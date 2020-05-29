@@ -14,7 +14,7 @@ jobs:
     - name: Set environment virables
       run: |
         echo "::set-env name=IMAGE_PREFIX::spaceone"
-        echo "::set-env name=SERVICE::identity"
+        echo "::set-env name=SERVICE::monitoring"
         echo "::set-env name=LOCATION_SETUP_PY::src"
         echo "::set-env name=LOCATION_DOCKERFILE::."
 
