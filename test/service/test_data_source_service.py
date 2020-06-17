@@ -431,6 +431,29 @@ class TestDataSourceService(unittest.TestCase):
 
         print_data(values, 'test_stat_data_source')
 
+    @patch.object(MongoModel, 'connect', return_value=None)
+    def test_stat_data_source_distinct(self, *args):
+        data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), data_source_vos))
+
+        params = {
+            'domain_id': self.domain_id,
+            'query': {
+                'distinct': 'data_source_id',
+                'page': {
+                    'start': 2,
+                    'limit': 3
+                }
+            }
+        }
+
+        self.transaction.method = 'stat'
+        data_source_svc = DataSourceService(transaction=self.transaction)
+        values = data_source_svc.stat(params)
+        StatisticsInfo(values)
+
+        print_data(values, 'test_stat_data_source_distinct')
+
 
 if __name__ == "__main__":
     unittest.main(testRunner=RichTestRunner)
