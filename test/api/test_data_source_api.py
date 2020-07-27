@@ -47,7 +47,7 @@ class TestDataSourceAPI(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config.init_conf(service='monitoring')
+        config.init_conf(package='spaceone.monitoring')
         connect('test', host='mongomock://localhost')
         super().setUpClass()
 
