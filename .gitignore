@@ -6,6 +6,7 @@ build
 *.egg
 *.whl
 *.log
+.DS_Store
 .idea
 __pycache__
 venv
