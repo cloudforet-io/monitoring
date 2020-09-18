@@ -189,6 +189,7 @@ class MetricService(BaseService):
                 'supported_schema': supported_schema,
                 'secrets': resource_info['collection_info']['secrets']
             }
+
             return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
 
         else:
