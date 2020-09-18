@@ -23,10 +23,6 @@ class MonitoringPluginConnector(BaseConnector):
         self.client = pygrpc.client(endpoint=f'{e.get("hostname")}:{e.get("port")}', version='plugin')
 
     def init(self, options):
-        print("#####")
-        print(self.client.__dict__)
-        print("#####")
-
         response = self.client.DataSource.init({
             'options': options,
         }, metadata=self.transaction.get_connection_meta())
