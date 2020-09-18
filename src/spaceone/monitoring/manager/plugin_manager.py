@@ -28,24 +28,18 @@ class PluginManager(BaseManager):
         #     break
 
         _LOGGER.debug(f'[plugin_info] {plugin_info}')
-        plugin_options = plugin_info.get('metadata', {})
+        plugin_options = plugin_info.get('result', {}).get('metadata', {})
 
         self._validate_plugin_option(plugin_options, monitoring_type)
         return plugin_options
 
     def list_metrics(self, schema, options, secret_data, resource):
-        print("##### LIST METRICS ######")
-        print(f'SCHEMA: {schema}')
-        print(f'OPTIONS: {options}')
-        print(f'SECRET DATA: {secret_data}')
-        print(f'RESOURCE: {resource}')
-        print("###########")
         metrics_info = self.mp_connector.list_metrics(schema, options, secret_data, resource)
         # for result in self._process_stream(response_stream, return_resource_type='monitoring.Metric'):
         #     metrics_info = result
         #     break
 
-        return metrics_info
+        return metrics_info.get('result', {})
 
     def get_metric_data(self, schema, options, secret_data, resource, *args):
         metric_data_info = self.mp_connector.get_metric_data(schema, options, secret_data, resource, *args)
@@ -53,7 +47,7 @@ class PluginManager(BaseManager):
         #     metric_data_info = result
         #     break
 
-        return metric_data_info
+        return metric_data_info.get('result', {})
 
     def list_logs(self, options, secret_data, resource, *args):
         response_stream = self.mp_connector.list_logs(options, secret_data, resource, *args)
