@@ -47,7 +47,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: latest,${{ env.VERSION }}
-          
+
       - name: Slack
         if: always()
         uses: 8398a7/action-slack@v3.2.0

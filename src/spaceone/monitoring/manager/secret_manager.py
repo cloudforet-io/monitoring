@@ -37,8 +37,11 @@ class SecretManager(BaseManager):
         if response.get('total_count', 0) == 0:
             raise ERROR_RESOURCE_SECRETS_NOT_EXISTS(resource_id=resource_id)
 
-        secret_id = response['results'][0]['secret_id']
-        return self.get_secret_data(secret_id, domain_id)
+        result = response['results'][0]
+        secret_id = result['secret_id']
+        schema = result['schema']
+
+        return self.get_secret_data(secret_id, domain_id), schema
 
     def get_plugin_secret(self, plugin_id, secret_id, provider, capability, domain_id):
         use_resource_secret = capability.get('use_resource_secret', False)
@@ -60,9 +63,11 @@ class SecretManager(BaseManager):
             else:
                 raise ERROR_NOT_FOUND(key='plugin_info.secret_id', value=secret_id)
 
-        secret_id = response['results'][0]['secret_id']
+        result = response['results'][0]
+        secret_id = result['secret_id']
+        schema = result['schema']
 
-        return self.get_secret_data(secret_id, domain_id)
+        return self.get_secret_data(secret_id, domain_id), schema
 
     @staticmethod
     def _check_plugin_secret(use_resource_secret, secret_id, provider):

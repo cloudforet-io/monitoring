@@ -13,7 +13,7 @@ on:
     types: [branch_tagging]
 
 jobs:
-  
+
   condition_check:
     runs-on: ubuntu-latest
     outputs:
@@ -87,7 +87,7 @@ jobs:
           echo ${{ env.VERSION }} > src/VERSION
           git add .
           git commit -m "[CI/CD] release version ${{ env.VERSION }}"
-          git tag ${{ env.VERSION }} 
+          git tag ${{ env.VERSION }}
           git push --atomic origin ${{ env.BRANCH }} ${{ env.VERSION }}
       - name: task
         if: github.event_name == 'push'
@@ -101,7 +101,7 @@ jobs:
           echo ${{ env.VERSION }} > src/VERSION
           git add .
           git commit -m "[CI/CD] release version ${{ env.VERSION }}"
-          \git tag -f ${{ env.VERSION }} 
+          \git tag -f ${{ env.VERSION }}
           git push && \git push -f origin "${{ env.VERSION }}"
 
   pypi:

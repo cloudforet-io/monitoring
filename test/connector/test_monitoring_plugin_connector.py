@@ -29,43 +29,40 @@ class TestMonitoringPluginConnector(unittest.TestCase):
     def tearDownClass(cls) -> None:
         super().tearDownClass()
 
-    def test_verify_plugin_no_secret_data(self):
-        endpoint = self.connector_conf['endpoint']
-        self.mp_connector.initialize(endpoint)
-        responses = self.mp_connector.verify({}, {})
-        for response in responses:
-            print_data(response, 'test_verify_plugin_no_secret_data')
-
     def test_verify_plugin_with_secret_data(self):
         endpoint = self.connector_conf['endpoint']
         secret_data = self.connector_conf['secret_data']
+        schema = self.connector_conf['schema']
+
         self.mp_connector.initialize(endpoint)
-        responses = self.mp_connector.verify({}, secret_data)
-        for response in responses:
-            print_data(response, 'test_verify_plugin_with_secret_data')
+        response = self.mp_connector.verify(schema, {}, secret_data)
+        print_data(response, 'test_verify_plugin_with_secret_data')
 
     def test_list_metrics(self):
         endpoint = self.connector_conf['endpoint']
         secret_data = self.connector_conf['secret_data']
         resource = self.connector_conf['resource']
+        schema = self.connector_conf['schema']
+
         self.mp_connector.initialize(endpoint)
-        responses = self.mp_connector.list_metrics({}, secret_data, resource)
-        for response in responses:
-            print_data(response, 'test_list_metrics')
+        response = self.mp_connector.list_metrics(schema, {}, secret_data, resource)
+        print_data(response, 'test_list_metrics')
 
     def test_get_metric_data(self):
         endpoint = self.connector_conf['endpoint']
         secret_data = self.connector_conf['secret_data']
         resource = self.connector_conf['resource']
         metric_name = self.connector_conf['metric']
+        schema = self.connector_conf['schema']
+
         end = datetime.utcnow()
         start = end - timedelta(minutes=60)
 
         self.mp_connector.initialize(endpoint)
-        responses = self.mp_connector.get_metric_data({}, secret_data, resource, metric_name,
-                                                      start, end, None, None)
-        for response in responses:
-            print_data(response, 'test_get_metric_data')
+        response = self.mp_connector.get_metric_data(schema, {}, secret_data, resource, metric_name, start, end,
+                                                     None, None)
+
+        print_data(response, 'test_get_metric_data')
 
 
 if __name__ == "__main__":
