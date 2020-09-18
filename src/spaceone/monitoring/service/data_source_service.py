@@ -280,7 +280,7 @@ class DataSourceService(BaseService):
         monitoring_type = capability['monitoring_type']
 
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
-        secret_data = secret_mgr.get_plugin_secret(plugin_id, secret_id, provider, capability, domain_id)
+        secret_data, schema = secret_mgr.get_plugin_secret(plugin_id, secret_id, provider, capability, domain_id)
 
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         plugin_mgr.init_plugin(plugin_id, version, domain_id)

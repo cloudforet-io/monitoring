@@ -81,14 +81,14 @@ class MetricService(BaseService):
             _LOGGER.debug(f'[list] Resource info : resource_id = {resource_id} / resource_key = {resource_key}')
 
             try:
-                secret_data = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+                secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
             except Exception as e:
                 _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
                               extra={'traceback': traceback.format_exc()})
                 continue
 
             try:
-                metrics_info = self.plugin_mgr.list_metrics(plugin_options, secret_data, resource_key)
+                metrics_info = self.plugin_mgr.list_metrics(schema, plugin_options, secret_data, resource_key)
 
             except Exception as e:
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
@@ -155,8 +155,8 @@ class MetricService(BaseService):
         for resource_id, resource_info in resources_info.items():
             resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, reference_keys)
 
-            secret_data = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-            metric_data_info = self.plugin_mgr.get_metric_data(plugin_options, secret_data, resource_key,
+            secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+            metric_data_info = self.plugin_mgr.get_metric_data(schema, plugin_options, secret_data, resource_key,
                                                                params['metric'], params['start'], params['end'],
                                                                params.get('period'), params.get('stat'))
 
