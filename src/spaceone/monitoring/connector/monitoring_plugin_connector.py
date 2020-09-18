@@ -27,8 +27,8 @@ class MonitoringPluginConnector(BaseConnector):
             'options': options,
         }, metadata=self.transaction.get_connection_meta())
 
-        # return self._change_message(response)
-        return response
+        return self._change_message(response)
+        # return response
 
     def verify(self, schema, options, secret_data):
         params = {
@@ -56,11 +56,11 @@ class MonitoringPluginConnector(BaseConnector):
             })
 
         responses = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
-        # return self._change_message(responses)
+        message = self._change_message(responses)
         print("0000000")
-        print(responses)
+        print(message)
         print("0000000")
-        return responses
+        return message
 
     def get_metric_data(self, schema, options, secret_data, resource, metric, start, end, period, stat):
         params = {
@@ -80,8 +80,8 @@ class MonitoringPluginConnector(BaseConnector):
             })
 
         responses = self.client.Metric.get_data(params, metadata=self.transaction.get_connection_meta())
-        # return self._change_message(responses)
-        return responses
+        return self._change_message(responses)
+        # return responses
 
     def list_logs(self, schema, options, secret_data, resource, plugin_filter, start, end, sort, limit):
         params = {
@@ -101,9 +101,10 @@ class MonitoringPluginConnector(BaseConnector):
             })
 
         responses = self.client.Log.list(params, metadata=self.transaction.get_connection_meta())
-        return self._change_message(responses)
+
+        for response in responses:
+            yield self._change_message(response)
 
     @staticmethod
-    def _change_message(messages):
-        for message in messages:
-            yield MessageToDict(message, preserving_proto_field_name=True)
+    def _change_message(message):
+        return MessageToDict(message, preserving_proto_field_name=True)
