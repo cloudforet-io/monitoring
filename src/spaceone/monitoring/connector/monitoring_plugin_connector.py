@@ -57,6 +57,9 @@ class MonitoringPluginConnector(BaseConnector):
 
         responses = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
         # return self._change_message(responses)
+        print("0000000")
+        print(responses)
+        print("0000000")
         return responses
 
     def get_metric_data(self, schema, options, secret_data, resource, metric, start, end, period, stat):

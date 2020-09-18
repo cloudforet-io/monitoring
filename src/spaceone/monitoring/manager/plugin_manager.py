@@ -34,6 +34,12 @@ class PluginManager(BaseManager):
         return plugin_options
 
     def list_metrics(self, schema, options, secret_data, resource):
+        print("##### LIST METRICS ######")
+        print(f'SCHEMA: {schema}')
+        print(f'OPTIONS: {options}')
+        print(f'SECRET DATA: {secret_data}')
+        print(f'RESOURCE: {resource}')
+        print("###########")
         metrics_info = self.mp_connector.list_metrics(schema, options, secret_data, resource)
         # for result in self._process_stream(response_stream, return_resource_type='monitoring.Metric'):
         #     metrics_info = result
