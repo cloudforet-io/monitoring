@@ -89,7 +89,8 @@ class TestMetricService(unittest.TestCase):
 
         mock_list_secrets.return_value = {
             'results': [{
-                'secret_id': utils.generate_id('secret')
+                'secret_id': utils.generate_id('secret'),
+                'schema': 'aws_access_key'
             }],
             'total_count': 1
         }
