@@ -73,9 +73,9 @@ class LogService(BaseService):
         resource_info = resource_mgr.get_resource(resource_id, resource_type, domain_id)
         resource_key = resource_mgr.get_resource_key(resource_type, resource_info, reference_keys)
 
-        secret_data = self._get_secret_data(resource_id, resource_type, resource_info, data_source_vo, domain_id)
+        secret_data, schema = self._get_secret_data(resource_id, resource_type, resource_info, data_source_vo, domain_id)
 
-        logs_info = self.plugin_mgr.list_logs(plugin_options, secret_data, resource_key, plugin_filter,
+        logs_info = self.plugin_mgr.list_logs(schema, plugin_options, secret_data, resource_key, plugin_filter,
                                               params.get('start'), params.get('end'), params.get('sort', {}),
                                               params.get('limit', 100))
 

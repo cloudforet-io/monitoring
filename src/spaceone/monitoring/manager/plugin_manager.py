@@ -23,9 +23,6 @@ class PluginManager(BaseManager):
 
     def verify_plugin(self, options, secret_data, monitoring_type):
         plugin_info = self.mp_connector.init(options)
-        # for result in self._process_stream(response_stream, return_resource_type='monitoring.DataSource'):
-        #     verify_info = result
-        #     break
 
         _LOGGER.debug(f'[plugin_info] {plugin_info}')
         plugin_options = plugin_info.get('result', {}).get('metadata', {})
@@ -35,22 +32,16 @@ class PluginManager(BaseManager):
 
     def list_metrics(self, schema, options, secret_data, resource):
         metrics_info = self.mp_connector.list_metrics(schema, options, secret_data, resource)
-        # for result in self._process_stream(response_stream, return_resource_type='monitoring.Metric'):
-        #     metrics_info = result
-        #     break
 
         return metrics_info.get('result', {})
 
     def get_metric_data(self, schema, options, secret_data, resource, *args):
         metric_data_info = self.mp_connector.get_metric_data(schema, options, secret_data, resource, *args)
-        # for result in self._process_stream(response_stream, return_resource_type='monitoring.Metric'):
-        #     metric_data_info = result
-        #     break
 
         return metric_data_info.get('result', {})
 
-    def list_logs(self, options, secret_data, resource, *args):
-        response_stream = self.mp_connector.list_logs(options, secret_data, resource, *args)
+    def list_logs(self, schema, options, secret_data, resource, *args):
+        response_stream = self.mp_connector.list_logs(schema, options, secret_data, resource, *args)
 
         logs = []
         for result in self._process_stream(response_stream, return_resource_type='monitoring.Log'):
