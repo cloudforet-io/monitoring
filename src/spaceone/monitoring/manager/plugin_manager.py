@@ -25,7 +25,7 @@ class PluginManager(BaseManager):
         plugin_info = self.mp_connector.init(options)
 
         _LOGGER.debug(f'[plugin_info] {plugin_info}')
-        plugin_options = plugin_info.get('result', {}).get('metadata', {})
+        plugin_options = plugin_info.get('metadata', {})
 
         self._validate_plugin_option(plugin_options, monitoring_type)
         return plugin_options
