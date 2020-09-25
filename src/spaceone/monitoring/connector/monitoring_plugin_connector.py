@@ -27,8 +27,7 @@ class MonitoringPluginConnector(BaseConnector):
             'options': options,
         }, metadata=self.transaction.get_connection_meta())
 
-        response = self._change_message(response)
-        return response.get('metadata', {})
+        return self._change_message(response)
         # return response
 
     def verify(self, schema, options, secret_data):
