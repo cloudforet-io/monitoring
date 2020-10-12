@@ -47,8 +47,9 @@ class DataSourceService(BaseService):
         self._check_plugin_capability(params['capability'])
         params['monitoring_type'] = params['capability']['monitoring_type']
 
-        verified_options = self._verify_plugin(params['plugin_info'], params['capability'], domain_id)
-        params['plugin_info']['options'].update(verified_options)
+        # Update metadata
+        #verified_options = self._verify_plugin(params['plugin_info'], params['capability'], domain_id)
+        #params['plugin_info']['options'].update(verified_options)
 
         return self.data_source_mgr.register_data_source(params)
 
