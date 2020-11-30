@@ -25,10 +25,10 @@ class PluginManager(BaseManager):
         plugin_info = self.mp_connector.init(options)
 
         _LOGGER.debug(f'[plugin_info] {plugin_info}')
-        plugin_options = plugin_info.get('metadata', {})
+        plugin_metadata = plugin_info.get('metadata', {})
 
-        self._validate_plugin_option(plugin_options, monitoring_type)
-        return plugin_options
+        self._validate_plugin_option(plugin_metadata, monitoring_type)
+        return plugin_metadata
 
     def list_metrics(self, schema, options, secret_data, resource):
         metrics_info = self.mp_connector.list_metrics(schema, options, secret_data, resource)
