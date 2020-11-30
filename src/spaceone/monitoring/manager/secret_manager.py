@@ -39,7 +39,7 @@ class SecretManager(BaseManager):
 
         result = response['results'][0]
         secret_id = result['secret_id']
-        schema = result['schema']
+        schema = result.get('schema')
 
         return self.get_secret_data(secret_id, domain_id), schema
 
@@ -65,7 +65,7 @@ class SecretManager(BaseManager):
 
         result = response['results'][0]
         secret_id = result['secret_id']
-        schema = result['schema']
+        schema = result.get('schema')
 
         return self.get_secret_data(secret_id, domain_id), schema
 
