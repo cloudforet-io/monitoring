@@ -30,7 +30,7 @@ class DataSourceService(BaseService):
                 'name': 'str',
                 'monitoring_type': 'str',
                 'plugin_info': 'dict',
-                'tags': 'dict',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
@@ -48,8 +48,8 @@ class DataSourceService(BaseService):
         params['monitoring_type'] = params['capability']['monitoring_type']
 
         # Update metadata
-        #verified_options = self._verify_plugin(params['plugin_info'], params['capability'], domain_id)
-        #params['plugin_info']['options'].update(verified_options)
+        verified_options = self._verify_plugin(params['plugin_info'], params['capability'], domain_id)
+        params['plugin_info']['options'].update(verified_options)
 
         return self.data_source_mgr.register_data_source(params)
 
@@ -63,7 +63,7 @@ class DataSourceService(BaseService):
                 'data_source_id': 'str',
                 'name': 'dict',
                 'plugin_info': 'dict',
-                'tags': 'dict'
+                'tags': 'list'
                 'domain_id': 'str'
             }
 
@@ -192,6 +192,7 @@ class DataSourceService(BaseService):
     @transaction
     @check_required(['domain_id'])
     @append_query_filter(['data_source_id', 'name', 'state', 'monitoring_type', 'provider', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['data_source_id', 'name', 'provider'])
     def list(self, params):
         """ List data sources
@@ -218,6 +219,8 @@ class DataSourceService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
+    @append_keyword_filter(['data_source_id', 'name', 'provider'])
     def stat(self, params):
         """
         Args:
@@ -285,5 +288,5 @@ class DataSourceService(BaseService):
 
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         plugin_mgr.init_plugin(plugin_id, version, domain_id)
-        verified_options = plugin_mgr.verify_plugin(options, secret_data, monitoring_type)
-        return verified_options
+        verified_metadata = plugin_mgr.verify_plugin(options, secret_data, monitoring_type)
+        return verified_metadata

@@ -63,9 +63,12 @@ class TestDataSourceAPI(unittest.TestCase):
         params = {
             'name': utils.random_string(),
             'monitoring_type': 'METRIC',
-            'tags': {
-                'tag_key': 'tag_value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'plugin_info': {
                 'plugin_id': utils.generate_id('plugin'),
                 'version': '1.1',
@@ -83,14 +86,14 @@ class TestDataSourceAPI(unittest.TestCase):
 
         print_message(data_source_info, 'test_register_data_source')
 
+        data_source_data = MessageToDict(data_source_info, preserving_proto_field_name=True)
         self.assertIsInstance(data_source_info, data_source_pb2.DataSourceInfo)
         self.assertEqual(data_source_info.name, params['name'])
         self.assertEqual(data_source_info.state, data_source_pb2.DataSourceInfo.State.ENABLED)
         self.assertEqual(data_source_info.monitoring_type, data_source_pb2.MonitoringType.METRIC)
         self.assertIsNotNone(data_source_info.provider)
         self.assertIsNotNone(data_source_info.capability)
-        self.assertDictEqual(MessageToDict(data_source_info.tags, preserving_proto_field_name=True),
-                             params['tags'])
+        self.assertListEqual(data_source_data['tags'], params['tags'])
         self.assertIsInstance(data_source_info.plugin_info, data_source_pb2.PluginInfo)
         self.assertDictEqual(MessageToDict(data_source_info.plugin_info, preserving_proto_field_name=True),
                              params['plugin_info'])
@@ -103,9 +106,12 @@ class TestDataSourceAPI(unittest.TestCase):
     def test_update_data_source(self, mock_parse_request, *args):
         params = {
             'name': utils.random_string(),
-            'tags': {
-                'update_key': 'update_value'
-            },
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ],
             'domain_id': utils.generate_id('domain')
         }
         mock_parse_request.return_value = (params, {})
@@ -115,9 +121,10 @@ class TestDataSourceAPI(unittest.TestCase):
 
         print_message(data_source_info, 'test_update_data_source')
 
+        data_source_data = MessageToDict(data_source_info, preserving_proto_field_name=True)
         self.assertIsInstance(data_source_info, data_source_pb2.DataSourceInfo)
         self.assertEqual(data_source_info.name, params['name'])
-        self.assertDictEqual(MessageToDict(data_source_info.tags), params['tags'])
+        self.assertListEqual(data_source_data['tags'], params['tags'])
 
     @patch.object(BaseAPI, '__init__', return_value=None)
     @patch.object(Locator, 'get_service', return_value=_MockDataSourceService())

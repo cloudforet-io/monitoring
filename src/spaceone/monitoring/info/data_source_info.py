@@ -1,4 +1,5 @@
 import functools
+from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.monitoring.v1 import data_source_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.monitoring.model.data_source_model import DataSource
@@ -34,7 +35,7 @@ def DataSourceInfo(data_source_vo: DataSource, minimal=False):
         info.update({
             'capability': change_struct_type(data_source_vo.capability),
             'plugin_info': PluginInfo(data_source_vo.plugin_info),
-            'tags': change_struct_type(data_source_vo.tags),
+            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in data_source_vo.tags],
             'domain_id': data_source_vo.domain_id,
             'created_at': change_timestamp_type(data_source_vo.created_at)
         })
