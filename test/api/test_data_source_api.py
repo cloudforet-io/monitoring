@@ -34,7 +34,7 @@ class _MockDataSourceService(BaseService):
         return DataSourceFactory(**params)
 
     def verify_plugin(self, params):
-        return True
+        pass
 
     def get(self, params):
         return DataSourceFactory(**params)

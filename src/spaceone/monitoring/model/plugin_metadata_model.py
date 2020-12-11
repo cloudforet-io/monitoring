@@ -4,7 +4,7 @@ from schematics.exceptions import ValidationError
 from schematics.types import BaseType, ListType, DictType, StringType
 from schematics.types.compound import ModelType
 
-__all__ = ['MetricPluginOptionsModel', 'LogPluginOptionsModel']
+__all__ = ['MetricPluginMetadataModel', 'LogPluginMetadataModel']
 
 _SUPPORTED_RESOURCE_TYPE = [
     'identity.ServiceAccount',
@@ -18,7 +18,7 @@ class JSONSchemaType(BaseType):
         try:
             jsonschema.Draft7Validator.check_schema(value)
         except Exception as e:
-            raise ValidationError(key=f'Plugin option is invalid. (filter_format = {str(value)}')
+            raise ValidationError(key=f'Plugin metadata is invalid. (filter_format = {str(value)}')
 
 
 class ReferenceKeyModel(Model):
@@ -37,13 +37,13 @@ class TemplateModel(Model):
     table = ListType(ModelType(DynamicField))
 
 
-class MetricPluginOptionsModel(Model):
+class MetricPluginMetadataModel(Model):
     supported_resource_type = ListType(StringType(choices=_SUPPORTED_RESOURCE_TYPE), required=True)
     supported_stat = ListType(StringType, required=True)
     reference_keys = ListType(ModelType(ReferenceKeyModel))
 
 
-class LogPluginOptionsModel(Model):
+class LogPluginMetadataModel(Model):
     supported_resource_type = ListType(StringType(choices=_SUPPORTED_RESOURCE_TYPE), required=True)
     reference_keys = ListType(ModelType(ReferenceKeyModel))
     filter_format = JSONSchemaType()

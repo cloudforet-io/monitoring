@@ -4,7 +4,7 @@ from spaceone.core.manager import BaseManager
 from spaceone.monitoring.error import *
 from spaceone.monitoring.connector.plugin_connector import PluginConnector
 from spaceone.monitoring.connector.monitoring_plugin_connector import MonitoringPluginConnector
-from spaceone.monitoring.model.plugin_options_model import MetricPluginOptionsModel, LogPluginOptionsModel
+from spaceone.monitoring.model.plugin_metadata_model import MetricPluginMetadataModel, LogPluginMetadataModel
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,19 +16,22 @@ class PluginManager(BaseManager):
         self.plugin_connector: PluginConnector = self.locator.get_connector('PluginConnector')
         self.mp_connector: MonitoringPluginConnector = self.locator.get_connector('MonitoringPluginConnector')
 
-    def init_plugin(self, plugin_id, version, domain_id):
+    def initialize(self, plugin_id, version, domain_id):
         endpoint = self.plugin_connector.get_plugin_endpoint(plugin_id, version, domain_id)
         _LOGGER.debug(f'[init_plugin] endpoint: {endpoint}')
         self.mp_connector.initialize(endpoint)
 
-    def verify_plugin(self, options, secret_data, monitoring_type):
+    def init_plugin(self, options, monitoring_type):
         plugin_info = self.mp_connector.init(options)
 
         _LOGGER.debug(f'[plugin_info] {plugin_info}')
         plugin_metadata = plugin_info.get('metadata', {})
 
-        self._validate_plugin_option(plugin_metadata, monitoring_type)
+        self._validate_plugin_metadata(plugin_metadata, monitoring_type)
         return plugin_metadata
+
+    def verify_plugin(self, options, secret_data, schema):
+        self.mp_connector.verify(options, secret_data, schema)
 
     def list_metrics(self, schema, options, secret_data, resource):
         metrics_info = self.mp_connector.list_metrics(schema, options, secret_data, resource)
@@ -52,12 +55,12 @@ class PluginManager(BaseManager):
         }
 
     @staticmethod
-    def _validate_plugin_option(options, monitoring_type):
+    def _validate_plugin_metadata(plugin_metadata, monitoring_type):
         try:
             if monitoring_type == 'METRIC':
-                MetricPluginOptionsModel(options).validate()
+                MetricPluginMetadataModel(plugin_metadata).validate()
             else:
-                LogPluginOptionsModel(options).validate()
+                LogPluginMetadataModel(plugin_metadata).validate()
 
         except Exception as e:
             raise ERROR_INVALID_PLUGIN_OPTIONS(reason=str(e))
