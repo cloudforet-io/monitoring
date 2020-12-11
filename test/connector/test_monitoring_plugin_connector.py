@@ -35,7 +35,7 @@ class TestMonitoringPluginConnector(unittest.TestCase):
         schema = self.connector_conf['schema']
 
         self.mp_connector.initialize(endpoint)
-        response = self.mp_connector.verify(schema, {}, secret_data)
+        response = self.mp_connector.verify({}, secret_data, schema)
         print_data(response, 'test_verify_plugin_with_secret_data')
 
     def test_list_metrics(self):

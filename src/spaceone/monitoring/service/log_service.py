@@ -65,7 +65,7 @@ class LogService(BaseService):
 
         self._check_resource_type(plugin_options, resource_type)
 
-        self.plugin_mgr.init_plugin(plugin_id, version, domain_id)
+        self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
         plugin_filter = {}
 

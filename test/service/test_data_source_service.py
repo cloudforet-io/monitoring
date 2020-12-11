@@ -55,26 +55,23 @@ class TestDataSourceService(unittest.TestCase):
     @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'verify')
+    @patch.object(MonitoringPluginConnector, 'init')
     def test_register_metric_data_source_with_secret_id(self, mock_plugin_verify, mock_list_secrets,
                                                         mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
         plugin_id = utils.generate_id('plugin')
         plugin_version = '1.0'
 
-        mock_plugin_verify.return_value.__iter__ = lambda response: iter([{
-            'resource_type': 'monitoring.DataSource',
-            'result': {
-                'options': {
-                    'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                    'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                    'reference_keys': [{
-                        'resource_type': 'inventory.Server',
-                        'reference_key': 'reference.resource_id'
-                    }]
-                }
+        mock_plugin_verify.return_value = {
+            'metadata': {
+                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
+                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
+                'reference_keys': [{
+                    'resource_type': 'inventory.Server',
+                    'reference_key': 'reference.resource_id'
+                }]
             }
-        }])
+        }
 
         mock_list_secrets.return_value = {
             'results': [{
@@ -130,25 +127,22 @@ class TestDataSourceService(unittest.TestCase):
     @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'verify')
-    def test_register_metric_data_source_with_provider(self, mock_plugin_verify, mock_list_secrets,
+    @patch.object(MonitoringPluginConnector, 'init')
+    def test_register_metric_data_source_with_provider(self, mock_plugin_init, mock_list_secrets,
                                                        mock_get_plugin, *args):
         plugin_id = utils.generate_id('plugin')
         plugin_version = '1.0'
 
-        mock_plugin_verify.return_value.__iter__ = lambda response: iter([{
-            'resource_type': 'monitoring.DataSource',
-            'result': {
-                'options': {
-                    'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                    'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                    'reference_keys': [{
-                        'resource_type': 'inventory.Server',
-                        'reference_key': 'reference.resource_id'
-                    }]
-                }
+        mock_plugin_init.return_value = {
+            'metadata': {
+                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
+                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
+                'reference_keys': [{
+                    'resource_type': 'inventory.Server',
+                    'reference_key': 'reference.resource_id'
+                }]
             }
-        }])
+        }
 
         mock_list_secrets.return_value = {
             'results': [{
