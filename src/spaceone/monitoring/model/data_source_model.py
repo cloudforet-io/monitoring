@@ -38,24 +38,12 @@ class DataSource(MongoModel):
             'state',
             'tags'
         ],
-        'exact_fields': [
-            'data_source_id',
-            'state',
-            'monitoring_type',
-            'provider',
-            'plugin_info.plugin_id',
-            'plugin_info.version',
-            'plugin_info.secret_id',
-            'plugin_info.provider',
-            'domain_id',
-        ],
         'minimal_fields': [
             'data_source_id',
             'name',
             'state',
             'monitoring_type',
             'provider'
-
         ],
         'ordering': [
             'name'
@@ -67,5 +55,6 @@ class DataSource(MongoModel):
             'provider',
             'domain_id',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }
