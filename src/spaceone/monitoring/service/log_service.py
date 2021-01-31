@@ -14,6 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class LogService(BaseService):
 
@@ -25,7 +26,7 @@ class LogService(BaseService):
         self.data_source_mgr: DataSourceManager = self.locator.get_manager('DataSourceManager')
         self.plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'resource_type', 'resource_id', 'domain_id'])
     @change_timestamp_value(['start', 'end'], timestamp_format='iso8601')
     def list(self, params):
