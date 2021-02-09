@@ -407,7 +407,7 @@ class TestDataSourceService(unittest.TestCase):
         params = {
             'domain_id': self.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'data_source_id',
@@ -418,11 +418,12 @@ class TestDataSourceService(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'name': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 
