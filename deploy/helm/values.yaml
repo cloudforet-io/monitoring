@@ -8,8 +8,7 @@ worker: false
 name: monitoring
 replicas: 1
 image:
-    repository: spaceone
-    name: monitoring
+    name: spaceone/monitoring
     version: latest
 imagePullPolicy: IfNotPresent
 
