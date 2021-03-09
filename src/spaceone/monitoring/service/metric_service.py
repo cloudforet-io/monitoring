@@ -13,6 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class MetricService(BaseService):
 
@@ -23,7 +24,7 @@ class MetricService(BaseService):
         self.data_source_mgr: DataSourceManager = self.locator.get_manager('DataSourceManager')
         self.plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'resource_type', 'resources', 'domain_id'])
     def list(self, params):
         """ Get resource's metrics
@@ -55,7 +56,7 @@ class MetricService(BaseService):
 
         self._check_resource_type(plugin_options, resource_type)
 
-        self.plugin_mgr.init_plugin(plugin_id, version, domain_id)
+        self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
         response = {
             'metrics': None,
@@ -104,7 +105,7 @@ class MetricService(BaseService):
         response['metrics'] = self._intersect_metric_keys(metrics_dict, and_metric_keys)
         return response
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'resource_type', 'resources', 'metric', 'start', 'end', 'domain_id'])
     @change_timestamp_value(['start', 'end'], timestamp_format='iso8601')
     def get_data(self, params):
@@ -142,7 +143,7 @@ class MetricService(BaseService):
 
         self._check_resource_type(plugin_options, resource_type)
 
-        self.plugin_mgr.init_plugin(plugin_id, version, domain_id)
+        self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
         response = {
             'labels': None,

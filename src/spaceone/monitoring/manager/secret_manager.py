@@ -39,7 +39,7 @@ class SecretManager(BaseManager):
 
         result = response['results'][0]
         secret_id = result['secret_id']
-        schema = result['schema']
+        schema = result.get('schema')
 
         return self.get_secret_data(secret_id, domain_id), schema
 
@@ -58,14 +58,13 @@ class SecretManager(BaseManager):
 
         if response.get('total_count', 0) == 0:
             if use_resource_secret:
-                return {}
-                # raise ERROR_SUPPORTED_SECRETS_NOT_EXISTS(plugin_id=plugin_id, provider=provider)
+                raise ERROR_SUPPORTED_SECRETS_NOT_EXISTS(plugin_id=plugin_id, provider=provider)
             else:
                 raise ERROR_NOT_FOUND(key='plugin_info.secret_id', value=secret_id)
 
         result = response['results'][0]
         secret_id = result['secret_id']
-        schema = result['schema']
+        schema = result.get('schema')
 
         return self.get_secret_data(secret_id, domain_id), schema
 

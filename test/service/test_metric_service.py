@@ -64,7 +64,7 @@ class TestMetricService(unittest.TestCase):
         server_id_2 = utils.generate_id('server')
         server_id_3 = utils.generate_id('server')
 
-        mock_list_metrics.return_value.__iter__ = lambda response: iter([{
+        mock_list_metrics.return_value = {
             'resource_type': 'monitoring.Metric',
             'result': {
                 'metrics': [{
@@ -85,7 +85,7 @@ class TestMetricService(unittest.TestCase):
                     'chart_type': 'line'
                 }]
             }
-        }])
+        }
 
         mock_list_secrets.return_value = {
             'results': [{
@@ -141,14 +141,11 @@ class TestMetricService(unittest.TestCase):
         start = end - timedelta(days=1)
         start_ts = int(time.mktime(start.timetuple()))
 
-        mock_get_metric_data.return_value.__iter__ = lambda response: iter([{
-            'resource_type': 'monitoring.Metric',
-            'result': {
-                'labels': [start_ts, start_ts + 3600, start_ts + (3600 * 2), start_ts + (3600 * 3),
-                           start_ts + (3600 * 4)],
-                'values': [1, 2, 3, 4, 5]
-            }
-        }])
+        mock_get_metric_data.return_value = {
+            'labels': [start_ts, start_ts + 3600, start_ts + (3600 * 2), start_ts + (3600 * 3),
+                       start_ts + (3600 * 4)],
+            'values': [1, 2, 3, 4, 5]
+        }
 
         mock_list_secrets.return_value = {
             'results': [{

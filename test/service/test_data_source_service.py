@@ -55,30 +55,28 @@ class TestDataSourceService(unittest.TestCase):
     @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'verify')
+    @patch.object(MonitoringPluginConnector, 'init')
     def test_register_metric_data_source_with_secret_id(self, mock_plugin_verify, mock_list_secrets,
                                                         mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
         plugin_id = utils.generate_id('plugin')
         plugin_version = '1.0'
 
-        mock_plugin_verify.return_value.__iter__ = lambda response: iter([{
-            'resource_type': 'monitoring.DataSource',
-            'result': {
-                'options': {
-                    'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                    'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                    'reference_keys': [{
-                        'resource_type': 'inventory.Server',
-                        'reference_key': 'reference.resource_id'
-                    }]
-                }
+        mock_plugin_verify.return_value = {
+            'metadata': {
+                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
+                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
+                'reference_keys': [{
+                    'resource_type': 'inventory.Server',
+                    'reference_key': 'reference.resource_id'
+                }]
             }
-        }])
+        }
 
         mock_list_secrets.return_value = {
             'results': [{
-                'secret_id': secret_id
+                'secret_id': secret_id,
+                'schema': 'aws_access_key'
             }],
             'total_count': 1
         }
@@ -99,9 +97,12 @@ class TestDataSourceService(unittest.TestCase):
                 'options': {},
                 'secret_id': secret_id
             },
-            'tags': {
-                'tag_key': 'tag_value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'domain_id': self.domain_id
         }
 
@@ -114,7 +115,7 @@ class TestDataSourceService(unittest.TestCase):
 
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params.get('tags', {}), data_source_vo.tags)
+        self.assertEqual(params.get('tags', {}), data_source_vo.to_dict()['tags'])
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
     @patch.object(MongoModel, 'connect', return_value=None)
@@ -126,25 +127,22 @@ class TestDataSourceService(unittest.TestCase):
     @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'verify')
-    def test_register_metric_data_source_with_provider(self, mock_plugin_verify, mock_list_secrets,
+    @patch.object(MonitoringPluginConnector, 'init')
+    def test_register_metric_data_source_with_provider(self, mock_plugin_init, mock_list_secrets,
                                                        mock_get_plugin, *args):
         plugin_id = utils.generate_id('plugin')
         plugin_version = '1.0'
 
-        mock_plugin_verify.return_value.__iter__ = lambda response: iter([{
-            'resource_type': 'monitoring.DataSource',
-            'result': {
-                'options': {
-                    'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                    'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                    'reference_keys': [{
-                        'resource_type': 'inventory.Server',
-                        'reference_key': 'reference.resource_id'
-                    }]
-                }
+        mock_plugin_init.return_value = {
+            'metadata': {
+                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
+                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
+                'reference_keys': [{
+                    'resource_type': 'inventory.Server',
+                    'reference_key': 'reference.resource_id'
+                }]
             }
-        }])
+        }
 
         mock_list_secrets.return_value = {
             'results': [{
@@ -171,9 +169,12 @@ class TestDataSourceService(unittest.TestCase):
                 'options': {},
                 'provider': 'aws'
             },
-            'tags': {
-                'tag_key': 'tag_value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'domain_id': self.domain_id
         }
 
@@ -186,7 +187,7 @@ class TestDataSourceService(unittest.TestCase):
 
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params.get('tags', {}), data_source_vo.tags)
+        self.assertEqual(params.get('tags', {}), data_source_vo.to_dict()['tags'])
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
     @patch.object(MongoModel, 'connect', return_value=None)
@@ -195,21 +196,18 @@ class TestDataSourceService(unittest.TestCase):
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'verify')
-    def test_update_data_source(self, mock_plugin_verify, mock_list_secrets, *args):
-        mock_plugin_verify.return_value.__iter__ = lambda response: iter([{
-            'resource_type': 'monitoring.DataSource',
-            'result': {
-                'options': {
-                    'supported_resource_type': ['inventory.Server'],
-                    'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                    'reference_keys': [{
-                        'resource_type': 'inventory.Server',
-                        'reference_key': 'reference.resource_id'
-                    }]
-                }
+    @patch.object(MonitoringPluginConnector, 'init')
+    def test_update_data_source(self, mock_plugin_init, mock_list_secrets, *args):
+        mock_plugin_init.return_value = {
+            'metadata': {
+                'supported_resource_type': ['inventory.Server'],
+                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
+                'reference_keys': [{
+                    'resource_type': 'inventory.Server',
+                    'reference_key': 'reference.resource_id'
+                }]
             }
-        }])
+        }
 
         mock_list_secrets.return_value = {
             'results': [{
@@ -228,9 +226,12 @@ class TestDataSourceService(unittest.TestCase):
                 'options': {},
                 'provider': 'aws'
             },
-            'tags': {
-                'update_key': 'update_value'
-            },
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ],
             'domain_id': self.domain_id
         }
 
@@ -244,7 +245,7 @@ class TestDataSourceService(unittest.TestCase):
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
         self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params.get('tags', {}), data_source_vo.tags)
+        self.assertEqual(params.get('tags', {}), data_source_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_enable_data_source(self, *args):
@@ -374,15 +375,15 @@ class TestDataSourceService(unittest.TestCase):
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_data_sources_by_tag(self, *args):
-        DataSourceFactory(tags={'tag_key': 'tag_value'}, domain_id=self.domain_id)
+        DataSourceFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
         data_source_vos = DataSourceFactory.build_batch(9, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), data_source_vos))
 
         params = {
             'query': {
                 'filter': [{
-                    'k': 'tags.tag_key',
-                    'v': 'tag_value',
+                    'k': 'tags.tag_key_1',
+                    'v': 'tag_value_1',
                     'o': 'eq'
                 }]
             },
@@ -406,7 +407,7 @@ class TestDataSourceService(unittest.TestCase):
         params = {
             'domain_id': self.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'data_source_id',
@@ -417,11 +418,12 @@ class TestDataSourceService(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'name': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 

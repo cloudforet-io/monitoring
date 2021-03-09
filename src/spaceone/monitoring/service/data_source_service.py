@@ -13,6 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class DataSourceService(BaseService):
 
@@ -20,7 +21,7 @@ class DataSourceService(BaseService):
         super().__init__(*args, **kwargs)
         self.data_source_mgr: DataSourceManager = self.locator.get_manager('DataSourceManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['name', 'plugin_info', 'domain_id'])
     def register(self, params):
         """Register data source
@@ -30,7 +31,7 @@ class DataSourceService(BaseService):
                 'name': 'str',
                 'monitoring_type': 'str',
                 'plugin_info': 'dict',
-                'tags': 'dict',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
@@ -48,12 +49,14 @@ class DataSourceService(BaseService):
         params['monitoring_type'] = params['capability']['monitoring_type']
 
         # Update metadata
-        #verified_options = self._verify_plugin(params['plugin_info'], params['capability'], domain_id)
-        #params['plugin_info']['options'].update(verified_options)
+        plugin_metadata = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
+        params['plugin_info']['options'].update(plugin_metadata)
+        # TODO: Change plugin_info.options to metadata
+        # params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.register_data_source(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
     def update(self, params):
         """Update data source
@@ -63,7 +66,7 @@ class DataSourceService(BaseService):
                 'data_source_id': 'str',
                 'name': 'dict',
                 'plugin_info': 'dict',
-                'tags': 'dict'
+                'tags': 'list'
                 'domain_id': 'str'
             }
 
@@ -81,14 +84,14 @@ class DataSourceService(BaseService):
                 raise ERROR_NOT_ALLOWED_PLUGIN_ID(old_plugin_id=data_source_vo.plugin_info.plugin_id,
                                                   new_plugin_id=params['plugin_info']['plugin_id'])
 
-            verified_options = self._verify_plugin(params['plugin_info'],
-                                                   data_source_vo.capability, domain_id)
-
-            params['plugin_info']['options'].update(verified_options)
+            plugin_metadata = self._init_plugin(params['plugin_info'], data_source_vo.monitoring_type, domain_id)
+            params['plugin_info']['options'].update(plugin_metadata)
+            # TODO: Change plugin_info.options to metadata
+            # params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
     def enable(self, params):
         """ Enable data source
@@ -110,7 +113,7 @@ class DataSourceService(BaseService):
         return self.data_source_mgr.update_data_source_by_vo({'state': 'ENABLED'},
                                                              data_source_vo)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
     def disable(self, params):
         """ Disable data source
@@ -132,7 +135,7 @@ class DataSourceService(BaseService):
         return self.data_source_mgr.update_data_source_by_vo({'state': 'DISABLED'},
                                                              data_source_vo)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
     def deregister(self, params):
         """Deregister data source
@@ -149,7 +152,7 @@ class DataSourceService(BaseService):
 
         self.data_source_mgr.deregister_data_source(params['data_source_id'], params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
     def verify_plugin(self, params):
         """ Verify data source plugin
@@ -172,7 +175,7 @@ class DataSourceService(BaseService):
 
         return {'status': True}
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
     def get(self, params):
         """ Get data source
@@ -189,9 +192,10 @@ class DataSourceService(BaseService):
         """
         return self.data_source_mgr.get_data_source(params['data_source_id'], params['domain_id'], params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['data_source_id', 'name', 'state', 'monitoring_type', 'provider', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['data_source_id', 'name', 'provider'])
     def list(self, params):
         """ List data sources
@@ -215,9 +219,11 @@ class DataSourceService(BaseService):
         query = params.get('query', {})
         return self.data_source_mgr.list_data_sources(query)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
+    @append_keyword_filter(['data_source_id', 'name', 'provider'])
     def stat(self, params):
         """
         Args:
@@ -272,18 +278,25 @@ class DataSourceService(BaseService):
 
         return plugin_info
 
+    def _init_plugin(self, plugin_info, monitoring_type, domain_id):
+        plugin_id = plugin_info['plugin_id']
+        version = plugin_info['version']
+        options = plugin_info['options']
+
+        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
+        plugin_mgr.initialize(plugin_id, version, domain_id)
+        return plugin_mgr.init_plugin(options, monitoring_type)
+
     def _verify_plugin(self, plugin_info, capability, domain_id):
         plugin_id = plugin_info['plugin_id']
         version = plugin_info['version']
         options = plugin_info['options']
         secret_id = plugin_info.get('secret_id')
         provider = plugin_info.get('provider')
-        monitoring_type = capability['monitoring_type']
 
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
         secret_data, schema = secret_mgr.get_plugin_secret(plugin_id, secret_id, provider, capability, domain_id)
 
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        plugin_mgr.init_plugin(plugin_id, version, domain_id)
-        verified_options = plugin_mgr.verify_plugin(options, secret_data, monitoring_type)
-        return verified_options
+        plugin_mgr.initialize(plugin_id, version, domain_id)
+        plugin_mgr.verify_plugin(options, secret_data, schema)

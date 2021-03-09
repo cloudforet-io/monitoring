@@ -39,8 +39,11 @@ class DataSourceFactory(factory.mongoengine.MongoEngineFactory):
         'monitoring_type': 'METRIC'
     }
     plugin_info = factory.SubFactory(PluginInfoFactory)
-    tags = {
-        'key': 'value'
-    }
+    tags = [
+        {
+            'key': 'tag_key',
+            'value': 'tag_value'
+        }
+    ]
     domain_id = utils.generate_id('domain')
     created_at = factory.Faker('date_time')

@@ -28,9 +28,8 @@ class MonitoringPluginConnector(BaseConnector):
         }, metadata=self.transaction.get_connection_meta())
 
         return self._change_message(response)
-        # return response
 
-    def verify(self, schema, options, secret_data):
+    def verify(self, options, secret_data, schema=None):
         params = {
             'options': options,
             'secret_data': secret_data
@@ -78,7 +77,6 @@ class MonitoringPluginConnector(BaseConnector):
 
         responses = self.client.Metric.get_data(params, metadata=self.transaction.get_connection_meta())
         return self._change_message(responses)
-        # return responses
 
     def list_logs(self, schema, options, secret_data, resource, plugin_filter, start, end, sort, limit):
         params = {

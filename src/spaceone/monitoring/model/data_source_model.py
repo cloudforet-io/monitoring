@@ -14,6 +14,11 @@ class PluginInfo(EmbeddedDocument):
         return self.to_mongo()
 
 
+class DataSourceTag(EmbeddedDocument):
+    key = StringField(max_length=255)
+    value = StringField(max_length=255)
+
+
 class DataSource(MongoModel):
     data_source_id = StringField(max_length=40, generate_id='ds', unique=True)
     name = StringField(max_length=255, unique_with='domain_id')
@@ -22,7 +27,7 @@ class DataSource(MongoModel):
     provider = StringField(max_length=40, default=None, null=True)
     capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
-    tags = DictField()
+    tags = ListField(EmbeddedDocumentField(DataSourceTag))
     domain_id = StringField(max_length=255)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -33,24 +38,12 @@ class DataSource(MongoModel):
             'state',
             'tags'
         ],
-        'exact_fields': [
-            'data_source_id',
-            'state',
-            'monitoring_type',
-            'provider',
-            'plugin_info.plugin_id',
-            'plugin_info.version',
-            'plugin_info.secret_id',
-            'plugin_info.provider',
-            'domain_id',
-        ],
         'minimal_fields': [
             'data_source_id',
             'name',
             'state',
             'monitoring_type',
             'provider'
-
         ],
         'ordering': [
             'name'
@@ -60,6 +53,7 @@ class DataSource(MongoModel):
             'state',
             'monitoring_type',
             'provider',
-            'domain_id'
+            'domain_id',
+            ('tags.key', 'tags.value')
         ]
     }
