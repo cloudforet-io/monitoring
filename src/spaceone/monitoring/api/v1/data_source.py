@@ -38,6 +38,12 @@ class DataSource(BaseAPI, data_source_pb2_grpc.DataSourceServicer):
             data_source_service.deregister(params)
             return self.locator.get_info('EmptyInfo')
 
+    def update_plugin(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('DataSourceService', metadata) as data_source_service:
+            return self.locator.get_info('DataSourceInfo', data_source_service.update_plugin(params))
+
     def verify_plugin(self, request, context):
         params, metadata = self.parse_request(request, context)
 

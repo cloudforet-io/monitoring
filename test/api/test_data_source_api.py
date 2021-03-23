@@ -33,6 +33,9 @@ class _MockDataSourceService(BaseService):
     def disable(self, params):
         return DataSourceFactory(**params)
 
+    def update_plugin(self, params):
+        return DataSourceFactory(**params)
+
     def verify_plugin(self, params):
         pass
 
@@ -176,6 +179,28 @@ class TestDataSourceAPI(unittest.TestCase):
 
         self.assertIsInstance(data_source_info, data_source_pb2.DataSourceInfo)
         self.assertEqual(data_source_info.state, data_source_pb2.DataSourceInfo.State.DISABLED)
+
+    @patch.object(BaseAPI, '__init__', return_value=None)
+    @patch.object(Locator, 'get_service', return_value=_MockDataSourceService())
+    @patch.object(BaseAPI, 'parse_request')
+    def test_update_plugin(self, mock_parse_request, *args):
+        params = {
+            'data_source_id': utils.generate_id('data_source'),
+            'version': '1.2',
+            'domain_id': utils.generate_id('domain')
+        }
+        mock_parse_request.return_value = (params, {})
+
+        data_source_servicer = DataSource()
+        data_source_info = data_source_servicer.update_plugin({}, {})
+
+        print_message(data_source_info, 'test_update_data_source')
+
+        data_source_data = MessageToDict(data_source_info, preserving_proto_field_name=True)
+        self.assertIsInstance(data_source_info, data_source_pb2.DataSourceInfo)
+        self.assertEqual(data_source_info.name, params['name'])
+        self.assertEqual(data_source_info.plugin_info.version, params['version'])
+
 
     @patch.object(BaseAPI, '__init__', return_value=None)
     @patch.object(Locator, 'get_service', return_value=_MockDataSourceService())

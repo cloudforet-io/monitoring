@@ -32,20 +32,19 @@ class InventoryManager(BaseManager):
         get_method = _RESOURCE_GET_METHODS[resource_type]
         return getattr(self.inventory_connector, get_method)(resource_id, domain_id)
 
-    def list_resources(self, resources, resource_type, reference_keys, domain_id):
-        reference_key = self._get_reference_key(resource_type, reference_keys)
-        query = self._make_query(resource_type, resources, reference_key)
+    def list_resources(self, resources, resource_type, required_keys, domain_id):
+        query = self._make_query(resource_type, resources, required_keys)
         get_method = _RESOURCE_LIST_METHODS[resource_type]
 
         response = getattr(self.inventory_connector, get_method)(query, domain_id)
         return self._change_resources_info(resource_type, response)
 
-    def get_resource_key(self, resource_type, resource_info, reference_keys):
-        reference_key = self._get_reference_key(resource_type, reference_keys)
+    def get_resource_key(self, resource_type, resource_info, required_keys):
+        reference_key = self._get_reference_key(resource_type, required_keys)
         resource_key = utils.get_dict_value(resource_info, reference_key)
 
         if resource_key is None:
-            raise ERROR_NOT_FOUND_REFERENCE_KEY(reference_keys=str(reference_keys))
+            raise ERROR_NOT_FOUND_REFERENCE_KEY(reference_keys=str(required_keys))
 
         return resource_key
 
@@ -60,15 +59,18 @@ class InventoryManager(BaseManager):
         return resources_info
 
     @staticmethod
-    def _make_query(resource_type, resources, reference_key):
+    def _make_query(resource_type, resources, required_keys):
         resource_key = _RESOURCE_KEYS[resource_type]
+        only_keys = list(set([resource_key, 'collection_info.secrets'] + required_keys))
+        only_keys.sort()
+
         return {
             'filter': [{
                 'k': resource_key,
                 'v': resources,
                 'o': 'in'
             }],
-            'only': [resource_key, reference_key, 'collection_info.secrets']
+            'only': only_keys
         }
 
     @staticmethod

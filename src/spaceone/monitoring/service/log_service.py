@@ -60,6 +60,7 @@ class LogService(BaseService):
 
         plugin_options = data_source_vo.plugin_info.options
         reference_keys = plugin_options.get('reference_keys', [])
+        required_keys = plugin_options.get('required_keys', [])
         filter_format = plugin_options.get('filter_format', {})
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
@@ -72,11 +73,11 @@ class LogService(BaseService):
 
         resource_mgr = self._get_resource_manager(resource_type)
         resource_info = resource_mgr.get_resource(resource_id, resource_type, domain_id)
-        resource_key = resource_mgr.get_resource_key(resource_type, resource_info, reference_keys)
+        # resource_key = resource_mgr.get_resource_key(resource_type, resource_info, reference_keys)
 
         secret_data, schema = self._get_secret_data(resource_id, resource_type, resource_info, data_source_vo, domain_id)
 
-        logs_info = self.plugin_mgr.list_logs(schema, plugin_options, secret_data, resource_key, plugin_filter,
+        logs_info = self.plugin_mgr.list_logs(schema, plugin_options, secret_data, resource_info, plugin_filter,
                                               params.get('start'), params.get('end'), params.get('sort', {}),
                                               params.get('limit', 100))
 

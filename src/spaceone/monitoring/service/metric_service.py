@@ -1,5 +1,6 @@
 import logging
 import traceback
+import concurrent.futures
 from spaceone.core.service import *
 
 from spaceone.monitoring.error import *
@@ -9,7 +10,7 @@ from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
 
 _LOGGER = logging.getLogger(__name__)
-
+MAX_WORKER = 20
 
 @authentication_handler
 @authorization_handler
@@ -51,6 +52,7 @@ class MetricService(BaseService):
 
         plugin_options = data_source_vo.plugin_info.options
         reference_keys = plugin_options.get('reference_keys', [])
+        required_keys = plugin_options.get('required_keys', [])
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
@@ -69,17 +71,18 @@ class MetricService(BaseService):
         for resource_id in resources:
             response['available_resources'][resource_id] = False
 
-        resources_info = self.inventory_mgr.list_resources(resources, resource_type, reference_keys, domain_id)
+        resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
         for resource_id, resource_info in resources_info.items():
-            try:
-                resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, reference_keys)
-            except Exception as e:
-                _LOGGER.error(f'[list] Get resource reference error ({resource_id}): {str(e)}',
-                              extra={'traceback': traceback.format_exc()})
-                continue
 
-            _LOGGER.debug(f'[list] Resource info : resource_id = {resource_id} / resource_key = {resource_key}')
+            # try:
+            #     resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, required_keys)
+            # except Exception as e:
+            #     _LOGGER.error(f'[list] Get resource reference error ({resource_id}): {str(e)}',
+            #                   extra={'traceback': traceback.format_exc()})
+            #     continue
+            #
+            # _LOGGER.debug(f'[list] Resource info : resource_id = {resource_id} / resource_key = {resource_key}')
 
             try:
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
@@ -89,7 +92,7 @@ class MetricService(BaseService):
                 continue
 
             try:
-                metrics_info = self.plugin_mgr.list_metrics(schema, plugin_options, secret_data, resource_key)
+                metrics_info = self.plugin_mgr.list_metrics(schema, plugin_options, secret_data, resource_info)
 
             except Exception as e:
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
@@ -138,6 +141,7 @@ class MetricService(BaseService):
 
         plugin_options = data_source_vo.plugin_info.options
         reference_keys = plugin_options.get('reference_keys', [])
+        required_keys = plugin_options.get('required_keys', [])
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
@@ -151,22 +155,70 @@ class MetricService(BaseService):
             'domain_id': domain_id
         }
 
-        resources_info = self.inventory_mgr.list_resources(resources, resource_type, reference_keys, domain_id)
+        resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
-        for resource_id, resource_info in resources_info.items():
-            resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, reference_keys)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
+            future_executors = []
 
-            secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-            metric_data_info = self.plugin_mgr.get_metric_data(schema, plugin_options, secret_data, resource_key,
-                                                               params['metric'], params['start'], params['end'],
-                                                               params.get('period'), params.get('stat'))
+            for resource_id, resource_info in resources_info.items():
+                #resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, required_keys)
 
-            if response['labels'] is None:
-                response['labels'] = metric_data_info.get('labels', [])
+                secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 
-            response['resource_values'][resource_id] = metric_data_info.get('values', [])
+                concurrent_param = {'schema': schema,
+                                    'plugin_options': plugin_options,
+                                    'secret_data': secret_data,
+                                    'resource': resource_info,
+                                    'metric': params['metric'],
+                                    'start': params['start'],
+                                    'end': params['end'],
+                                    'period': params.get('period'),
+                                    'stat': params.get('stat'),
+                                    }
+
+                future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
+
+            for future in concurrent.futures.as_completed(future_executors):
+                for result in future.result():
+                    if response['labels'] is None:
+                        response['labels'] = result.get('labels', [])
+                    response['resource_values'][resource_id] = result.get('values', [])
+
+        # for resource_id, resource_info in resources_info.items():
+        #     resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, reference_keys)
+        #
+        #     secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+        #     metric_data_info = self.plugin_mgr.get_metric_data(schema, plugin_options, secret_data, resource_key,
+        #                                                        params['metric'], params['start'], params['end'],
+        #                                                        params.get('period'), params.get('stat'))
+        #
+        #     if response['labels'] is None:
+        #         response['labels'] = metric_data_info.get('labels', [])
+        #
+        #     response['resource_values'][resource_id] = metric_data_info.get('values', [])
 
         return response
+
+    def concurrent_get_metric_data(self, param):
+        schema = param.get('schema')
+        plugin_options = param.get('schema')
+        secret_data = param.get('secret_data')
+        resource = param.get('resource')
+        _metric = param.get('metric')
+        start = param.get('start')
+        end = param.get('end')
+        period = param.get('period')
+        stat = param.get('stat')
+        metric_data_info = self.plugin_mgr.get_metric_data(schema,
+                                                           plugin_options,
+                                                           secret_data,
+                                                           resource,
+                                                           _metric,
+                                                           start,
+                                                           end,
+                                                           period,
+                                                           stat)
+        return metric_data_info
 
     @staticmethod
     def _check_data_source_state(data_source_vo):
