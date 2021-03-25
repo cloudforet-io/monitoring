@@ -34,6 +34,11 @@ class _MockDataSourceService(BaseService):
         return DataSourceFactory(**params)
 
     def update_plugin(self, params):
+        params['plugin_info'] = {}
+        params['plugin_info']['version'] = params.get('version')
+        params['plugin_info']['options'] = params.get('options')
+        del params['version']
+        del params['options']
         return DataSourceFactory(**params)
 
     def verify_plugin(self, params):
@@ -123,7 +128,6 @@ class TestDataSourceAPI(unittest.TestCase):
         data_source_info = data_source_servicer.update({}, {})
 
         print_message(data_source_info, 'test_update_data_source')
-
         data_source_data = MessageToDict(data_source_info, preserving_proto_field_name=True)
         self.assertIsInstance(data_source_info, data_source_pb2.DataSourceInfo)
         self.assertEqual(data_source_info.name, params['name'])
@@ -186,20 +190,18 @@ class TestDataSourceAPI(unittest.TestCase):
     def test_update_plugin(self, mock_parse_request, *args):
         params = {
             'data_source_id': utils.generate_id('data_source'),
-            'version': '1.2',
-            'domain_id': utils.generate_id('domain')
+            'domain_id': utils.generate_id('domain'),
+            'version': "1.1",
+            'options': {}
         }
         mock_parse_request.return_value = (params, {})
 
         data_source_servicer = DataSource()
         data_source_info = data_source_servicer.update_plugin({}, {})
-
         print_message(data_source_info, 'test_update_data_source')
-
         data_source_data = MessageToDict(data_source_info, preserving_proto_field_name=True)
         self.assertIsInstance(data_source_info, data_source_pb2.DataSourceInfo)
-        self.assertEqual(data_source_info.name, params['name'])
-        self.assertEqual(data_source_info.plugin_info.version, params['version'])
+        self.assertEqual(data_source_info.plugin_info.version, "1.1")
 
 
     @patch.object(BaseAPI, '__init__', return_value=None)
