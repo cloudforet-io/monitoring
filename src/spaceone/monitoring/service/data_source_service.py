@@ -50,9 +50,10 @@ class DataSourceService(BaseService):
 
         # Update metadata
         plugin_metadata = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
+        # TODO: temp
         params['plugin_info']['options'].update(plugin_metadata)
         # TODO: Change plugin_info.options to metadata
-        # params['plugin_info']['metadata'] = plugin_metadata
+        params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.register_data_source(params)
 
@@ -85,9 +86,10 @@ class DataSourceService(BaseService):
                                                   new_plugin_id=params['plugin_info']['plugin_id'])
 
             plugin_metadata = self._init_plugin(params['plugin_info'], data_source_vo.monitoring_type, domain_id)
+            # TODO: temp
             params['plugin_info']['options'].update(plugin_metadata)
             # TODO: Change plugin_info.options to metadata
-            # params['plugin_info']['metadata'] = plugin_metadata
+            params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
@@ -151,6 +153,71 @@ class DataSourceService(BaseService):
         """
 
         self.data_source_mgr.deregister_data_source(params['data_source_id'], params['domain_id'])
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['data_source_id', 'domain_id'])
+    def verify_plugin(self, params):
+        """ Verify data source plugin
+
+        Args:
+            params (dict): {
+                'data_source_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            data_source_vo (object)
+        """
+
+        data_source_id = params['data_source_id']
+        domain_id = params['domain_id']
+        data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
+
+        self._verify_plugin(data_source_vo.plugin_info, data_source_vo.capability, domain_id)
+
+        return {'status': True}
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['data_source_id', 'domain_id'])
+    def update_plugin(self, params):
+        """Update data source
+
+        Args:
+            params (dict): {
+                'data_source_id': 'str',
+                'name': 'dict',
+                'plugin_info': 'dict',
+                'tags': 'list'
+                'domain_id': 'str'
+            }
+
+        Returns:
+            data_source_vo (object)
+        """
+        data_source_id = params['data_source_id']
+        domain_id = params['domain_id']
+        options = params.get('options')
+        version = params.get('version')
+        data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
+
+        plugin_info = data_source_vo.get('plugin_info', {})
+
+        if version:
+            del params['version']
+            plugin_info['version'] = version
+
+        if options:
+            del params['options']
+            plugin_info['options'] = options
+
+        params['plugin_info'] = plugin_info
+
+        plugin_metadata = self._init_plugin(plugin_info, data_source_vo.monitoring_type, domain_id)
+        # TODO: Change plugin_info.options to metadata
+        params['plugin_info']['metadata'] = plugin_metadata
+
+        return self.data_source_mgr.update_data_source(params)
+
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])

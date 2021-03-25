@@ -40,11 +40,12 @@ class TemplateModel(Model):
 class MetricPluginMetadataModel(Model):
     supported_resource_type = ListType(StringType(choices=_SUPPORTED_RESOURCE_TYPE), required=True)
     supported_stat = ListType(StringType, required=True)
-    reference_keys = ListType(ModelType(ReferenceKeyModel))
+    required_keys = ListType(StringType)
+#    reference_keys = ListType(ModelType(ReferenceKeyModel))
 
 
 class LogPluginMetadataModel(Model):
     supported_resource_type = ListType(StringType(choices=_SUPPORTED_RESOURCE_TYPE), required=True)
-    reference_keys = ListType(ModelType(ReferenceKeyModel))
+    required_keys = ListType(StringType)
     filter_format = JSONSchemaType()
     template = ModelType(TemplateModel)
