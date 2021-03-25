@@ -216,7 +216,7 @@ class DataSourceService(BaseService):
         # TODO: Change plugin_info.options to metadata
         params['plugin_info']['metadata'] = plugin_metadata
 
-        return self.data_source_mgr.update_data_source(params)
+        return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
