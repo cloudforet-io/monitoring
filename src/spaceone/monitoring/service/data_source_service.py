@@ -211,9 +211,14 @@ class DataSourceService(BaseService):
             plugin_info['options'] = options
 
         params['plugin_info'] = plugin_info
-
+        print('plugin_info')
+        print(plugin_info)
         plugin_metadata = self._init_plugin(plugin_info, data_source_vo.monitoring_type, domain_id)
         # TODO: Change plugin_info.options to metadata
+        
+        print('#params[plugin_info]#')
+        print(params['plugin_info'])
+        
         params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
