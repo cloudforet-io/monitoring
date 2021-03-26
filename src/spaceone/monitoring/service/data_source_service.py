@@ -201,10 +201,12 @@ class DataSourceService(BaseService):
         version = params.get('version')
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-        plugin_info = PluginInfo(data_source_vo.plugin_info)
-        dict_plugin_info = MessageToDict(plugin_info, preserving_proto_field_name=True)
+        data_source_vo_dict = MessageToDict(data_source_vo, preserving_proto_field_name=True)
 
-        new_plugin_info = {}
+        new_plugin_info = data_source_vo_dict.get('plugin_info', {})
+        
+        print('##new_plugin_info##')
+        print(new_plugin_info)
         
         if version:
             print(version)
@@ -216,7 +218,7 @@ class DataSourceService(BaseService):
             del params['options']
             new_plugin_info['options'] = options
 
-        params['plugin_info'] = dict_plugin_info
+        params['plugin_info'] = new_plugin_info
 
         plugin_metadata = self._init_plugin(data_source_vo.plugin_info, data_source_vo.monitoring_type, domain_id)
         params['plugin_info']['metadata'] = plugin_metadata
