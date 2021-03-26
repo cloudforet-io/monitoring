@@ -200,7 +200,7 @@ class DataSourceService(BaseService):
         version = params.get('version')
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
 
-        plugin_info = data_source_vo.plugin_info
+        plugin_info = data_source_vo['plugin_info']
 
         if version:
             del params['version']
