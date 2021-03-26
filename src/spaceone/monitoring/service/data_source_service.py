@@ -1,7 +1,7 @@
 import logging
 
 from spaceone.core.service import *
-
+from google.protobuf.json_format import MessageToDict
 from spaceone.monitoring.error import *
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
@@ -198,28 +198,33 @@ class DataSourceService(BaseService):
         domain_id = params['domain_id']
         options = params.get('options')
         version = params.get('version')
-        data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
+
+        data_source_vo = MessageToDict(self.data_source_mgr.get_data_source(data_source_id, domain_id))
+
+        print('data_source_vo.plugin_info')
+        print(data_source_vo.plugin_info)
 
         plugin_info = data_source_vo['plugin_info']
 
         if version:
+            print(version)
             del params['version']
             plugin_info['version'] = version
 
         if options:
+            print(options)
             del params['options']
             plugin_info['options'] = options
 
         params['plugin_info'] = plugin_info
-        print('plugin_info')
-        print(plugin_info)
+
         plugin_metadata = self._init_plugin(plugin_info, data_source_vo.monitoring_type, domain_id)
         # TODO: Change plugin_info.options to metadata
         
         print('#params[plugin_info]#')
         print(params['plugin_info'])
 
-        params['plugin_info']['metadata'].update(plugin_metadata)
+        params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
