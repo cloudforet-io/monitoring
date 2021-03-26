@@ -56,10 +56,6 @@ class PluginManager(BaseManager):
 
     @staticmethod
     def _validate_plugin_metadata(plugin_metadata, monitoring_type):
-        print('#plugin_metadata#')
-        print(plugin_metadata)
-        print('#monitoring_type#')
-        print(monitoring_type)
         try:
             if monitoring_type == 'METRIC':
                 MetricPluginMetadataModel(plugin_metadata).validate()
