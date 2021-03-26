@@ -201,7 +201,7 @@ class DataSourceService(BaseService):
         version = params.get('version')
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-        data_source_vo_dict = MessageToDict(data_source_vo, preserving_proto_field_name=True)
+        data_source_vo_dict = data_source_vo.to_dict()
 
         new_plugin_info = data_source_vo_dict.get('plugin_info', {})
         
