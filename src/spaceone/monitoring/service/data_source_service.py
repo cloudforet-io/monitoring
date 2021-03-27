@@ -214,7 +214,7 @@ class DataSourceService(BaseService):
             repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
             plugin_info['version'] = version
-            metadata = self._init_plugin(params['plugin_info'], data_source_vo.monitoring_type, domain_id)
+            metadata = self._init_plugin(data_source_vo.plugin_info, data_source_vo.monitoring_type, domain_id)
             plugin_info['metadata'] = metadata['metadata']
 
         if options:
