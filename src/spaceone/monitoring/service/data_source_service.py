@@ -201,27 +201,36 @@ class DataSourceService(BaseService):
         version = params.get('version')
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-        data_source_vo_dict = data_source_vo.to_dict()
+        data_source_dict = data_source_vo.to_dict()
+        plugin_info = data_source_dict['plugin_info']
 
-        new_plugin_info = data_source_vo_dict.get('plugin_info', {})
-        
-        print('##new_plugin_info##')
-        print(new_plugin_info)
-        
+        print('#plugin_info#')
+        print(plugin_info)
+
         if version:
-            print(version)
-            del params['version']
-            new_plugin_info['version'] = version
+            # Update plugin_version
+            plugin_id = plugin_info['plugin_id']
+            repo_mgr = self.locator.get_manager('RepositoryManager')
+            repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+
+            plugin_info['version'] = version
+            metadata = self._init_plugin(params['plugin_info'], data_source_vo.monitoring_type, domain_id)
+            plugin_info['metadata'] = metadata['metadata']
 
         if options:
-            print(options)
-            del params['options']
-            new_plugin_info['options'] = options
+            # Overwriting
+            plugin_info['options'] = options
 
-        params['plugin_info'] = new_plugin_info
+        params = {
+            'data_source_id': data_source_id,
+            'domain_id': domain_id,
+            'plugin_info': plugin_info
+        }
 
-        plugin_metadata = self._init_plugin(data_source_vo.plugin_info, data_source_vo.monitoring_type, domain_id)
-        params['plugin_info']['metadata'] = plugin_metadata
+        print('#params#')
+        print(params)
+
+        _LOGGER.debug(f'[update_plugin] {plugin_info}')
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
