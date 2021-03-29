@@ -13,6 +13,7 @@ def PluginInfo(vo):
             'plugin_id': vo.plugin_id,
             'version': vo.version,
             'options': change_struct_type(vo.options),
+            'metadata': change_struct_type(vo.metadata),
             'secret_id': vo.secret_id,
             'provider': vo.provider
         }
