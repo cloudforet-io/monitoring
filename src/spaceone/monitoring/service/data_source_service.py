@@ -54,7 +54,7 @@ class DataSourceService(BaseService):
         # TODO: temp
         params['plugin_info']['options'].update(plugin_metadata)
         # TODO: Change plugin_info.options to metadata
-        params['plugin_info']['metadata'].update(plugin_metadata)
+        params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.register_data_source(params)
 
@@ -90,7 +90,7 @@ class DataSourceService(BaseService):
             # TODO: temp
             params['plugin_info']['options'].update(plugin_metadata)
             # TODO: Change plugin_info.options to metadata
-            params['plugin_info']['metadata'].update(plugin_metadata)
+            params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
@@ -214,7 +214,7 @@ class DataSourceService(BaseService):
             repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
             plugin_info['version'] = version
-            metadata = self._init_plugin(data_source_vo.plugin_info, data_source_vo.monitoring_type, domain_id)
+            metadata = self._init_plugin(data_source_dict.plugin_info, data_source_dict.monitoring_type, domain_id)
             plugin_info['metadata'] = metadata['metadata']
 
         if options:
