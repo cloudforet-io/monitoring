@@ -7,7 +7,7 @@ class PluginInfo(EmbeddedDocument):
     plugin_id = StringField(max_length=40)
     version = StringField(max_length=255)
     options = DictField()
-    _metadata = DictField(serialized_name='metadata')
+    metadata = DictField()
     secret_id = StringField(max_length=40, default=None, null=True)
     provider = StringField(max_length=40, default=None, null=True)
 
