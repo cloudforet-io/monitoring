@@ -51,6 +51,8 @@ class MetricService(BaseService):
 
         self._check_data_source_state(data_source_vo)
         data_source_vo_readable = data_source_vo.to_dict()
+
+        print('data_source_vo')
         pprint(data_source_vo_readable)
 
         plugin_options = data_source_vo.plugin_info.options
@@ -58,6 +60,7 @@ class MetricService(BaseService):
 
         reference_keys = plugin_options.get('reference_keys', [])
         required_keys = plugin_metadata.get('required_keys', [])
+
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
@@ -100,7 +103,11 @@ class MetricService(BaseService):
                 continue
 
             try:
+
                 metrics_info = self.plugin_mgr.list_metrics(schema, plugin_options, secret_data, resource_info)
+
+                print('##### metrics_info ####')
+                pprint(metrics_info)
 
             except Exception as e:
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
@@ -280,6 +287,19 @@ class MetricService(BaseService):
 
     @staticmethod
     def _merge_metric_keys(metrics_info, metrics_dict, and_metric_keys):
+
+        print('metrics_info')
+        pprint(metrics_info)
+        print()
+
+        print('metrics_dict')
+        pprint(metrics_dict)
+        print()
+
+        print('and_metric_keys')
+        pprint(and_metric_keys)
+        print()
+
         for metric_info in metrics_info.get('metrics', []):
             if 'key' in metric_info:
                 metric_key = metric_info['key']
