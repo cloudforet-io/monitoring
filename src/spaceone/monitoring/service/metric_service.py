@@ -157,10 +157,9 @@ class MetricService(BaseService):
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
             future_executors = []
+
             for resource_id, resource_info in resources_info.items():
-
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-
                 concurrent_param = {'schema': schema,
                                     'plugin_metadata': plugin_metadata,
                                     'secret_data': secret_data,
@@ -175,14 +174,15 @@ class MetricService(BaseService):
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
             for future in concurrent.futures.as_completed(future_executors):
-                print('######future####')
-                pprint(future)
-                for result in future.result():
-                    print('## result ##')
-                    pprint(result)
-                    # if response['labels'] is None:
-                    #     response['labels'] = result.get('labels', [])
-                    # response['resource_values'][resource_id] = result.get('values', [])
+                print('#### future.result() ####')
+                pprint(future.result())
+
+                metric_data = future.result()
+
+                if response['labels'] is None:
+                    response['labels'] = metric_data.get('labels', [])
+
+                response['resource_values'][resource_id] = metric_data.get('values', [])
 
         # for resource_id, resource_info in resources_info.items():
         #     resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, reference_keys)
