@@ -81,9 +81,6 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
-        print('#######resources_infos#######')
-        pprint(resources_info)
-
         for resource_id, resource_info in resources_info.items():
 
             # try:
@@ -105,9 +102,6 @@ class MetricService(BaseService):
             try:
 
                 metrics_info = self.plugin_mgr.list_metrics(schema, plugin_options, secret_data, resource_info)
-
-                print('##### metrics_info ####')
-                pprint(metrics_info)
 
             except Exception as e:
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
@@ -157,9 +151,14 @@ class MetricService(BaseService):
 
         self._check_data_source_state(data_source_vo)
 
+        #TODO: Please remove Plugin_option once Front-end has moved to Options
+
         plugin_options = data_source_vo.plugin_info.options
         reference_keys = plugin_options.get('reference_keys', [])
-        required_keys = plugin_options.get('required_keys', [])
+
+        plugin_metadata = data_source_vo.plugin_info.metadata
+        required_keys = plugin_metadata.get('required_keys', [])
+
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
@@ -175,7 +174,7 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
-        print('#######resources_infos#######')
+        print('####### get_data: resources_infos #######')
         pprint(resources_info)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
@@ -184,7 +183,7 @@ class MetricService(BaseService):
             for resource_id, resource_info in resources_info.items():
                 #resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, required_keys)
 
-                print('####### resources_info single#######')
+                print('####### get_data: resources_info single#######')
                 pprint(resources_info)
 
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
@@ -199,7 +198,10 @@ class MetricService(BaseService):
                                     'period': params.get('period'),
                                     'stat': params.get('stat'),
                                     }
-
+                print()
+                print('## get_data: concurrent_param ##')
+                pprint(concurrent_param)
+                print()
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
             for future in concurrent.futures.as_completed(future_executors):
