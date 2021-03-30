@@ -55,17 +55,16 @@ class MetricService(BaseService):
         print('data_source_vo')
         pprint(data_source_vo_readable)
 
-        plugin_options = data_source_vo.plugin_info.options
-        plugin_metadata = data_source_vo.plugin_info.metadata
+        # plugin_options = data_source_vo.plugin_info.options
+        # reference_keys = plugin_options.get('reference_keys', [])
 
-        reference_keys = plugin_options.get('reference_keys', [])
+        plugin_metadata = data_source_vo.plugin_info.metadata
         required_keys = plugin_metadata.get('required_keys', [])
 
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
-        self._check_resource_type(plugin_options, resource_type)
-
+        self._check_resource_type(plugin_metadata, resource_type)
         self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
         response = {
@@ -100,8 +99,7 @@ class MetricService(BaseService):
                 continue
 
             try:
-
-                metrics_info = self.plugin_mgr.list_metrics(schema, plugin_options, secret_data, resource_info)
+                metrics_info = self.plugin_mgr.list_metrics(schema, plugin_metadata, secret_data, resource_info)
 
             except Exception as e:
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
@@ -162,7 +160,7 @@ class MetricService(BaseService):
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
-        self._check_resource_type(plugin_options, resource_type)
+        self._check_resource_type(plugin_metadata, resource_type)
 
         self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
@@ -227,7 +225,7 @@ class MetricService(BaseService):
 
     def concurrent_get_metric_data(self, param):
         schema = param.get('schema')
-        plugin_options = param.get('schema')
+        plugin_options = param.get('plugin_options')
         secret_data = param.get('secret_data')
         resource = param.get('resource')
         _metric = param.get('metric')
@@ -252,8 +250,8 @@ class MetricService(BaseService):
             raise ERROR_DATA_SOURCE_STATE_DISABLED(data_source_id=data_source_vo.data_source_id)
 
     @staticmethod
-    def _check_resource_type(plugin_options, resource_type):
-        supported_resource_type = plugin_options['supported_resource_type']
+    def _check_resource_type(plugin_metadata, resource_type):
+        supported_resource_type = plugin_metadata['supported_resource_type']
 
         if resource_type not in supported_resource_type:
             raise ERROR_NOT_SUPPORT_RESOURCE_TYPE(supported_resource_type=supported_resource_type)
