@@ -74,6 +74,9 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
+        print('#######resources_infos#######')
+        pprint(resources_info)
+
         for resource_id, resource_info in resources_info.items():
 
             # try:
@@ -99,6 +102,9 @@ class MetricService(BaseService):
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
                               extra={'traceback': traceback.format_exc()})
                 continue
+
+            print('####### resources_info single#######')
+            pprint(resources_info)
 
             metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
             response['available_resources'][resource_id] = True
