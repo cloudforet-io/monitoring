@@ -8,6 +8,7 @@ from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
+from pprint import pprint
 
 _LOGGER = logging.getLogger(__name__)
 MAX_WORKER = 20
@@ -157,11 +158,17 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
+        print('#######resources_infos#######')
+        pprint(resources_info)
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
             future_executors = []
 
             for resource_id, resource_info in resources_info.items():
                 #resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, required_keys)
+
+                print('####### resources_info single#######')
+                pprint(resources_info)
 
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 

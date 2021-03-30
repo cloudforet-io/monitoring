@@ -4,7 +4,7 @@ from spaceone.core import utils
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.error import *
 from spaceone.monitoring.connector.inventory_connector import InventoryConnector
-
+from pprint import pprint
 _LOGGER = logging.getLogger(__name__)
 
 _DEFAULT_REFERENCE_KEY = 'reference.resource_id'
@@ -34,6 +34,7 @@ class InventoryManager(BaseManager):
 
     def list_resources(self, resources, resource_type, required_keys, domain_id):
         query = self._make_query(resource_type, resources, required_keys)
+        pprint(query)
         get_method = _RESOURCE_LIST_METHODS[resource_type]
 
         response = getattr(self.inventory_connector, get_method)(query, domain_id)
