@@ -81,9 +81,6 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
-        print('#######resources_infos#######')
-        pprint(resources_info)
-
         for resource_id, resource_info in resources_info.items():
 
             # try:
@@ -105,9 +102,6 @@ class MetricService(BaseService):
             try:
 
                 metrics_info = self.plugin_mgr.list_metrics(schema, plugin_options, secret_data, resource_info)
-
-                print('##### metrics_info ####')
-                pprint(metrics_info)
 
             except Exception as e:
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
@@ -157,9 +151,14 @@ class MetricService(BaseService):
 
         self._check_data_source_state(data_source_vo)
 
+        #TODO: Please remove Plugin_option once Front-end has moved to Options
+
         plugin_options = data_source_vo.plugin_info.options
         reference_keys = plugin_options.get('reference_keys', [])
-        required_keys = plugin_options.get('required_keys', [])
+
+        plugin_metadata = data_source_vo.plugin_info.metadata
+        required_keys = plugin_metadata.get('required_keys', [])
+
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
