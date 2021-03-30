@@ -34,8 +34,8 @@ class PluginManager(BaseManager):
     def verify_plugin(self, options, secret_data, schema):
         self.mp_connector.verify(options, secret_data, schema)
 
-    def list_metrics(self, schema, options, secret_data, resource):
-        metrics_info = self.mp_connector.list_metrics(schema, options, secret_data, resource)
+    def list_metrics(self, schema, metadata, secret_data, resource):
+        metrics_info = self.mp_connector.list_metrics(schema, metadata, secret_data, resource)
 
         print('metrics_info')
         pprint(metrics_info)
