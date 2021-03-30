@@ -2,7 +2,6 @@ import logging
 
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.error import *
-from pprint import pprint
 from spaceone.monitoring.connector.plugin_connector import PluginConnector
 from spaceone.monitoring.connector.monitoring_plugin_connector import MonitoringPluginConnector
 from spaceone.monitoring.model.plugin_metadata_model import MetricPluginMetadataModel, LogPluginMetadataModel
