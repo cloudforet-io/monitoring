@@ -8,10 +8,9 @@ from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
-from pprint import pprint
 
 _LOGGER = logging.getLogger(__name__)
-MAX_WORKER = 20
+MAX_WORKER = 25
 
 @authentication_handler
 @authorization_handler
@@ -50,10 +49,6 @@ class MetricService(BaseService):
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
 
         self._check_data_source_state(data_source_vo)
-        data_source_vo_readable = data_source_vo.to_dict()
-
-        print('data_source_vo')
-        pprint(data_source_vo_readable)
 
         plugin_metadata = data_source_vo.plugin_info.metadata
         required_keys = plugin_metadata.get('required_keys', [])
@@ -134,9 +129,6 @@ class MetricService(BaseService):
 
         self._check_data_source_state(data_source_vo)
 
-        # plugin_options = data_source_vo.plugin_info.options
-        # reference_keys = plugin_options.get('reference_keys', [])
-
         plugin_metadata = data_source_vo.plugin_info.metadata
         required_keys = plugin_metadata.get('required_keys', [])
 
@@ -174,28 +166,11 @@ class MetricService(BaseService):
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
             for future in concurrent.futures.as_completed(future_executors):
-                print('#### future.result() ####')
-                pprint(future.result())
-
                 metric_data = future.result()
 
                 if response['labels'] is None:
                     response['labels'] = metric_data.get('labels', [])
-
                 response['resource_values'][resource_id] = metric_data.get('values', [])
-
-        # for resource_id, resource_info in resources_info.items():
-        #     resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, reference_keys)
-        #
-        #     secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-        #     metric_data_info = self.plugin_mgr.get_metric_data(schema, plugin_options, secret_data, resource_key,
-        #                                                        params['metric'], params['start'], params['end'],
-        #                                                        params.get('period'), params.get('stat'))
-        #
-        #     if response['labels'] is None:
-        #         response['labels'] = metric_data_info.get('labels', [])
-        #
-        #     response['resource_values'][resource_id] = metric_data_info.get('values', [])
 
         return response
 
@@ -263,19 +238,6 @@ class MetricService(BaseService):
 
     @staticmethod
     def _merge_metric_keys(metrics_info, metrics_dict, and_metric_keys):
-
-        print('metrics_info')
-        pprint(metrics_info)
-        print()
-
-        print('metrics_dict')
-        pprint(metrics_dict)
-        print()
-
-        print('and_metric_keys')
-        pprint(and_metric_keys)
-        print()
-
         for metric_info in metrics_info.get('metrics', []):
             if 'key' in metric_info:
                 metric_key = metric_info['key']
