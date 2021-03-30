@@ -152,7 +152,8 @@ class MetricService(BaseService):
 
             for resource_id, resource_info in resources_info.items():
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-                concurrent_param = {'schema': schema,
+                concurrent_param = {'resource_id': resource_id,
+                                    'schema': schema,
                                     'plugin_metadata': plugin_metadata,
                                     'secret_data': secret_data,
                                     'resource': resource_info,
@@ -166,15 +167,17 @@ class MetricService(BaseService):
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
             for future in concurrent.futures.as_completed(future_executors):
-                metric_data = future.result()
+                resource_id, metric_data = future.result()
 
                 if response['labels'] is None:
                     response['labels'] = metric_data.get('labels', [])
+
                 response['resource_values'][resource_id] = metric_data.get('values', [])
 
         return response
 
     def concurrent_get_metric_data(self, param):
+        resource_id = param.get('resource_id')
         schema = param.get('schema')
         plugin_metadata = param.get('plugin_metadata')
         secret_data = param.get('secret_data')
@@ -193,7 +196,7 @@ class MetricService(BaseService):
                                                            end,
                                                            period,
                                                            stat)
-        return metric_data_info
+        return resource_id, metric_data_info
 
     @staticmethod
     def _check_data_source_state(data_source_vo):
