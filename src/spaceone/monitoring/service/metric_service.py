@@ -50,8 +50,8 @@ class MetricService(BaseService):
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
 
         self._check_data_source_state(data_source_vo)
-        data_srouce_vo_readable = data_source_vo.dict()
-        pprint(data_srouce_vo_readable)
+        data_source_vo_readable = data_source_vo.to_dict()
+        pprint(data_source_vo_readable)
 
         plugin_options = data_source_vo.plugin_info.options
         plugin_metadata = data_source_vo.plugin_info.metadata
