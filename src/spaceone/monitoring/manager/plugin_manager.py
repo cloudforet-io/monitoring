@@ -43,8 +43,8 @@ class PluginManager(BaseManager):
 
         return metrics_info
 
-    def get_metric_data(self, schema, options, secret_data, resource, *args):
-        metric_data_info = self.mp_connector.get_metric_data(schema, options, secret_data, resource, *args)
+    def get_metric_data(self, schema, metadata, secret_data, resource, *args):
+        metric_data_info = self.mp_connector.get_metric_data(schema, metadata, secret_data, resource, *args)
 
         print('metric_data_info')
         pprint(metric_data_info)
