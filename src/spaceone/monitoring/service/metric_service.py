@@ -55,9 +55,6 @@ class MetricService(BaseService):
         print('data_source_vo')
         pprint(data_source_vo_readable)
 
-        # plugin_options = data_source_vo.plugin_info.options
-        # reference_keys = plugin_options.get('reference_keys', [])
-
         plugin_metadata = data_source_vo.plugin_info.metadata
         required_keys = plugin_metadata.get('required_keys', [])
 
@@ -82,15 +79,6 @@ class MetricService(BaseService):
 
         for resource_id, resource_info in resources_info.items():
 
-            # try:
-            #     resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, required_keys)
-            # except Exception as e:
-            #     _LOGGER.error(f'[list] Get resource reference error ({resource_id}): {str(e)}',
-            #                   extra={'traceback': traceback.format_exc()})
-            #     continue
-            #
-            # _LOGGER.debug(f'[list] Resource info : resource_id = {resource_id} / resource_key = {resource_key}')
-
             try:
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
             except Exception as e:
@@ -105,9 +93,6 @@ class MetricService(BaseService):
                 _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
                               extra={'traceback': traceback.format_exc()})
                 continue
-
-            print('####### resources_info single#######')
-            pprint(resources_info)
 
             metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
             response['available_resources'][resource_id] = True
@@ -149,10 +134,8 @@ class MetricService(BaseService):
 
         self._check_data_source_state(data_source_vo)
 
-        #TODO: Please remove Plugin_option once Front-end has moved to Options
-
-        plugin_options = data_source_vo.plugin_info.options
-        reference_keys = plugin_options.get('reference_keys', [])
+        # plugin_options = data_source_vo.plugin_info.options
+        # reference_keys = plugin_options.get('reference_keys', [])
 
         plugin_metadata = data_source_vo.plugin_info.metadata
         required_keys = plugin_metadata.get('required_keys', [])
@@ -172,22 +155,14 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
-        print('####### get_data: resources_infos #######')
-        pprint(resources_info)
-
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
             future_executors = []
-
             for resource_id, resource_info in resources_info.items():
-                #resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, required_keys)
-
-                print('####### get_data: resources_info single#######')
-                pprint(resources_info)
 
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 
                 concurrent_param = {'schema': schema,
-                                    'plugin_options': plugin_options,
+                                    'plugin_metadata': plugin_metadata,
                                     'secret_data': secret_data,
                                     'resource': resource_info,
                                     'metric': params['metric'],
@@ -196,17 +171,18 @@ class MetricService(BaseService):
                                     'period': params.get('period'),
                                     'stat': params.get('stat'),
                                     }
-                print()
-                print('## get_data: concurrent_param ##')
-                pprint(concurrent_param)
-                print()
+
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
             for future in concurrent.futures.as_completed(future_executors):
+                print('######future####')
+                pprint(future)
                 for result in future.result():
-                    if response['labels'] is None:
-                        response['labels'] = result.get('labels', [])
-                    response['resource_values'][resource_id] = result.get('values', [])
+                    print('## result ##')
+                    pprint(result)
+                    # if response['labels'] is None:
+                    #     response['labels'] = result.get('labels', [])
+                    # response['resource_values'][resource_id] = result.get('values', [])
 
         # for resource_id, resource_info in resources_info.items():
         #     resource_key = self.inventory_mgr.get_resource_key(resource_type, resource_info, reference_keys)
@@ -225,7 +201,7 @@ class MetricService(BaseService):
 
     def concurrent_get_metric_data(self, param):
         schema = param.get('schema')
-        plugin_options = param.get('plugin_options')
+        plugin_metadata = param.get('plugin_metadata')
         secret_data = param.get('secret_data')
         resource = param.get('resource')
         _metric = param.get('metric')
@@ -234,7 +210,7 @@ class MetricService(BaseService):
         period = param.get('period')
         stat = param.get('stat')
         metric_data_info = self.plugin_mgr.get_metric_data(schema,
-                                                           plugin_options,
+                                                           plugin_metadata,
                                                            secret_data,
                                                            resource,
                                                            _metric,
