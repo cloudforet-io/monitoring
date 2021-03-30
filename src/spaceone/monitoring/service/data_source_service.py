@@ -204,9 +204,6 @@ class DataSourceService(BaseService):
         data_source_dict = data_source_vo.to_dict()
         plugin_info = data_source_dict['plugin_info']
 
-        print('#plugin_info#')
-        print(plugin_info)
-
         if version:
             # Update plugin_version
             plugin_id = plugin_info['plugin_id']
@@ -215,10 +212,6 @@ class DataSourceService(BaseService):
 
             plugin_info['version'] = version
             metadata = self._init_plugin(data_source_dict['plugin_info'], data_source_vo.monitoring_type, domain_id)
-
-            print('metadata')
-            print(metadata)
-
             plugin_info['metadata'] = metadata
 
         if options:
@@ -230,9 +223,6 @@ class DataSourceService(BaseService):
             'domain_id': domain_id,
             'plugin_info': plugin_info
         }
-
-        print('#params#')
-        print(params)
 
         _LOGGER.debug(f'[update_plugin] {plugin_info}')
 
