@@ -72,56 +72,57 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
-        #     future_executors = []
-        #
-        #     for resource_id, resource_info in resources_info.items():
-        #         concurrent_param = {'response': response,
-        #                             'resource_id': resource_id,
-        #                             'resource_info': resource_info,
-        #                             'plugin_metadata': plugin_metadata,
-        #                             'data_source_vo': data_source_vo,
-        #                             'domain_id': domain_id,
-        #                             'metrics_dict': metrics_dict,
-        #                             'and_metric_keys': and_metric_keys}
-        #
-        #         future_executors.append(executor.submit(self.concurrent_secret_data_and_metrics_info, concurrent_param))
-        #
-        #     for future in concurrent.futures.as_completed(future_executors):
-        #         resource_id, metrics_dict, and_metric_keys = future.result()
-        #         response['available_resources'][resource_id] = True
-        #
-        #     _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
-        #     _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
-        #
-        #     response['metrics'] = self._intersect_metric_keys(metrics_dict, and_metric_keys)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
+            future_executors = []
 
-        for resource_id, resource_info in resources_info.items():
+            for resource_id, resource_info in resources_info.items():
+                concurrent_param = {'response': response,
+                                    'resource_id': resource_id,
+                                    'resource_info': resource_info,
+                                    'plugin_metadata': plugin_metadata,
+                                    'data_source_vo': data_source_vo,
+                                    'domain_id': domain_id,
+                                    'metrics_dict': metrics_dict,
+                                    'and_metric_keys': and_metric_keys}
 
-            try:
-                secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-            except Exception as e:
-                _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
-                              extra={'traceback': traceback.format_exc()})
-                continue
+                future_executors.append(executor.submit(self.concurrent_secret_data_and_metrics_info, concurrent_param))
 
-            try:
-                metrics_info = self.plugin_mgr.list_metrics(schema, plugin_metadata, secret_data, resource_info)
+            for future in concurrent.futures.as_completed(future_executors):
+                resource_id, metrics_dict, and_metric_keys = future.result()
+                response['available_resources'][resource_id] = True
 
-            except Exception as e:
-                _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
-                              extra={'traceback': traceback.format_exc()})
-                continue
-
-            self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
-
-            #metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
-            response['available_resources'][resource_id] = True
-
-        _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
-        _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
+            _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
+            _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
 
         response['metrics'] = self._intersect_metric_keys(metrics_dict, and_metric_keys)
+
+        # for resource_id, resource_info in resources_info.items():
+        #
+        #     try:
+        #         secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+        #     except Exception as e:
+        #         _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
+        #                       extra={'traceback': traceback.format_exc()})
+        #         continue
+        #
+        #     try:
+        #         metrics_info = self.plugin_mgr.list_metrics(schema, plugin_metadata, secret_data, resource_info)
+        #
+        #     except Exception as e:
+        #         _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
+        #                       extra={'traceback': traceback.format_exc()})
+        #         continue
+        #
+        #     self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
+        #
+        #     #metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
+        #     response['available_resources'][resource_id] = True
+        #
+        # _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
+        # _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
+
+        #response['metrics'] = self._intersect_metric_keys(metrics_dict, and_metric_keys)
+
         return response
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
