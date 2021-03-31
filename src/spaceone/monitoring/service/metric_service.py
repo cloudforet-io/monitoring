@@ -76,6 +76,7 @@ class MetricService(BaseService):
             future_executors = []
 
             for resource_id, resource_info in resources_info.items():
+
                 concurrent_param = {'response': response,
                                     'resource_id': resource_id,
                                     'resource_info': resource_info,
@@ -95,33 +96,6 @@ class MetricService(BaseService):
             _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
 
         response['metrics'] = self._intersect_metric_keys(metrics_dict, and_metric_keys)
-
-        # for resource_id, resource_info in resources_info.items():
-        #
-        #     try:
-        #         secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-        #     except Exception as e:
-        #         _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
-        #                       extra={'traceback': traceback.format_exc()})
-        #         continue
-        #
-        #     try:
-        #         metrics_info = self.plugin_mgr.list_metrics(schema, plugin_metadata, secret_data, resource_info)
-        #
-        #     except Exception as e:
-        #         _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
-        #                       extra={'traceback': traceback.format_exc()})
-        #         continue
-        #
-        #     self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
-        #
-        #     #metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
-        #     response['available_resources'][resource_id] = True
-        #
-        # _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
-        # _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
-
-        #response['metrics'] = self._intersect_metric_keys(metrics_dict, and_metric_keys)
 
         return response
 
@@ -179,6 +153,7 @@ class MetricService(BaseService):
 
             for resource_id, resource_info in resources_info.items():
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+
                 concurrent_param = {'resource_id': resource_id,
                                     'schema': schema,
                                     'plugin_metadata': plugin_metadata,
@@ -188,8 +163,7 @@ class MetricService(BaseService):
                                     'start': params['start'],
                                     'end': params['end'],
                                     'period': params.get('period'),
-                                    'stat': params.get('stat'),
-                                    }
+                                    'stat': params.get('stat')}
 
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
@@ -213,7 +187,10 @@ class MetricService(BaseService):
         and_metric_keys = param.get('and_metric_keys')
 
         try:
-            secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+            secret_data, schema = self._get_secret_data(resource_id,
+                                                        resource_info,
+                                                        data_source_vo,
+                                                        domain_id)
         except Exception as e:
             _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
                           extra={'traceback': traceback.format_exc()})
@@ -230,26 +207,16 @@ class MetricService(BaseService):
         return resource_id, metrics_dict, and_metric_keys
 
     def concurrent_get_metric_data(self, param):
-        resource_id = param.get('resource_id')
-        schema = param.get('schema')
-        plugin_metadata = param.get('plugin_metadata')
-        secret_data = param.get('secret_data')
-        resource = param.get('resource')
-        _metric = param.get('metric')
-        start = param.get('start')
-        end = param.get('end')
-        period = param.get('period')
-        stat = param.get('stat')
-        metric_data_info = self.plugin_mgr.get_metric_data(schema,
-                                                           plugin_metadata,
-                                                           secret_data,
-                                                           resource,
-                                                           _metric,
-                                                           start,
-                                                           end,
-                                                           period,
-                                                           stat)
-        return resource_id, metric_data_info
+        metric_data_info = self.plugin_mgr.get_metric_data(param.get('schema'),
+                                                           param.get('plugin_metadata'),
+                                                           param.get('secret_data'),
+                                                           param.get('resource'),
+                                                           param.get('metric'),
+                                                           param.get('start'),
+                                                           param.get('end'),
+                                                           param.get('period'),
+                                                           param.get('stat'))
+        return param.get('resource_id'), metric_data_info
 
     @staticmethod
     def _check_data_source_state(data_source_vo):
@@ -303,3 +270,5 @@ class MetricService(BaseService):
                     and_metric_keys.append(metric_key)
 
         return metrics_dict, and_metric_keys
+
+
