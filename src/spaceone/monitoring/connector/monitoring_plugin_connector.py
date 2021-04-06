@@ -5,6 +5,7 @@ from google.protobuf.json_format import MessageToDict
 from spaceone.core.connector import BaseConnector
 from spaceone.core import pygrpc
 from spaceone.core.utils import parse_endpoint
+from pprint import pprint
 from spaceone.core.error import *
 
 __all__ = ['MonitoringPluginConnector']
@@ -53,6 +54,10 @@ class MonitoringPluginConnector(BaseConnector):
             params.update({
                 'schema': schema
             })
+
+        print('#### params #####')
+        pprint(params)
+        print()
 
         responses = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
         message = self._change_message(responses)
