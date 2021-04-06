@@ -186,14 +186,21 @@ class MetricService(BaseService):
         plugin_metadata = param.get('plugin_metadata')
         metrics_dict = param.get('metrics_dict')
         and_metric_keys = param.get('and_metric_keys')
+
         metrics_info = None
+        secret_data = None
+        schema = None
+
         try:
+
             secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+
         except Exception as e:
             _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
                           extra={'traceback': traceback.format_exc()})
 
         try:
+
             metrics_info = self.plugin_mgr.list_metrics(schema, plugin_metadata, secret_data, resource_info)
 
         except Exception as e:
