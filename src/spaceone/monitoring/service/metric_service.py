@@ -186,7 +186,7 @@ class MetricService(BaseService):
         plugin_metadata = param.get('plugin_metadata')
         metrics_dict = param.get('metrics_dict')
         and_metric_keys = param.get('and_metric_keys')
-
+        metrics_info = None
         try:
             secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
         except Exception as e:
@@ -196,11 +196,12 @@ class MetricService(BaseService):
         try:
             metrics_info = self.plugin_mgr.list_metrics(schema, plugin_metadata, secret_data, resource_info)
 
-            metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
-
         except Exception as e:
             _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
                           extra={'traceback': traceback.format_exc()})
+
+        if metrics_info:
+            metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
 
         return resource_id, metrics_dict, and_metric_keys
 
