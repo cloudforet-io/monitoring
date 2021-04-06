@@ -11,6 +11,7 @@ from spaceone.monitoring.manager.plugin_manager import PluginManager
 
 _LOGGER = logging.getLogger(__name__)
 MAX_WORKER = 25
+NUMBER_OF_MAX_PER_SERVICE_ACCOUNT = 30
 
 @authentication_handler
 @authorization_handler
@@ -185,12 +186,9 @@ class MetricService(BaseService):
         plugin_metadata = param.get('plugin_metadata')
         metrics_dict = param.get('metrics_dict')
         and_metric_keys = param.get('and_metric_keys')
-
+        metrics_info = None
         try:
-            secret_data, schema = self._get_secret_data(resource_id,
-                                                        resource_info,
-                                                        data_source_vo,
-                                                        domain_id)
+            secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
         except Exception as e:
             _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
                           extra={'traceback': traceback.format_exc()})
@@ -202,7 +200,8 @@ class MetricService(BaseService):
             _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
                           extra={'traceback': traceback.format_exc()})
 
-        metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
+        if metrics_info:
+            metrics_dict, and_metric_keys = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
 
         return resource_id, metrics_dict, and_metric_keys
 
