@@ -201,8 +201,8 @@ class MetricService(BaseService):
                                                         plugin_metadata,
                                                         metric_param.get('secret_data'),
                                                         resource_info)
-
             metric_param.update({'metrics_info': metrics_info})
+
         except Exception as e:
             _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
                           extra={'traceback': traceback.format_exc()})
