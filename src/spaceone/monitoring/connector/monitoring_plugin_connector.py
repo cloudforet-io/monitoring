@@ -55,10 +55,6 @@ class MonitoringPluginConnector(BaseConnector):
                 'schema': schema
             })
 
-        print('#### params #####')
-        pprint(params)
-        print()
-
         responses = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
         message = self._change_message(responses)
         return message
