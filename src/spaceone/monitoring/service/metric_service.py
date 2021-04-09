@@ -8,7 +8,7 @@ from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
-
+from pprint import pprint
 _LOGGER = logging.getLogger(__name__)
 MAX_WORKER = 25
 NUMBER_OF_MAX_PER_SERVICE_ACCOUNT = 30
@@ -153,6 +153,10 @@ class MetricService(BaseService):
             future_executors = []
 
             for resource_id, resource_info in resources_info.items():
+
+                print('### data_source_vo ###')
+                pprint(data_source_vo.to_dict())
+
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 
                 concurrent_param = {'resource_id': resource_id,
@@ -248,6 +252,12 @@ class MetricService(BaseService):
                 'secrets': resource_info['collection_info']['secrets']
             }
 
+            print('### secret_filter ###')
+            pprint(secret_filter)
+            print()
+            print('resource_id')
+            print(resource_id)
+
             return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
 
         else:
@@ -255,6 +265,13 @@ class MetricService(BaseService):
                 'secret_id': data_source_vo.plugin_info['secret_id'],
                 'supported_schema': supported_schema
             }
+
+            print('### secret_filter ###')
+            pprint(secret_filter)
+            print()
+            print('resource_id')
+            print(resource_id)
+
             return self.secret_mgr.get_plugin_secret_data(secret_filter, domain_id)
 
     @staticmethod
