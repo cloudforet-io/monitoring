@@ -38,8 +38,8 @@ class LogService(BaseService):
                 'resource_type': 'str',
                 'resource_id': 'str',
                 'filter': 'dict',
-                'start': 'timestamp',
-                'end': 'timestamp',
+                'start': 'datetime',
+                'end': 'datetime',
                 'sort': 'dict',
                 'limit': 'int',
                 'domain_id': 'str'

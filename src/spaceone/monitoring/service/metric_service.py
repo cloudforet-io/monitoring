@@ -13,6 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 MAX_WORKER = 25
 NUMBER_OF_MAX_PER_SERVICE_ACCOUNT = 30
 
+
 @authentication_handler
 @authorization_handler
 @mutation_handler
@@ -113,8 +114,8 @@ class MetricService(BaseService):
                 'resource_type': 'str',
                 'resources': 'list',
                 'metric': 'str',
-                'start': 'timestamp',
-                'end': 'timestamp',
+                'start': 'datetime',
+                'end': 'datetime',
                 'period': 'int',
                 'stat': 'str',
                 'domain_id': 'str'
