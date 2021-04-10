@@ -58,14 +58,13 @@ class LogService(BaseService):
 
         self._check_data_source_state(data_source_vo)
 
+        plugin_metadata = data_source_vo.plugin_info.metadata
         plugin_options = data_source_vo.plugin_info.options
-        reference_keys = plugin_options.get('reference_keys', [])
-        required_keys = plugin_options.get('required_keys', [])
-        filter_format = plugin_options.get('filter_format', {})
+        required_keys = plugin_metadata.get('required_keys', [])
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
-        self._check_resource_type(plugin_options, resource_type)
+        self._check_resource_type(plugin_metadata, resource_type)
 
         self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
@@ -92,8 +91,8 @@ class LogService(BaseService):
             raise ERROR_DATA_SOURCE_STATE_DISABLED(data_source_id=data_source_vo.data_source_id)
 
     @staticmethod
-    def _check_resource_type(plugin_options, resource_type):
-        supported_resource_type = plugin_options['supported_resource_type']
+    def _check_resource_type(plugin_metadata, resource_type):
+        supported_resource_type = plugin_metadata['supported_resource_type']
 
         if resource_type not in supported_resource_type:
             raise ERROR_NOT_SUPPORT_RESOURCE_TYPE(supported_resource_type=supported_resource_type)

@@ -33,11 +33,11 @@ class PluginManager(BaseManager):
     def verify_plugin(self, options, secret_data, schema):
         self.mp_connector.verify(options, secret_data, schema)
 
-    def list_metrics(self, schema, metadata, secret_data, resource):
-        return self.mp_connector.list_metrics(schema, metadata, secret_data, resource)
+    def list_metrics(self, schema, options, secret_data, resource):
+        return self.mp_connector.list_metrics(schema, options, secret_data, resource)
 
-    def get_metric_data(self, schema, metadata, secret_data, resource, *args):
-        return self.mp_connector.get_metric_data(schema, metadata, secret_data, resource, *args)
+    def get_metric_data(self, schema, options, secret_data, resource, *args):
+        return self.mp_connector.get_metric_data(schema, options, secret_data, resource, *args)
 
     def list_logs(self, schema, options, secret_data, resource, *args):
         response_stream = self.mp_connector.list_logs(schema, options, secret_data, resource, *args)

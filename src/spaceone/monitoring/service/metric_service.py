@@ -52,6 +52,7 @@ class MetricService(BaseService):
         self._check_data_source_state(data_source_vo)
 
         plugin_metadata = data_source_vo.plugin_info.metadata
+        plugin_options = data_source_vo.plugin_info.options
         required_keys = plugin_metadata.get('required_keys', [])
 
         plugin_id = data_source_vo.plugin_info.plugin_id
@@ -81,7 +82,7 @@ class MetricService(BaseService):
                 concurrent_param = {'response': response,
                                     'resource_id': resource_id,
                                     'resource_info': resource_info,
-                                    'plugin_metadata': plugin_metadata,
+                                    'plugin_options': plugin_options,
                                     'data_source_vo': data_source_vo,
                                     'domain_id': domain_id,
                                     'metrics_dict': metrics_dict,
@@ -132,6 +133,7 @@ class MetricService(BaseService):
         self._check_data_source_state(data_source_vo)
 
         plugin_metadata = data_source_vo.plugin_info.metadata
+        plugin_options = data_source_vo.plugin_info.options
         required_keys = plugin_metadata.get('required_keys', [])
 
         plugin_id = data_source_vo.plugin_info.plugin_id
@@ -161,7 +163,7 @@ class MetricService(BaseService):
 
                 concurrent_param = {'resource_id': resource_id,
                                     'schema': schema,
-                                    'plugin_metadata': plugin_metadata,
+                                    'plugin_options': plugin_options,
                                     'secret_data': secret_data,
                                     'resource': resource_info,
                                     'metric': params['metric'],
@@ -188,7 +190,7 @@ class MetricService(BaseService):
         resource_info = param.get('resource_info')
         data_source_vo = param.get('data_source_vo')
         domain_id = param.get('domain_id')
-        plugin_metadata = param.get('plugin_metadata')
+        plugin_options = param.get('plugin_options')
         metrics_dict = param.get('metrics_dict')
         and_metric_keys = param.get('and_metric_keys')
         metric_param = {}
@@ -202,7 +204,7 @@ class MetricService(BaseService):
 
         try:
             metrics_info = self.plugin_mgr.list_metrics(metric_param.get('schema'),
-                                                        plugin_metadata,
+                                                        plugin_options,
                                                         metric_param.get('secret_data'),
                                                         resource_info)
             metric_param.update({'metrics_info': metrics_info})
@@ -219,7 +221,7 @@ class MetricService(BaseService):
 
     def concurrent_get_metric_data(self, param):
         metric_data_info = self.plugin_mgr.get_metric_data(param.get('schema'),
-                                                           param.get('plugin_metadata'),
+                                                           param.get('plugin_options'),
                                                            param.get('secret_data'),
                                                            param.get('resource'),
                                                            param.get('metric'),
