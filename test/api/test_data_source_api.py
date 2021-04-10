@@ -1,4 +1,5 @@
 import unittest
+import copy
 from unittest.mock import patch
 from mongoengine import connect, disconnect
 from google.protobuf.json_format import MessageToDict
@@ -19,9 +20,17 @@ from test.factory.data_source_factory import DataSourceFactory
 class _MockDataSourceService(BaseService):
 
     def register(self, params):
+        params = copy.deepcopy(params)
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return DataSourceFactory(**params)
 
     def update(self, params):
+        params = copy.deepcopy(params)
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return DataSourceFactory(**params)
 
     def deregister(self, params):
@@ -71,18 +80,12 @@ class TestDataSourceAPI(unittest.TestCase):
         params = {
             'name': utils.random_string(),
             'monitoring_type': 'METRIC',
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-            ],
+            'tags': {
+                utils.random_string(): utils.random_string()
+            },
             'plugin_info': {
                 'plugin_id': utils.generate_id('plugin'),
                 'version': '1.1',
-                'options': {
-                    'supported_resource_type': ['SERVER', 'CLOUD_SERVICE']
-                },
                 'secret_id': utils.generate_id('secret')
             },
             'domain_id': utils.generate_id('domain')
@@ -101,10 +104,11 @@ class TestDataSourceAPI(unittest.TestCase):
         self.assertEqual(data_source_info.monitoring_type, data_source_pb2.MonitoringType.METRIC)
         self.assertIsNotNone(data_source_info.provider)
         self.assertIsNotNone(data_source_info.capability)
-        self.assertListEqual(data_source_data['tags'], params['tags'])
+        self.assertDictEqual(data_source_data['tags'], params['tags'])
         self.assertIsInstance(data_source_info.plugin_info, data_source_pb2.PluginInfo)
-        self.assertDictEqual(MessageToDict(data_source_info.plugin_info, preserving_proto_field_name=True),
-                             params['plugin_info'])
+        self.assertEqual(data_source_data['plugin_info']['plugin_id'], params['plugin_info']['plugin_id'])
+        self.assertEqual(data_source_data['plugin_info']['version'], params['plugin_info']['version'])
+        self.assertEqual(data_source_data['plugin_info']['secret_id'], params['plugin_info']['secret_id'])
         self.assertEqual(data_source_info.domain_id, params['domain_id'])
         self.assertIsNotNone(getattr(data_source_info, 'created_at', None))
 
@@ -114,12 +118,9 @@ class TestDataSourceAPI(unittest.TestCase):
     def test_update_data_source(self, mock_parse_request, *args):
         params = {
             'name': utils.random_string(),
-            'tags': [
-                {
-                    'key': 'update_key',
-                    'value': 'update_value'
-                }
-            ],
+            'tags': {
+                'update_key': 'update_value'
+            },
             'domain_id': utils.generate_id('domain')
         }
         mock_parse_request.return_value = (params, {})
@@ -131,7 +132,7 @@ class TestDataSourceAPI(unittest.TestCase):
         data_source_data = MessageToDict(data_source_info, preserving_proto_field_name=True)
         self.assertIsInstance(data_source_info, data_source_pb2.DataSourceInfo)
         self.assertEqual(data_source_info.name, params['name'])
-        self.assertListEqual(data_source_data['tags'], params['tags'])
+        self.assertDictEqual(data_source_data['tags'], params['tags'])
 
     @patch.object(BaseAPI, '__init__', return_value=None)
     @patch.object(Locator, 'get_service', return_value=_MockDataSourceService())
