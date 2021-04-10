@@ -66,10 +66,7 @@ class TestDataSourceService(unittest.TestCase):
             'metadata': {
                 'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
                 'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'reference_keys': [{
-                    'resource_type': 'inventory.Server',
-                    'reference_key': 'reference.resource_id'
-                }]
+                'required_keys': ['reference.resource_id']
             }
         }
 
@@ -97,12 +94,9 @@ class TestDataSourceService(unittest.TestCase):
                 'options': {},
                 'secret_id': secret_id
             },
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-            ],
+            'tags': {
+                utils.random_string(): utils.random_string()
+            },
             'domain_id': self.domain_id
         }
 
@@ -115,7 +109,7 @@ class TestDataSourceService(unittest.TestCase):
 
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params.get('tags', {}), data_source_vo.to_dict()['tags'])
+        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
     @patch.object(MongoModel, 'connect', return_value=None)
@@ -137,10 +131,7 @@ class TestDataSourceService(unittest.TestCase):
             'metadata': {
                 'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
                 'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'reference_keys': [{
-                    'resource_type': 'inventory.Server',
-                    'reference_key': 'reference.resource_id'
-                }]
+                'required_keys': ['reference.resource_id']
             }
         }
 
@@ -169,12 +160,9 @@ class TestDataSourceService(unittest.TestCase):
                 'options': {},
                 'provider': 'aws'
             },
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-            ],
+            'tags': {
+                'tag_key': 'tag_value'
+            },
             'domain_id': self.domain_id
         }
 
@@ -187,7 +175,7 @@ class TestDataSourceService(unittest.TestCase):
 
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params.get('tags', {}), data_source_vo.to_dict()['tags'])
+        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
     @patch.object(MongoModel, 'connect', return_value=None)
@@ -202,10 +190,7 @@ class TestDataSourceService(unittest.TestCase):
             'metadata': {
                 'supported_resource_type': ['inventory.Server'],
                 'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'reference_keys': [{
-                    'resource_type': 'inventory.Server',
-                    'reference_key': 'reference.resource_id'
-                }]
+                'required_keys': ['reference.resource_id']
             }
         }
 
@@ -226,12 +211,9 @@ class TestDataSourceService(unittest.TestCase):
                 'options': {},
                 'provider': 'aws'
             },
-            'tags': [
-                {
-                    'key': 'update_key',
-                    'value': 'update_value'
-                }
-            ],
+            'tags': {
+                'update_key': 'update_value'
+            },
             'domain_id': self.domain_id
         }
 
@@ -245,7 +227,7 @@ class TestDataSourceService(unittest.TestCase):
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
         self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params.get('tags', {}), data_source_vo.to_dict()['tags'])
+        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_enable_data_source(self, *args):
@@ -420,7 +402,7 @@ class TestDataSourceService(unittest.TestCase):
                     }
                 }, {
                     'sort': {
-                        'name': 'Count',
+                        'key': 'Count',
                         'desc': True
                     }
                 }]
