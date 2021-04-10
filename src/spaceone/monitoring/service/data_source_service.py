@@ -32,7 +32,7 @@ class DataSourceService(BaseService):
                 'name': 'str',
                 'monitoring_type': 'str',
                 'plugin_info': 'dict',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -71,7 +71,7 @@ class DataSourceService(BaseService):
                 'data_source_id': 'str',
                 'name': 'dict',
                 'plugin_info': 'dict',
-                'tags': 'list'
+                'tags': 'dict'
                 'domain_id': 'str'
             }
 
