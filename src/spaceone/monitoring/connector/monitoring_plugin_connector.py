@@ -55,9 +55,8 @@ class MonitoringPluginConnector(BaseConnector):
                 'schema': schema
             })
 
-        responses = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
-        message = self._change_message(responses)
-        return message
+        response = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
+        return self._change_message(response)
 
     def get_metric_data(self, schema, options, secret_data, resource, metric, start, end, period, stat):
         params = {
@@ -76,8 +75,8 @@ class MonitoringPluginConnector(BaseConnector):
                 'schema': schema
             })
 
-        responses = self.client.Metric.get_data(params, metadata=self.transaction.get_connection_meta())
-        return self._change_message(responses)
+        response = self.client.Metric.get_data(params, metadata=self.transaction.get_connection_meta())
+        return self._change_message(response)
 
     def list_logs(self, schema, options, secret_data, resource, plugin_filter, start, end, sort, limit):
         params = {

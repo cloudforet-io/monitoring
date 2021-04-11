@@ -28,7 +28,6 @@ class LogService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'resource_type', 'resource_id', 'domain_id'])
-    @change_timestamp_value(['start', 'end'], timestamp_format='iso8601')
     def list(self, params):
         """ Get resource's logs
 
