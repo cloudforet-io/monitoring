@@ -104,7 +104,6 @@ class MetricService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'resource_type', 'resources', 'metric', 'start', 'end', 'domain_id'])
-    @change_timestamp_value(['start', 'end'], timestamp_format='iso8601')
     def get_data(self, params):
         """ Get resource's metric data
 
@@ -114,8 +113,8 @@ class MetricService(BaseService):
                 'resource_type': 'str',
                 'resources': 'list',
                 'metric': 'str',
-                'start': 'datetime',
-                'end': 'datetime',
+                'start': 'str',
+                'end': 'str',
                 'period': 'int',
                 'stat': 'str',
                 'domain_id': 'str'
