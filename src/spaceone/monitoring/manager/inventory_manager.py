@@ -36,6 +36,10 @@ class InventoryManager(BaseManager):
         get_method = _RESOURCE_LIST_METHODS[resource_type]
 
         response = getattr(self.inventory_connector, get_method)(query, domain_id)
+
+        if response.get('total_count', 0) == 0:
+            raise ERROR_NOT_FOUND(key='resources', value=resources)
+
         return self._change_resources_info(resource_type, response)
 
     def get_resource_key(self, resource_type, resource_info, required_keys):
@@ -51,7 +55,7 @@ class InventoryManager(BaseManager):
     def _change_resources_info(resource_type, response):
         resource_key = _RESOURCE_KEYS[resource_type]
         resources_info = {}
-        for resource_info in response['results']:
+        for resource_info in response.get('results', []):
             resource_id = resource_info[resource_key]
             resources_info[resource_id] = resource_info
 
