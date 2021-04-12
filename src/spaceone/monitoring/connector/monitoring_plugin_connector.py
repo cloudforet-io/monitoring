@@ -20,6 +20,11 @@ class MonitoringPluginConnector(BaseConnector):
         self.client = None
 
     def initialize(self, endpoint):
+        static_endpoint = self.config.get('endpoint')
+
+        if static_endpoint:
+            endpoint = static_endpoint
+
         e = parse_endpoint(endpoint)
         self.client = pygrpc.client(endpoint=f'{e.get("hostname")}:{e.get("port")}', version='plugin')
 
