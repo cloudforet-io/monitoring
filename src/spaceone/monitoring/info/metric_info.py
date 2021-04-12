@@ -7,14 +7,8 @@ __all__ = ['MetricsInfo', 'MetricDataInfo']
 
 
 def MetricDataInfo(metric_data):
-    new_labels = []
-    for label in metric_data.get('labels', []):
-        timestamp = label.get('seconds', 0)
-        time = datetime.datetime.fromtimestamp(timestamp)
-        new_labels.append(utils.datetime_to_iso8601(time))
-
     info = {
-        'labels': change_list_value_type(new_labels),
+        'labels': change_list_value_type(metric_data.get('labels', [])),
         'resource_values': change_struct_type(metric_data['resource_values']),
         'domain_id': metric_data['domain_id']
     }
