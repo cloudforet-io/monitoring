@@ -1,12 +1,14 @@
+import datetime
 from spaceone.api.monitoring.v1 import metric_pb2
 from spaceone.core.pygrpc.message_type import *
+from spaceone.core import utils
 
 __all__ = ['MetricsInfo', 'MetricDataInfo']
 
 
 def MetricDataInfo(metric_data):
     info = {
-        'labels': change_list_value_type(metric_data['labels']),
+        'labels': change_list_value_type(metric_data.get('labels', [])),
         'resource_values': change_struct_type(metric_data['resource_values']),
         'domain_id': metric_data['domain_id']
     }

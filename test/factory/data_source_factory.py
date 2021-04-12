@@ -11,13 +11,11 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
 
     plugin_id = factory.LazyAttribute(lambda o: utils.generate_id('plugin'))
     version = '1.0'
-    options = {
+    options = {}
+    metadata = {
         'supported_resource_type': ['inventory.Server', 'inventory.CloudService', 'identity.ServiceAccount'],
         'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-        'reference_keys': [{
-            'resource_type': 'inventory.Server',
-            'reference_key': 'reference.resource_id'
-        }]
+        'required_keys': ['reference.resource_id']
     }
     secret_id = None
     provider = 'aws'
