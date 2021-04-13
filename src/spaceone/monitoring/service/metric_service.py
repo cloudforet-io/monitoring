@@ -156,8 +156,8 @@ class MetricService(BaseService):
 
             for resource_id, resource_info in resources_info.items():
 
-                print('### data_source_vo ###')
-                pprint(data_source_vo.to_dict())
+                # print('### data_source_vo ###')
+                # pprint(data_source_vo.to_dict())
 
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 
@@ -257,11 +257,6 @@ class MetricService(BaseService):
                 'secrets': resource_info['collection_info']['secrets']
             }
 
-            print('### secret_filter ###')
-            pprint(secret_filter)
-            print()
-            print('resource_id')
-            print(resource_id)
 
             return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
 
@@ -271,11 +266,6 @@ class MetricService(BaseService):
                 'supported_schema': supported_schema
             }
 
-            print('### secret_filter ###')
-            pprint(secret_filter)
-            print()
-            print('resource_id')
-            print(resource_id)
 
             return self.secret_mgr.get_plugin_secret_data(secret_filter, domain_id)
 
