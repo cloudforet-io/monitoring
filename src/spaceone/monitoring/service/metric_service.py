@@ -177,7 +177,10 @@ class MetricService(BaseService):
             for future in concurrent.futures.as_completed(future_executors):
                 resource_id, metric_data = future.result()
 
-                if response['labels'] is None:
+                if response.get('labels') is None:
+                    response['labels'] = metric_data.get('labels', [])
+
+                if len(response.get('labels')) == 0 and len(metric_data.get('labels', [])) > 0:
                     response['labels'] = metric_data.get('labels', [])
 
                 response['resource_values'][resource_id] = metric_data.get('values', [])
