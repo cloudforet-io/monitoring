@@ -156,8 +156,8 @@ class MetricService(BaseService):
 
             for resource_id, resource_info in resources_info.items():
 
-                print('### data_source_vo ###')
-                pprint(data_source_vo.to_dict())
+                # print('### data_source_vo ###')
+                # pprint(data_source_vo.to_dict())
 
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 
@@ -177,7 +177,10 @@ class MetricService(BaseService):
             for future in concurrent.futures.as_completed(future_executors):
                 resource_id, metric_data = future.result()
 
-                if response['labels'] is None:
+                if response.get('labels') is None:
+                    response['labels'] = metric_data.get('labels', [])
+
+                if len(response.get('labels')) == 0 and len(metric_data.get('labels', [])) > 0:
                     response['labels'] = metric_data.get('labels', [])
 
                 response['resource_values'][resource_id] = metric_data.get('values', [])
@@ -254,11 +257,6 @@ class MetricService(BaseService):
                 'secrets': resource_info['collection_info']['secrets']
             }
 
-            print('### secret_filter ###')
-            pprint(secret_filter)
-            print()
-            print('resource_id')
-            print(resource_id)
 
             return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
 
@@ -268,11 +266,6 @@ class MetricService(BaseService):
                 'supported_schema': supported_schema
             }
 
-            print('### secret_filter ###')
-            pprint(secret_filter)
-            print()
-            print('resource_id')
-            print(resource_id)
 
             return self.secret_mgr.get_plugin_secret_data(secret_filter, domain_id)
 
