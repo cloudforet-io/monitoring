@@ -220,7 +220,7 @@ class DataSourceService(BaseService):
             metadata = self._init_plugin(data_source_dict['plugin_info'], data_source_vo.monitoring_type, domain_id)
             plugin_info['metadata'] = metadata
 
-        if options:
+        if options or options == {}:
             # Overwriting
             plugin_info['options'] = options
 
