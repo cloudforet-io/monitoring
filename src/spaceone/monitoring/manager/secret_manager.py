@@ -33,9 +33,9 @@ class SecretManager(BaseManager):
     def get_resource_secret_data(self, resource_id, secret_filter, domain_id):
         secret_query = self._make_query(**secret_filter)
 
-        # print('### secret_query ###')
-        # pprint(secret_query)
-        # print()
+        print('### secret_query ###')
+        pprint(secret_query)
+        print()
 
         response = self.list_secrets(secret_query, domain_id)
 
