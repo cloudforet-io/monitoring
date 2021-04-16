@@ -70,8 +70,8 @@ class MetricService(BaseService):
         metrics_dict = {}
         and_metric_keys = []
 
-        print('### data_source_vo: get_data ###')
-        pprint(data_source_vo.to_dict())
+        # print('### data_source_vo: get_data ###')
+        # pprint(data_source_vo.to_dict())
 
 
         for resource_id in resources:
@@ -153,8 +153,8 @@ class MetricService(BaseService):
             'domain_id': domain_id
         }
 
-        print('### data_source_vo: get_data ###')
-        pprint(data_source_vo.to_dict())
+        # print('### data_source_vo: get_data ###')
+        # pprint(data_source_vo.to_dict())
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
@@ -261,11 +261,11 @@ class MetricService(BaseService):
                 'secrets': resource_info['collection_info']['secrets']
             }
 
-            print('### secret_filter: get_secret_data, if ###')
-            pprint(secret_filter)
-            print()
-            print('resource_id')
-            print(resource_id)
+            # print('### secret_filter: get_secret_data, if ###')
+            # pprint(secret_filter)
+            # print()
+            # print('resource_id')
+            # print(resource_id)
 
             return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
 
@@ -275,11 +275,11 @@ class MetricService(BaseService):
                 'supported_schema': supported_schema
             }
 
-            print('### secret_filter: get_secret_data, else ###')
-            pprint(secret_filter)
-            print()
-            print('resource_id')
-            print(resource_id)
+            # print('### secret_filter: get_secret_data, else ###')
+            # pprint(secret_filter)
+            # print()
+            # print('resource_id')
+            # print(resource_id)
 
             return self.secret_mgr.get_plugin_secret_data(secret_filter, domain_id)
 
