@@ -70,6 +70,10 @@ class MetricService(BaseService):
         metrics_dict = {}
         and_metric_keys = []
 
+        print('### data_source_vo: get_data ###')
+        pprint(data_source_vo.to_dict())
+
+
         for resource_id in resources:
             response['available_resources'][resource_id] = False
 
@@ -149,15 +153,15 @@ class MetricService(BaseService):
             'domain_id': domain_id
         }
 
+        print('### data_source_vo: get_data ###')
+        pprint(data_source_vo.to_dict())
+
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
             future_executors = []
 
             for resource_id, resource_info in resources_info.items():
-
-                # print('### data_source_vo ###')
-                # pprint(data_source_vo.to_dict())
 
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 
@@ -257,6 +261,11 @@ class MetricService(BaseService):
                 'secrets': resource_info['collection_info']['secrets']
             }
 
+            print('### secret_filter: get_secret_data, if ###')
+            pprint(secret_filter)
+            print()
+            print('resource_id')
+            print(resource_id)
 
             return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
 
@@ -266,6 +275,11 @@ class MetricService(BaseService):
                 'supported_schema': supported_schema
             }
 
+            print('### secret_filter: get_secret_data, else ###')
+            pprint(secret_filter)
+            print()
+            print('resource_id')
+            print(resource_id)
 
             return self.secret_mgr.get_plugin_secret_data(secret_filter, domain_id)
 
