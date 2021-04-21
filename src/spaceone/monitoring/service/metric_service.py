@@ -1,6 +1,7 @@
 import logging
 import traceback
 import concurrent.futures
+import gc
 from spaceone.core.service import *
 
 from spaceone.monitoring.error import *
@@ -8,11 +9,21 @@ from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
-from pprint import pprint
-_LOGGER = logging.getLogger(__name__)
-MAX_WORKER = 25
-NUMBER_OF_MAX_PER_SERVICE_ACCOUNT = 30
 
+_LOGGER = logging.getLogger(__name__)
+MAX_CONCURRENT_WORKER = [10, 5]
+
+MAX_REQUEST_LIMIT = {
+    'aws': 200,
+    'google_cloud': 20,
+    'azure': 10
+}
+
+MONITORING_PATH = {
+    'aws': 'cloudwatch',
+    'google_cloud': 'stackdriver',
+    'azure': 'azure_monitor'
+}
 
 @authentication_handler
 @authorization_handler
@@ -53,7 +64,6 @@ class MetricService(BaseService):
         self._check_data_source_state(data_source_vo)
 
         plugin_metadata = data_source_vo.plugin_info.metadata
-        plugin_options = data_source_vo.plugin_info.options
         required_keys = plugin_metadata.get('required_keys', [])
 
         plugin_id = data_source_vo.plugin_info.plugin_id
@@ -75,7 +85,7 @@ class MetricService(BaseService):
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER[0]) as executor:
             future_executors = []
 
             for resource_id, resource_info in resources_info.items():
@@ -83,7 +93,7 @@ class MetricService(BaseService):
                 concurrent_param = {'response': response,
                                     'resource_id': resource_id,
                                     'resource_info': resource_info,
-                                    'plugin_options': plugin_options,
+                                    'plugin_metadata': plugin_metadata,
                                     'data_source_vo': data_source_vo,
                                     'domain_id': domain_id,
                                     'metrics_dict': metrics_dict,
@@ -94,6 +104,11 @@ class MetricService(BaseService):
             for future in concurrent.futures.as_completed(future_executors):
                 resource_id, metrics_dict, and_metric_keys = future.result()
                 response['available_resources'][resource_id] = True
+
+                del future_executors[future]
+                gc.collect()
+
+                # del future
 
             _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
             _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
@@ -128,19 +143,23 @@ class MetricService(BaseService):
         resources = params['resources']
         domain_id = params['domain_id']
 
+        concurrent_param = {'metric': params['metric'],
+                            'start': params['start'],
+                            'end': params['end'],
+                            'period': params.get('period'),
+                            'stat': params.get('stat')}
+
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
 
         self._check_data_source_state(data_source_vo)
 
         plugin_metadata = data_source_vo.plugin_info.metadata
-        plugin_options = data_source_vo.plugin_info.options
         required_keys = plugin_metadata.get('required_keys', [])
 
         plugin_id = data_source_vo.plugin_info.plugin_id
         version = data_source_vo.plugin_info.version
 
         self._check_resource_type(plugin_metadata, resource_type)
-
         self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
         response = {
@@ -150,89 +169,96 @@ class MetricService(BaseService):
         }
 
         resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
+        filtered_resources = self.get_filtered_resources_info(resources_info, data_source_vo, domain_id)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER[1]) as executor:
             future_executors = []
 
-            for resource_id, resource_info in resources_info.items():
-
-                # print('### data_source_vo ###')
-                # pprint(data_source_vo.to_dict())
-
-                secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-
-                concurrent_param = {'resource_id': resource_id,
-                                    'schema': schema,
-                                    'plugin_options': plugin_options,
-                                    'secret_data': secret_data,
-                                    'resource': resource_info,
-                                    'metric': params['metric'],
-                                    'start': params['start'],
-                                    'end': params['end'],
-                                    'period': params.get('period'),
-                                    'stat': params.get('stat')}
+            for filtered_resource in filtered_resources:
+                concurrent_param.update({'schema': filtered_resource.get('schema'),
+                                         'plugin_metadata': plugin_metadata,
+                                         'secret_data': filtered_resource.get('secret_data'),
+                                         'resources': filtered_resource})
 
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
             for future in concurrent.futures.as_completed(future_executors):
-                resource_id, metric_data = future.result()
+                metric_data = future.result()
 
-                if response.get('labels') is None:
+                if response.get('labels') is None or not response.get('labels') and not metric_data.get('labels', []):
                     response['labels'] = metric_data.get('labels', [])
 
-                if len(response.get('labels')) == 0 and len(metric_data.get('labels', [])) > 0:
-                    response['labels'] = metric_data.get('labels', [])
-
-                response['resource_values'][resource_id] = metric_data.get('values', [])
+                if metric_data.get('resource_values', {}) != {}:
+                    response['resource_values'].update(metric_data.get('resource_values'))
 
         return response
 
-    def concurrent_secret_data_and_metrics_info(self, param):
+    def get_filtered_resources_info(self, resources_info, data_source_vo, domain_id):
+        filter_resources = []
 
-        resource_id = param.get('resource_id')
-        resource_info = param.get('resource_info')
-        data_source_vo = param.get('data_source_vo')
-        domain_id = param.get('domain_id')
-        plugin_options = param.get('plugin_options')
-        metrics_dict = param.get('metrics_dict')
-        and_metric_keys = param.get('and_metric_keys')
-        metric_param = {}
+        for resource_id, resource_info in resources_info.items():
 
-        try:
-            secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-            metric_param.update({'secret_data': secret_data, 'schema': schema})
-        except Exception as e:
-            _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
-                          extra={'traceback': traceback.format_exc()})
+            provider = data_source_vo.plugin_info['provider']
 
-        try:
-            metrics_info = self.plugin_mgr.list_metrics(metric_param.get('schema'),
-                                                        plugin_options,
-                                                        metric_param.get('secret_data'),
-                                                        resource_info)
-            metric_param.update({'metrics_info': metrics_info})
+            if provider not in MONITORING_PATH.keys():
+                raise ERROR_NOT_SUPPORT_PROVIDER_MONITORING(provider=provider)
 
-        except Exception as e:
-            _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
-                          extra={'traceback': traceback.format_exc()})
+            monitor_info_per_provider = resource_info.get('data', {}).get(MONITORING_PATH.get(provider))
+            resource_key = 'sp_resource_id' if provider == 'azure' else 'resource_id'
+            monitor_info_per_provider.update({resource_key: resource_id})
 
-        metrics_dict, and_metric_keys = self._merge_metric_keys(metric_param.get('metrics_info'),
-                                                                metrics_dict,
-                                                                and_metric_keys)
+            try:
+                secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
 
-        return resource_id, metrics_dict, and_metric_keys
+            except Exception as e:
+                _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
+                              extra={'traceback': traceback.format_exc()})
+
+            index = None
+
+            if provider == 'aws':
+                index = self._get_idx_by_value(provider, filter_resources, secret_data, schema,
+                                               monitor_info_per_provider.get('region_name'))
+
+            elif provider == 'google_cloud':
+                index = self._get_idx_by_value(provider, filter_resources, secret_data, schema, None)
+
+            elif provider == 'azure':
+                index = self._get_idx_by_value(provider, filter_resources, secret_data, schema, None)
+
+            if index is None:
+                raise ERROR_NOT_MATCHING_RESOURCES(monitoring=monitor_info_per_provider)
+
+            if index == -1:
+                attaching_resource = {
+                    'secret_data': secret_data,
+                    'schema': schema,
+                    'resources': [monitor_info_per_provider]
+                }
+
+                if provider == 'aws':
+                    attaching_resource.update({'region_name': monitor_info_per_provider.get('region_name')})
+
+                filter_resources.append(attaching_resource)
+
+            else:
+                updatable = filter_resources[index].get('resources')
+                if updatable is not None:
+                    filter_resources[index]['resources'].append(monitor_info_per_provider)
+
+        return filter_resources
 
     def concurrent_get_metric_data(self, param):
         metric_data_info = self.plugin_mgr.get_metric_data(param.get('schema'),
-                                                           param.get('plugin_options'),
+                                                           param.get('plugin_metadata'),
                                                            param.get('secret_data'),
-                                                           param.get('resource'),
+                                                           param.get('resources'),
                                                            param.get('metric'),
                                                            param.get('start'),
                                                            param.get('end'),
                                                            param.get('period'),
                                                            param.get('stat'))
-        return param.get('resource_id'), metric_data_info
+        return metric_data_info
 
     @staticmethod
     def _check_data_source_state(data_source_vo):
@@ -257,7 +283,6 @@ class MetricService(BaseService):
                 'secrets': resource_info['collection_info']['secrets']
             }
 
-
             return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
 
         else:
@@ -265,7 +290,6 @@ class MetricService(BaseService):
                 'secret_id': data_source_vo.plugin_info['secret_id'],
                 'supported_schema': supported_schema
             }
-
 
             return self.secret_mgr.get_plugin_secret_data(secret_filter, domain_id)
 
@@ -290,4 +314,62 @@ class MetricService(BaseService):
 
         return metrics_dict, and_metric_keys
 
+    @staticmethod
+    def _get_idx_by_value(provider, filter_resources, secret_data, schema, region_name):
+        idx_list = []
+        if provider == 'aws':
+            idx_list = [index for (index, d) in enumerate(filter_resources) if
+                        d.get('secret_data') == secret_data and d.get('schema') == schema and d.get(
+                            'region_name') == region_name]
 
+        elif provider == 'google_cloud':
+            idx_list = [index for (index, d) in enumerate(filter_resources) if
+                        d.get('secret_data') == secret_data and d.get('schema') == schema]
+
+        elif provider == 'azure':
+            idx_list = [index for (index, d) in enumerate(filter_resources) if
+                        d.get('secret_data') == secret_data and d.get('schema') == schema]
+
+        if not idx_list:
+            return -1
+        else:
+            l_digit = len(idx_list) - 1
+            prop_resource_list = filter_resources[idx_list[l_digit]].get('resources', [])
+            return -1 if len(prop_resource_list) > MAX_REQUEST_LIMIT[provider] else idx_list[l_digit]
+
+    def concurrent_secret_data_and_metrics_info(self, param):
+
+        resource_id = param.get('resource_id')
+        resource_info = param.get('resource_info')
+        data_source_vo = param.get('data_source_vo')
+        domain_id = param.get('domain_id')
+        plugin_metadata = param.get('plugin_metadata')
+        metrics_dict = param.get('metrics_dict')
+        and_metric_keys = param.get('and_metric_keys')
+        metric_param = {}
+
+        try:
+
+            secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+            metric_param.update({'secret_data': secret_data, 'schema': schema})
+
+        except Exception as e:
+            _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
+                          extra={'traceback': traceback.format_exc()})
+
+        try:
+            metrics_info = self.plugin_mgr.list_metrics(metric_param.get('schema'),
+                                                        plugin_metadata,
+                                                        metric_param.get('secret_data'),
+                                                        resource_info)
+            metric_param.update({'metrics_info': metrics_info})
+
+        except Exception as e:
+            _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
+                          extra={'traceback': traceback.format_exc()})
+
+        metrics_dict, and_metric_keys = self._merge_metric_keys(metric_param.get('metrics_info'),
+                                                                metrics_dict,
+                                                                and_metric_keys)
+
+        return resource_id, metrics_dict, and_metric_keys
