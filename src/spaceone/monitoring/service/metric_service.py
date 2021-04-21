@@ -105,11 +105,6 @@ class MetricService(BaseService):
                 resource_id, metrics_dict, and_metric_keys = future.result()
                 response['available_resources'][resource_id] = True
 
-                del future_executors[future]
-                gc.collect()
-
-                # del future
-
             _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
             _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
 
