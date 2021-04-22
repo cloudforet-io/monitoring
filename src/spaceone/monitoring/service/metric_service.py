@@ -102,8 +102,10 @@ class MetricService(BaseService):
                 future_executors.append(executor.submit(self.concurrent_secret_data_and_metrics_info, concurrent_param))
 
             for future in concurrent.futures.as_completed(future_executors):
-                resource_id, metrics_dict, and_metric_keys = future.result()
-                response['available_resources'][resource_id] = True
+                is_invalid, resource_id, metrics_dict, and_metric_keys = future.result()
+
+                if not is_invalid:
+                    response['available_resources'][resource_id] = True
 
             _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
             _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
@@ -342,29 +344,37 @@ class MetricService(BaseService):
         metrics_dict = param.get('metrics_dict')
         and_metric_keys = param.get('and_metric_keys')
         metric_param = {}
+        is_invalid = False
 
-        try:
+        if not is_invalid:
+            try:
 
-            secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-            metric_param.update({'secret_data': secret_data, 'schema': schema})
+                secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
+                metric_param.update({'secret_data': secret_data, 'schema': schema})
 
-        except Exception as e:
-            _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
-                          extra={'traceback': traceback.format_exc()})
+            except Exception as e:
+                _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
+                              extra={'traceback': traceback.format_exc()})
 
-        try:
-            metrics_info = self.plugin_mgr.list_metrics(metric_param.get('schema'),
-                                                        plugin_metadata,
-                                                        metric_param.get('secret_data'),
-                                                        resource_info)
-            metric_param.update({'metrics_info': metrics_info})
+                is_invalid = True
 
-        except Exception as e:
-            _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
-                          extra={'traceback': traceback.format_exc()})
+        if not is_invalid:
+            try:
+                metrics_info = self.plugin_mgr.list_metrics(metric_param.get('schema'),
+                                                            plugin_metadata,
+                                                            metric_param.get('secret_data'),
+                                                            resource_info)
 
-        metrics_dict, and_metric_keys = self._merge_metric_keys(metric_param.get('metrics_info'),
-                                                                metrics_dict,
-                                                                and_metric_keys)
+                metric_param.update({'metrics_info': metrics_info})
 
-        return resource_id, metrics_dict, and_metric_keys
+            except Exception as e:
+                _LOGGER.error(f'[list] List metrics error ({resource_id}): {str(e)}',
+                              extra={'traceback': traceback.format_exc()})
+                is_invalid = True
+
+        if not is_invalid:
+            metrics_dict, and_metric_keys = self._merge_metric_keys(metric_param.get('metrics_info'),
+                                                                    metrics_dict,
+                                                                    and_metric_keys)
+
+        return is_invalid, resource_id, metrics_dict, and_metric_keys
