@@ -160,7 +160,7 @@ class MetricService(BaseService):
         self.plugin_mgr.initialize(plugin_id, version, domain_id)
 
         response = {
-            'labels': None,
+            'labels': [],
             'resource_values': {},
             'domain_id': domain_id
         }
@@ -182,7 +182,7 @@ class MetricService(BaseService):
             for future in concurrent.futures.as_completed(future_executors):
                 metric_data = future.result()
 
-                if response.get('labels') is None or not response.get('labels') and not metric_data.get('labels', []):
+                if not response.get('labels') and metric_data.get('labels', []):
                     response['labels'] = metric_data.get('labels', [])
 
                 if metric_data.get('resource_values', {}) != {}:
