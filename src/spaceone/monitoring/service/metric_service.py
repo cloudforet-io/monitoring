@@ -1,7 +1,7 @@
 import logging
 import traceback
 import concurrent.futures
-import gc
+from pprint import pprint
 from spaceone.core.service import *
 
 from spaceone.monitoring.error import *
@@ -24,6 +24,7 @@ MONITORING_PATH = {
     'google_cloud': 'stackdriver',
     'azure': 'azure_monitor'
 }
+
 
 @authentication_handler
 @authorization_handler
@@ -89,7 +90,6 @@ class MetricService(BaseService):
             future_executors = []
 
             for resource_id, resource_info in resources_info.items():
-
                 concurrent_param = {'response': response,
                                     'resource_id': resource_id,
                                     'resource_info': resource_info,
@@ -202,59 +202,74 @@ class MetricService(BaseService):
 
             monitor_info_per_provider = resource_info.get('data', {}).get(MONITORING_PATH.get(provider))
             resource_key = 'sp_resource_id' if provider == 'azure' else 'resource_id'
-            monitor_info_per_provider.update({resource_key: resource_id})
+
+            # Skip item, if selected items does not identical provider
+            need_skip = False
+
+            try:
+                monitor_info_per_provider.update({resource_key: resource_id})
+            except Exception as e:
+                need_skip = True
 
             try:
                 secret_data, schema = self._get_secret_data(resource_id, resource_info, data_source_vo, domain_id)
-
             except Exception as e:
-                _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}',
-                              extra={'traceback': traceback.format_exc()})
+                need_skip = True
+                _LOGGER.error(f'[list] Get resource secret error ({resource_id}): {str(e)}', extra={'traceback': traceback.format_exc()})
 
-            index = None
-
-            if provider == 'aws':
-                index = self._get_idx_by_value(provider, filter_resources, secret_data, schema,
-                                               monitor_info_per_provider.get('region_name'))
-
-            elif provider == 'google_cloud':
-                index = self._get_idx_by_value(provider, filter_resources, secret_data, schema, None)
-
-            elif provider == 'azure':
-                index = self._get_idx_by_value(provider, filter_resources, secret_data, schema, None)
-
-            if index is None:
-                raise ERROR_NOT_MATCHING_RESOURCES(monitoring=monitor_info_per_provider)
-
-            if index == -1:
-                attaching_resource = {
-                    'secret_data': secret_data,
-                    'schema': schema,
-                    'resources': [monitor_info_per_provider]
-                }
-
+            if not need_skip:
+                index = None
                 if provider == 'aws':
-                    attaching_resource.update({'region_name': monitor_info_per_provider.get('region_name')})
+                    index = self._get_idx_by_value(provider, filter_resources, secret_data, schema,
+                                                   monitor_info_per_provider.get('region_name'))
+                elif provider == 'google_cloud':
+                    index = self._get_idx_by_value(provider, filter_resources, secret_data, schema, None)
 
-                filter_resources.append(attaching_resource)
+                elif provider == 'azure':
+                    index = self._get_idx_by_value(provider, filter_resources, secret_data, schema, None)
 
-            else:
-                updatable = filter_resources[index].get('resources')
-                if updatable is not None:
-                    filter_resources[index]['resources'].append(monitor_info_per_provider)
+                if index is None:
+                    raise ERROR_NOT_MATCHING_RESOURCES(monitoring=monitor_info_per_provider)
+
+                if index == -1:
+                    attaching_resource = {
+                        'secret_data': secret_data,
+                        'schema': schema,
+                        'resources': [monitor_info_per_provider]
+                    }
+
+                    if provider == 'aws':
+                        attaching_resource.update({'region_name': monitor_info_per_provider.get('region_name')})
+
+                    filter_resources.append(attaching_resource)
+
+                else:
+                    updatable = filter_resources[index].get('resources')
+                    if updatable is not None:
+                        filter_resources[index]['resources'].append(monitor_info_per_provider)
 
         return filter_resources
 
     def concurrent_get_metric_data(self, param):
-        metric_data_info = self.plugin_mgr.get_metric_data(param.get('schema'),
-                                                           param.get('plugin_metadata'),
-                                                           param.get('secret_data'),
-                                                           param.get('resources'),
-                                                           param.get('metric'),
-                                                           param.get('start'),
-                                                           param.get('end'),
-                                                           param.get('period'),
-                                                           param.get('stat'))
+        metric_data_info = {'labels': [],
+                            'resource_values': {}}
+
+        try:
+            metric_data_info = self.plugin_mgr.get_metric_data(param.get('schema'),
+                                                               param.get('plugin_metadata'),
+                                                               param.get('secret_data'),
+                                                               param.get('resources'),
+                                                               param.get('metric'),
+                                                               param.get('start'),
+                                                               param.get('end'),
+                                                               param.get('period'),
+                                                               param.get('stat'))
+
+        except Exception as e:
+            print(e)
+
+        pprint(metric_data_info)
+
         return metric_data_info
 
     @staticmethod
