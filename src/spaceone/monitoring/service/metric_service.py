@@ -15,7 +15,7 @@ MAX_CONCURRENT_WORKER = [10, 5]
 
 MAX_REQUEST_LIMIT = {
     'aws': 200,
-    'google_cloud': 20,
+    'google_cloud': 100,
     'azure': 10
 }
 
