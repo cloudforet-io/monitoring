@@ -268,8 +268,6 @@ class MetricService(BaseService):
         except Exception as e:
             print(e)
 
-        pprint(metric_data_info)
-
         return metric_data_info
 
     @staticmethod
