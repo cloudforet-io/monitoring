@@ -2,12 +2,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.name }}-application-conf
+  name: {{ .Values.name }}-application-rest-conf
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   annotations:
-    spaceone.auto-deploy-flag: {{ print .Values.application | sha256sum }}
+    spaceone.auto-deploy-flag: {{ print .Values.application_rest | sha256sum }}
 data:
   application.yaml: |-
-{{- toYaml .Values.application | nindent 4 }}
+{{- toYaml .Values.application_rest | nindent 4 }}
 {{ end }}
-

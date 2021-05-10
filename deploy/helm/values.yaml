@@ -2,9 +2,11 @@
 # DEFAULT 
 ###############################
 enabled: true
+grpc: true
 developer: false
 scheduler: false
 worker: false
+grpc: false
 name: monitoring
 replicas: 1
 image:
@@ -81,3 +83,12 @@ service:
           port: 50051
           targetPort: 50051
           protocol: TCP
+
+################################
+# volumeMount per deployment
+################################
+volumeMounts:
+    application_grpc: []
+    application_rest: []
+    application_scheduler: []
+    application_worker: []
