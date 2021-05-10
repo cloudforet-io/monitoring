@@ -1,5 +1,6 @@
 import logging
 import traceback
+import time
 import concurrent.futures
 from pprint import pprint
 from spaceone.core.service import *
@@ -80,7 +81,7 @@ class MetricService(BaseService):
         }
         metrics_dict = {}
         and_metric_keys = []
-
+        start_time = time.time()
         for resource_id in resources:
             response['available_resources'][resource_id] = False
 
@@ -101,17 +102,22 @@ class MetricService(BaseService):
 
                 future_executors.append(executor.submit(self.concurrent_secret_data_and_metrics_info, concurrent_param))
 
+            print(f'** Before Create Thread {time.time() - start_time} Seconds **')
+
             for future in concurrent.futures.as_completed(future_executors):
                 is_invalid, resource_id, metrics_dict, and_metric_keys = future.result()
 
                 if not is_invalid:
                     response['available_resources'][resource_id] = True
 
+            print(f'** After running Thread {time.time() - start_time} Seconds **')
+
             _LOGGER.debug(f'[list] All metrics : {metrics_dict}')
             _LOGGER.debug(f'[list] And metric keys : {and_metric_keys}')
 
         response['metrics'] = self._intersect_metric_keys(metrics_dict, and_metric_keys)
 
+        print(f'** Get metric list  {time.time() - start_time} Seconds **')
         return response
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -139,7 +145,7 @@ class MetricService(BaseService):
         resource_type = params['resource_type']
         resources = params['resources']
         domain_id = params['domain_id']
-
+        start_time = time.time()
         concurrent_param = {'metric': params['metric'],
                             'start': params['start'],
                             'end': params['end'],
@@ -170,7 +176,7 @@ class MetricService(BaseService):
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER[1]) as executor:
             future_executors = []
-
+            print(f'** Before running Thread {time.time() - start_time} Seconds **')
             for filtered_resource in filtered_resources:
                 concurrent_param.update({'schema': filtered_resource.get('schema'),
                                          'plugin_metadata': plugin_metadata,
@@ -179,15 +185,17 @@ class MetricService(BaseService):
 
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
+            print(f'** After running Thread {time.time() - start_time} Seconds **')
             for future in concurrent.futures.as_completed(future_executors):
                 metric_data = future.result()
-
+                print(f'** Single Thread {time.time() - start_time} Seconds **')
                 if not response.get('labels') and metric_data.get('labels', []):
                     response['labels'] = metric_data.get('labels', [])
 
                 if metric_data.get('resource_values', {}) != {}:
                     response['resource_values'].update(metric_data.get('resource_values'))
 
+        print(f'** Running Thread All has finished {time.time() - start_time} Seconds **')
         return response
 
     def get_filtered_resources_info(self, resources_info, data_source_vo, domain_id):
