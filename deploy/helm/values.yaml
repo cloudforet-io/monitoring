@@ -2,11 +2,11 @@
 # DEFAULT 
 ###############################
 enabled: true
-grpc: true
 developer: false
+grpc: true
 scheduler: false
 worker: false
-grpc: false
+rest: false
 name: monitoring
 replicas: 1
 image:
