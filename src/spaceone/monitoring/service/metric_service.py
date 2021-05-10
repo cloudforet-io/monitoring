@@ -146,6 +146,7 @@ class MetricService(BaseService):
         resources = params['resources']
         domain_id = params['domain_id']
         start_time = time.time()
+        _metric = params['metric']
         concurrent_param = {'metric': params['metric'],
                             'start': params['start'],
                             'end': params['end'],
@@ -176,7 +177,8 @@ class MetricService(BaseService):
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER[1]) as executor:
             future_executors = []
-            print(f'** Before running Thread {time.time() - start_time} Seconds **')
+            print()
+            print(f'** {_metric} :Before running Thread {time.time() - start_time} Seconds **')
             for filtered_resource in filtered_resources:
                 concurrent_param.update({'schema': filtered_resource.get('schema'),
                                          'plugin_metadata': plugin_metadata,
@@ -185,7 +187,7 @@ class MetricService(BaseService):
 
                 future_executors.append(executor.submit(self.concurrent_get_metric_data, concurrent_param))
 
-            print(f'** After running Thread {time.time() - start_time} Seconds **')
+            print(f'** {_metric} :After running Thread {time.time() - start_time} Seconds **')
             for future in concurrent.futures.as_completed(future_executors):
                 metric_data = future.result()
                 print(f'** Single Thread {time.time() - start_time} Seconds **')
@@ -195,7 +197,8 @@ class MetricService(BaseService):
                 if metric_data.get('resource_values', {}) != {}:
                     response['resource_values'].update(metric_data.get('resource_values'))
 
-        print(f'** Running Thread All has finished {time.time() - start_time} Seconds **')
+        print(f'** Running Thread for {_metric} All has finished {time.time() - start_time} Seconds **')
+        print()
         return response
 
     def get_filtered_resources_info(self, resources_info, data_source_vo, domain_id):
