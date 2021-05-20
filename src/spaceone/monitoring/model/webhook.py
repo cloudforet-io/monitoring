@@ -30,20 +30,21 @@ class Webhook(MongoModel):
         'updatable_fields': [
             'name',
             'state',
-            'repeat_count',
-            'finish_condition',
+            'capability',
+            'plugin_info',
             'tags'
         ],
         'minimal_fields': [
-            'escalation_policy_id',
+            'webhook_id',
             'name',
-            'is_default'
+            'state',
+            'webhook_url'
         ],
         'ordering': ['name'],
         'indexes': [
-            'escalation_policy_id',
-            'is_default',
-            'finish_condition',
+            'webhook_id',
+            'state',
+            'access_key',
             'project_id',
             'domain_id'
         ]
