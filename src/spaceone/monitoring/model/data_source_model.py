@@ -35,9 +35,9 @@ class DataSource(MongoModel):
     meta = {
         'updatable_fields': [
             'name',
+            'state',
             'capability',
             'plugin_info',
-            'state',
             'tags'
         ],
         'minimal_fields': [
