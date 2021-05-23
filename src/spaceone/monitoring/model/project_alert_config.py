@@ -21,8 +21,9 @@ class ProjectAlertConfig(MongoModel):
 
     meta = {
         'updatable_fields': [
-            'escalation_policy_id',
-            'notification_options'
+            'notification_options',
+            'escalation_policy',
+            'escalation_policy_id'
         ],
         'minimal_fields': [
             'project_id',

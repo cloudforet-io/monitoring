@@ -14,7 +14,7 @@ class PluginInfo(EmbeddedDocument):
 
 
 class Webhook(MongoModel):
-    webhook_id = StringField(max_length=40)
+    webhook_id = StringField(max_length=40, generate_id='webhook', unique=True)
     name = StringField(max_length=255)
     state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
     access_key = StringField(max_length=255)
@@ -22,6 +22,7 @@ class Webhook(MongoModel):
     capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
     tags = DictField()
+    project = ReferenceField('ProjectAlertConfig', reverse_delete_rule=CASCADE)
     project_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
@@ -38,7 +39,8 @@ class Webhook(MongoModel):
             'webhook_id',
             'name',
             'state',
-            'webhook_url'
+            'webhook_url',
+            'project_id'
         ],
         'ordering': ['name'],
         'indexes': [

@@ -9,7 +9,7 @@ class EscalationRule(EmbeddedDocument):
 
 
 class EscalationPolicy(MongoModel):
-    escalation_policy_id = StringField(max_length=40)
+    escalation_policy_id = StringField(max_length=40, generate_id='ep', unique=True)
     name = StringField(max_length=255)
     is_default = BooleanField(default=False)
     rules = ListField(EmbeddedDocumentField(EscalationRule))
@@ -23,6 +23,7 @@ class EscalationPolicy(MongoModel):
     meta = {
         'updatable_fields': [
             'name',
+            'is_default',
             'rules',
             'repeat_count',
             'finish_condition',
