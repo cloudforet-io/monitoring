@@ -12,7 +12,7 @@ from spaceone.core.service import BaseService
 from spaceone.core.locator import Locator
 from spaceone.core.pygrpc import BaseAPI
 from spaceone.api.monitoring.v1 import log_pb2
-from spaceone.monitoring.api.v1.log import Log
+from spaceone.monitoring.interface.grpc.v1.log import Log
 from test.factory.log_factory import LogDataFactory
 
 
