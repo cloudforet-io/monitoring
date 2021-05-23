@@ -16,7 +16,7 @@ def PluginInfo(vo):
             'metadata': change_struct_type(vo.metadata)
         }
 
-        return webhook_pb2.PluginInfo(**info)
+        return webhook_pb2.WebhookPluginInfo(**info)
     else:
         return None
 
