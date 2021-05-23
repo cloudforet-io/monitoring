@@ -8,12 +8,14 @@ class Note(MongoModel):
     note = StringField()
     alert_id = StringField(max_length=40)
     user_id = StringField(max_length=40)
+    project_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
         'updatable_fields': [
-            'note'
+            'note',
+            'project_id'
         ],
         'minimal_fields': [
             'note_id',

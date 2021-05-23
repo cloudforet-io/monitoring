@@ -1,7 +1,7 @@
 from mongoengine import *
 
 from spaceone.core.model.mongo_model import MongoModel
-from spaceone.monitoring.model.escalation_policy import EscalationPolicy
+from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 
 
 class NotificationOptions(EmbeddedDocument):
