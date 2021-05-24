@@ -15,8 +15,8 @@ class EscalationPolicyManager(BaseManager):
     def create_escalation_policy(self, params):
         def _rollback(escalation_policy_vo: EscalationPolicy):
             _LOGGER.info(f'[create_escalation_policy._rollback] '
-                         f'Delete escalation policy : {escalation_policy_vo.escalation_policy_id} '
-                         f'({escalation_policy_vo.name})')
+                         f'Delete escalation policy : {escalation_policy_vo.name} '
+                         f'({escalation_policy_vo.escalation_policy_id})')
             escalation_policy_vo.delete()
 
         escalation_policy_vo: EscalationPolicy = self.escalation_policy_model.create(params)
