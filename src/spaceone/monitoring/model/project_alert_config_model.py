@@ -12,7 +12,7 @@ class NotificationOptions(EmbeddedDocument):
 
 
 class ProjectAlertConfig(MongoModel):
-    project_id = StringField(max_length=40)
+    project_id = StringField(max_length=40, unique=True)
     notification_options = EmbeddedDocumentField(NotificationOptions, required=True)
     escalation_policy = ReferenceField('EscalationPolicy', reverse_delete_rule=DENY)
     escalation_policy_id = StringField(max_length=40)
@@ -29,6 +29,9 @@ class ProjectAlertConfig(MongoModel):
             'project_id',
             'notification_options'
         ],
+        'change_query_keys': {
+            'user_projects': 'project_id'
+        },
         'reference_query_keys': {
             'escalation_policy': EscalationPolicy
         },

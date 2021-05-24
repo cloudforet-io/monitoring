@@ -38,6 +38,7 @@ def EscalationPolicyInfo(escalation_policy_vo: EscalationPolicy, minimal=False):
             'repeat_count': escalation_policy_vo.repeat_count,
             'finish_condition': escalation_policy_vo.finish_condition,
             'tags': change_struct_type(escalation_policy_vo.tags),
+            'scope': escalation_policy_vo.scope,
             'project_id': escalation_policy_vo.project_id,
             'domain_id': escalation_policy_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(escalation_policy_vo.created_at)

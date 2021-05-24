@@ -1,7 +1,9 @@
+import copy
 import logging
 
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
+from spaceone.monitoring.conf.default_escalation_policy import DEFAULT_ESCALATION_POLICY
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,6 +53,15 @@ class EscalationPolicyManager(BaseManager):
 
         return updated_escalation_policy_vo
 
+    def get_default_escalation_policy(self, domain_id):
+        escalation_policy_vos = self.escalation_policy_model.get(is_default=True, domain_id=domain_id)
+        if escalation_policy_vos.count() > 0:
+            return escalation_policy_vos[0]
+        else:
+            default_escalation_policy = copy.deepcopy(DEFAULT_ESCALATION_POLICY)
+            default_escalation_policy['domain_id'] = domain_id
+            return self.create_escalation_policy(default_escalation_policy)
+
     def delete_escalation_policy(self, escalation_policy_id, domain_id):
         escalation_policy_vo: EscalationPolicy = self.get_escalation_policy(escalation_policy_id, domain_id)
         escalation_policy_vo.delete()
@@ -64,3 +75,6 @@ class EscalationPolicyManager(BaseManager):
 
     def stat_escalation_policies(self, query):
         return self.escalation_policy_model.stat(**query)
+
+    def _create_default_escalation_policy(self, domain_id):
+        pass

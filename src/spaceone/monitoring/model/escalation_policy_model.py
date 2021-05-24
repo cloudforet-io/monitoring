@@ -4,19 +4,20 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class EscalationRule(EmbeddedDocument):
-    notification_level = StringField(max_length=20)
+    notification_level = StringField(max_length=20, default='ALL')
     escalate_minutes = IntField(default=0)
 
 
 class EscalationPolicy(MongoModel):
     escalation_policy_id = StringField(max_length=40, generate_id='ep', unique=True)
-    name = StringField(max_length=255)
+    name = StringField(max_length=255, unique_with='domain_id')
     is_default = BooleanField(default=False)
     rules = ListField(EmbeddedDocumentField(EscalationRule))
     repeat_count = IntField(default=0)
     finish_condition = StringField(max_length=20, default='ACKNOWLEDGED', choices=('ACKNOWLEDGED', 'RESOLVED'))
     tags = DictField()
-    project_id = StringField(max_length=40)
+    scope = StringField(max_length=20, choices=('GLOBAL', 'PROJECT'))
+    project_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -39,6 +40,7 @@ class EscalationPolicy(MongoModel):
             'escalation_policy_id',
             'is_default',
             'finish_condition',
+            'scope',
             'project_id',
             'domain_id'
         ]
