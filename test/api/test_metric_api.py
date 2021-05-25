@@ -12,7 +12,7 @@ from spaceone.core.service import BaseService
 from spaceone.core.locator import Locator
 from spaceone.core.pygrpc import BaseAPI
 from spaceone.api.monitoring.v1 import metric_pb2
-from spaceone.monitoring.api.v1.metric import Metric
+from spaceone.monitoring.interface.grpc.v1.metric import Metric
 from test.factory.metric_factory import MetricsFactory, MetricDataFactory
 
 

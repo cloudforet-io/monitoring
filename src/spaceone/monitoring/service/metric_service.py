@@ -2,7 +2,6 @@ import logging
 import traceback
 import time
 import concurrent.futures
-from pprint import pprint
 from spaceone.core.service import *
 
 from spaceone.monitoring.error import *

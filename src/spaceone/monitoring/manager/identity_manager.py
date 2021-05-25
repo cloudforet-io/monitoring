@@ -19,6 +19,9 @@ class IdentityManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.identity_connector: IdentityConnector = self.locator.get_connector('IdentityConnector')
 
+    def get_project(self, project_id, domain_id):
+        return self.identity_connector.get_project(project_id, domain_id)
+
     def get_resource(self, resource_id, resource_type, domain_id):
         get_method = _GET_RESOURCE_METHODS[resource_type]
         return getattr(self.identity_connector, get_method)(resource_id, domain_id)

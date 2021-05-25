@@ -13,7 +13,7 @@ from spaceone.core.service import BaseService
 from spaceone.core.locator import Locator
 from spaceone.core.pygrpc import BaseAPI
 from spaceone.api.monitoring.v1 import data_source_pb2
-from spaceone.monitoring.api.v1.data_source import DataSource
+from spaceone.monitoring.interface.grpc.v1.data_source import DataSource
 from test.factory.data_source_factory import DataSourceFactory
 
 
@@ -105,7 +105,7 @@ class TestDataSourceAPI(unittest.TestCase):
         self.assertIsNotNone(data_source_info.provider)
         self.assertIsNotNone(data_source_info.capability)
         self.assertDictEqual(data_source_data['tags'], params['tags'])
-        self.assertIsInstance(data_source_info.plugin_info, data_source_pb2.PluginInfo)
+        self.assertIsInstance(data_source_info.plugin_info, data_source_pb2.DataSourcePluginInfo)
         self.assertEqual(data_source_data['plugin_info']['plugin_id'], params['plugin_info']['plugin_id'])
         self.assertEqual(data_source_data['plugin_info']['version'], params['plugin_info']['version'])
         self.assertEqual(data_source_data['plugin_info']['secret_id'], params['plugin_info']['secret_id'])

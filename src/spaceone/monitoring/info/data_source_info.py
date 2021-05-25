@@ -18,7 +18,7 @@ def PluginInfo(vo):
             'provider': vo.provider
         }
 
-        return data_source_pb2.PluginInfo(**info)
+        return data_source_pb2.DataSourcePluginInfo(**info)
     else:
         return None
 

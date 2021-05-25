@@ -8,27 +8,22 @@ class PluginInfo(EmbeddedDocument):
     version = StringField(max_length=255)
     options = DictField()
     metadata = DictField()
-    secret_id = StringField(max_length=40, default=None, null=True)
-    provider = StringField(max_length=40, default=None, null=True)
 
     def to_dict(self):
         return self.to_mongo()
 
 
-class DataSourceTag(EmbeddedDocument):
-    key = StringField(max_length=255)
-    value = StringField(max_length=255)
-
-
-class DataSource(MongoModel):
-    data_source_id = StringField(max_length=40, generate_id='ds', unique=True)
+class Webhook(MongoModel):
+    webhook_id = StringField(max_length=40, generate_id='webhook', unique=True)
     name = StringField(max_length=255, unique_with='domain_id')
     state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
-    monitoring_type = StringField(max_length=20, choices=('METRIC', 'LOG'))
-    provider = StringField(max_length=40, default=None, null=True)
+    access_key = StringField(max_length=255)
+    webhook_url = StringField(max_length=255)
     capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
-    tags = ListField(EmbeddedDocumentField(DataSourceTag))
+    tags = DictField()
+    project = ReferenceField('ProjectAlertConfig', reverse_delete_rule=CASCADE)
+    project_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -41,21 +36,18 @@ class DataSource(MongoModel):
             'tags'
         ],
         'minimal_fields': [
-            'data_source_id',
+            'webhook_id',
             'name',
             'state',
-            'monitoring_type',
-            'provider'
+            'webhook_url',
+            'project_id'
         ],
-        'ordering': [
-            'name'
-        ],
+        'ordering': ['name'],
         'indexes': [
-            'data_source_id',
+            'webhook_id',
             'state',
-            'monitoring_type',
-            'provider',
-            'domain_id',
-            ('tags.key', 'tags.value')
+            'access_key',
+            'project_id',
+            'domain_id'
         ]
     }
