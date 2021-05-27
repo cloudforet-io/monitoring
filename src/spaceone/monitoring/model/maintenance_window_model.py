@@ -12,6 +12,7 @@ class MaintenanceWindow(MongoModel):
     end_time = DateTimeField()
     tags = DictField()
     domain_id = StringField(max_length=40)
+    created_by = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
     closed_at = DateTimeField(default=None, null=True)
@@ -34,12 +35,19 @@ class MaintenanceWindow(MongoModel):
             'start_time',
             'end_time'
         ],
+        'change_query_keys': {
+            'user_projects': 'projects'
+        },
+        'ordering': [
+            '-start_time'
+        ],
         'indexes': [
             'maintenance_window_id',
             'state',
             'projects',
             'start_time',
             'end_time',
+            'created_by',
             'domain_id'
         ]
     }

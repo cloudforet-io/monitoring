@@ -3,7 +3,7 @@ import logging
 from spaceone.core.service import *
 from spaceone.core import utils
 from spaceone.monitoring.error import *
-from spaceone.monitoring.model.data_source_model import *
+from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
@@ -30,7 +30,6 @@ class DataSourceService(BaseService):
         Args:
             params (dict): {
                 'name': 'str',
-                'monitoring_type': 'str',
                 'plugin_info': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'
@@ -39,6 +38,7 @@ class DataSourceService(BaseService):
         Returns:
             data_source_vo (object)
         """
+
         domain_id = params['domain_id']
 
         if 'tags' in params:
@@ -70,7 +70,6 @@ class DataSourceService(BaseService):
             params (dict): {
                 'data_source_id': 'str',
                 'name': 'dict',
-                'plugin_info': 'dict',
                 'tags': 'dict'
                 'domain_id': 'str'
             }
@@ -187,14 +186,13 @@ class DataSourceService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
     def update_plugin(self, params):
-        """Update data source
+        """Update data source plugin
 
         Args:
             params (dict): {
                 'data_source_id': 'str',
-                'name': 'dict',
-                'plugin_info': 'dict',
-                'tags': 'list'
+                'version': 'str',
+                'options': 'dict',
                 'domain_id': 'str'
             }
 
@@ -233,30 +231,6 @@ class DataSourceService(BaseService):
         _LOGGER.debug(f'[update_plugin] {plugin_info}')
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
-
-
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['data_source_id', 'domain_id'])
-    def verify_plugin(self, params):
-        """ Verify data source plugin
-
-        Args:
-            params (dict): {
-                'data_source_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            data_source_vo (object)
-        """
-
-        data_source_id = params['data_source_id']
-        domain_id = params['domain_id']
-        data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-
-        self._verify_plugin(data_source_vo.plugin_info, data_source_vo.capability, domain_id)
-
-        return {'status': True}
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])

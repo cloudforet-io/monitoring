@@ -1,7 +1,7 @@
 import logging
 
 from spaceone.core.service import *
-from spaceone.monitoring.model.escalation_policy_model import *
+from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 
@@ -142,7 +142,7 @@ class EscalationPolicyService(BaseService):
                           'project_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['escalation_policy_id', 'name'])
     def list(self, params):
-        """ List data sources
+        """ List escalation polices
 
         Args:
             params (dict): {
@@ -169,8 +169,8 @@ class EscalationPolicyService(BaseService):
         'authorization.scope': 'PROJECT',
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
-    @check_required(['query', 'domain_id', 'user_projects'])
-    @append_query_filter(['domain_id'])
+    @check_required(['query', 'domain_id'])
+    @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['escalation_policy_id', 'name'])
     def stat(self, params):
         """

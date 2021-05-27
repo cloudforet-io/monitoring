@@ -35,6 +35,9 @@ class EscalationPolicy(MongoModel):
             'name',
             'is_default'
         ],
+        'change_query_keys': {
+            'user_projects': 'project_id'
+        },
         'ordering': ['name'],
         'indexes': [
             'escalation_policy_id',
