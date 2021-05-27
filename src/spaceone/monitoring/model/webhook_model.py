@@ -42,6 +42,9 @@ class Webhook(MongoModel):
             'webhook_url',
             'project_id'
         ],
+        'change_query_keys': {
+            'user_projects': 'project_id'
+        },
         'ordering': ['name'],
         'indexes': [
             'webhook_id',
