@@ -103,7 +103,7 @@ class ProjectAlertConfigService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_id', 'domain_id'])
     def get(self, params):
-        """ Get data source
+        """ Get project alert configuration
 
         Args:
             params (dict): {
@@ -126,7 +126,7 @@ class ProjectAlertConfigService(BaseService):
     @append_query_filter(['project_id', 'escalation_policy_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['project_id'])
     def list(self, params):
-        """ List data sources
+        """ List project alert configurations
 
         Args:
             params (dict): {

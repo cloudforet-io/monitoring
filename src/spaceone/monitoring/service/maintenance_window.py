@@ -30,6 +30,7 @@ class MaintenanceWindowService(BaseService):
                 'projects': 'list',
                 'start_time': 'datetime',
                 'end_time': 'datetime',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -37,7 +38,10 @@ class MaintenanceWindowService(BaseService):
             maintenance_window_vo (object)
         """
 
-        params['user_id']  = self.transaction.get_meta('user_id')
+        domain_id = params['domain_id']
+        projects = params['projects']
+
+        params['created_by'] = self.transaction.get_meta('user_id')
 
         identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
 
@@ -46,42 +50,47 @@ class MaintenanceWindowService(BaseService):
         return self.maintenance_window_mgr.create_maintenance_window(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['project_id', 'domain_id'])
+    @check_required(['maintenance_window_id', 'domain_id'])
+    @change_timestamp_value(['start_time', 'end_time'], timestamp_format='iso8601')
     def update(self, params):
         """Update maintenance window
 
         Args:
             params (dict): {
-                'project_id': 'str',
-                'escalation_policy_id': 'dict',
-                'notification_options': 'dict',
+                'maintenance_window_id': 'str',
+                'title': 'str',
+                'projects': 'list',
+                'start_time': 'datetime',
+                'end_time': 'datetime',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
         Returns:
             maintenance_window_vo (object)
         """
-        
-        project_id = params['project_id']
-        escalation_policy_id = params.get('escalation_policy_id')
+
+        maintenance_window_id = params['maintenance_window_id']
         domain_id = params['domain_id']
+        projects = params.get('projects')
 
-        maintenance_window_vo = self.maintenance_window_mgr.get_maintenance_window(project_id, domain_id)
+        maintenance_window_vo = self.maintenance_window_mgr.get_maintenance_window(maintenance_window_id, domain_id)
 
-        if escalation_policy_id:
-            escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager('EscalationPolicyManager')
-            params['escalation_policy'] = escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
+        if projects:
+            identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+
+            # Check projects and user permissions
 
         return self.maintenance_window_mgr.update_maintenance_window_by_vo(params, maintenance_window_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['project_id', 'domain_id'])
-    def delete(self, params):
+    @check_required(['maintenance_window_id', 'domain_id'])
+    def close(self, params):
         """Delete maintenance window
 
         Args:
             params (dict): {
-                'project_id': 'str',
+                'maintenance_window_id': 'str',
                 'domain_id': 'str'
             }
 
@@ -89,16 +98,17 @@ class MaintenanceWindowService(BaseService):
             None
         """
 
-        self.maintenance_window_mgr.delete_maintenance_window(params['project_id'], params['domain_id'])
+        return self.maintenance_window_mgr.close_maintenance_window(params['maintenance_window_id'],
+                                                                    params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['project_id', 'domain_id'])
+    @check_required(['maintenance_window_id', 'domain_id'])
     def get(self, params):
-        """ Get data source
+        """ Get maintenance window
 
         Args:
             params (dict): {
-                'project_id': 'str',
+                'maintenance_window_id': 'str',
                 'domain_id': 'str',
                 'only': 'list
             }
@@ -107,22 +117,27 @@ class MaintenanceWindowService(BaseService):
             maintenance_window_vo (object)
         """
 
-        return self.maintenance_window_mgr.get_maintenance_window(params['project_id'], params['domain_id'], params.get('only'))
+        return self.maintenance_window_mgr.get_maintenance_window(params['maintenance_window_id'],
+                                                                  params['domain_id'], params.get('only'))
 
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
     @check_required(['domain_id'])
-    @append_query_filter(['project_id', 'escalation_policy_id', 'domain_id', 'user_projects'])
-    @append_keyword_filter(['project_id'])
+    @append_query_filter(['maintenance_window_id', 'title', 'state', 'project_id', 'created_by', 'domain_id',
+                          'user_projects'])
+    @append_keyword_filter(['maintenance_window_id', 'title'])
     def list(self, params):
-        """ List data sources
+        """ List maintenance windows
 
         Args:
             params (dict): {
+                'maintenance_window_id': 'str',
+                'title': 'str',
+                'state': 'str',
                 'project_id': 'str',
-                'escalation_policy_id': 'str',
+                'created_by': 'str',
                 'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'user_projects': 'list', // from meta
@@ -142,7 +157,7 @@ class MaintenanceWindowService(BaseService):
     })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
-    @append_keyword_filter(['project_id'])
+    @append_keyword_filter(['maintenance_window_id', 'title'])
     def stat(self, params):
         """
         Args:

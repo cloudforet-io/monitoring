@@ -142,7 +142,7 @@ class EscalationPolicyService(BaseService):
                           'project_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['escalation_policy_id', 'name'])
     def list(self, params):
-        """ List data sources
+        """ List escalation polices
 
         Args:
             params (dict): {
