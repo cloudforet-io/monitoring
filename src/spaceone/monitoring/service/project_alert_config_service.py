@@ -149,8 +149,8 @@ class ProjectAlertConfigService(BaseService):
         'authorization.scope': 'PROJECT',
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
-    @check_required(['query', 'domain_id', 'user_projects'])
-    @append_query_filter(['domain_id'])
+    @check_required(['query', 'domain_id'])
+    @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['project_id'])
     def stat(self, params):
         """
