@@ -70,7 +70,6 @@ class DataSourceService(BaseService):
             params (dict): {
                 'data_source_id': 'str',
                 'name': 'dict',
-                'plugin_info': 'dict',
                 'tags': 'dict'
                 'domain_id': 'str'
             }
@@ -192,9 +191,8 @@ class DataSourceService(BaseService):
         Args:
             params (dict): {
                 'data_source_id': 'str',
-                'name': 'dict',
-                'plugin_info': 'dict',
-                'tags': 'list'
+                'version': 'str',
+                'options': 'dict',
                 'domain_id': 'str'
             }
 
