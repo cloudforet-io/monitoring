@@ -1,7 +1,7 @@
 import logging
 
 from spaceone.core.service import *
-from spaceone.monitoring.model.project_alert_config_model import *
+from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager

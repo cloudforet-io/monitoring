@@ -1,7 +1,7 @@
 import logging
 
 from spaceone.core.service import *
-from spaceone.monitoring.model.escalation_policy_model import *
+from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 

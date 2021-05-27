@@ -24,7 +24,7 @@ class Alert(MongoModel):
     escalation_level = IntField(default=1)
     escalation_ttl = IntField(default=0)
     responders = ListField(EmbeddedDocumentField(Responder))
-    webhook_id = StringField(max_length=40)
+    webhook_id = StringField(max_length=40, default=None, null=True)
     escalation_policy_id = StringField(max_length=40)
     project_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
@@ -62,6 +62,12 @@ class Alert(MongoModel):
             'urgency',
             'escalation_level',
             'project_id'
+        ],
+        'change_query_keys': {
+            'user_projects': 'project_id'
+        },
+        'ordering': [
+            '-created_at'
         ],
         'indexes': [
             'alert_number',

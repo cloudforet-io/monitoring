@@ -1,7 +1,7 @@
 import logging
 
 from spaceone.core.service import *
-from spaceone.monitoring.model.maintenance_window_model import *
+from spaceone.monitoring.model.maintenance_window_model import MaintenanceWindow
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.maintenance_window_manager import MaintenanceWindowManager
 

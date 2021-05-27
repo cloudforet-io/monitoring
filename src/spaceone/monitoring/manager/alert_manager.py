@@ -67,7 +67,7 @@ class AlertManager(BaseManager):
 
         for responder in alert_vo.responders:
             if responder.resource_type == resource_type and responder.resource_id == resource_id:
-                alert_vo = alert_vo.append('responders', {'resource_type': resource_type, 'resource_id': resource_id})
+                alert_vo = alert_vo.remove('responders', {'resource_type': resource_type, 'resource_id': resource_id})
                 return alert_vo
 
         raise ERROR_RESPONDER_NOT_EXIST(resource_type=resource_type, resource_id=resource_id)

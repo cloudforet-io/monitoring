@@ -35,6 +35,12 @@ class MaintenanceWindow(MongoModel):
             'start_time',
             'end_time'
         ],
+        'change_query_keys': {
+            'user_projects': 'projects'
+        },
+        'ordering': [
+            '-start_time'
+        ],
         'indexes': [
             'maintenance_window_id',
             'state',

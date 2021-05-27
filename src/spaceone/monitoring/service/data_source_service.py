@@ -3,7 +3,7 @@ import logging
 from spaceone.core.service import *
 from spaceone.core import utils
 from spaceone.monitoring.error import *
-from spaceone.monitoring.model.data_source_model import *
+from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager

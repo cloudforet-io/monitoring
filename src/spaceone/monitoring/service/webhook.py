@@ -5,7 +5,7 @@ from spaceone.core import utils
 
 from spaceone.monitoring.error import *
 from spaceone.monitoring.conf.global_conf import WEBHOOK_DOMAIN
-from spaceone.monitoring.model.webhook_model import *
+from spaceone.monitoring.model.webhook_model import Webhook
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
