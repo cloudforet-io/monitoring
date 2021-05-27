@@ -1,7 +1,7 @@
 import logging
 
 from spaceone.core.service import *
-from spaceone.monitoring.model.project_alert_config_model import *
+from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
@@ -103,7 +103,7 @@ class ProjectAlertConfigService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_id', 'domain_id'])
     def get(self, params):
-        """ Get data source
+        """ Get project alert configuration
 
         Args:
             params (dict): {
@@ -126,7 +126,7 @@ class ProjectAlertConfigService(BaseService):
     @append_query_filter(['project_id', 'escalation_policy_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['project_id'])
     def list(self, params):
-        """ List data sources
+        """ List project alert configurations
 
         Args:
             params (dict): {
@@ -149,8 +149,8 @@ class ProjectAlertConfigService(BaseService):
         'authorization.scope': 'PROJECT',
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
-    @check_required(['query', 'domain_id', 'user_projects'])
-    @append_query_filter(['domain_id'])
+    @check_required(['query', 'domain_id'])
+    @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['project_id'])
     def stat(self, params):
         """
