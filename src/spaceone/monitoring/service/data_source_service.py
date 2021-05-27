@@ -30,7 +30,6 @@ class DataSourceService(BaseService):
         Args:
             params (dict): {
                 'name': 'str',
-                'monitoring_type': 'str',
                 'plugin_info': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'
@@ -39,6 +38,7 @@ class DataSourceService(BaseService):
         Returns:
             data_source_vo (object)
         """
+
         domain_id = params['domain_id']
 
         if 'tags' in params:
