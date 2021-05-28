@@ -4,15 +4,13 @@ from spaceone.core.service import *
 from spaceone.core import utils
 
 from spaceone.monitoring.error import *
-from spaceone.monitoring.conf.global_conf import WEBHOOK_DOMAIN
 from spaceone.monitoring.model.webhook_model import Webhook
-from spaceone.monitoring.manager.identity_manager import IdentityManager
+from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.plugin_manager import PluginManager
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
 
 _LOGGER = logging.getLogger(__name__)
-_WEBHOOK_VERSION = 'v1'
 
 
 @authentication_handler
@@ -46,15 +44,15 @@ class WebhookService(BaseService):
         domain_id = params['domain_id']
         project_id = params['project_id']
 
-        identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+        project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
 
-        identity_mgr.get_project(project_id, domain_id)
+        project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
 
-        self._check_plugin_info(params['plugin_info'])
-        plugin_info = self._get_plugin(params['plugin_info'], domain_id)
-        params['capability'] = plugin_info.get('capability', {})
-
-        self._check_plugin_capability(params['capability'])
+        # self._check_plugin_info(params['plugin_info'])
+        # plugin_info = self._get_plugin(params['plugin_info'], domain_id)
+        # params['capability'] = plugin_info.get('capability', {})
+        #
+        # self._check_plugin_capability(params['capability'])
 
         # Init Plugin
         # plugin_metadata = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
@@ -295,7 +293,7 @@ class WebhookService(BaseService):
 
     @staticmethod
     def _make_webhook_url(access_key):
-        return f'{WEBHOOK_DOMAIN}/{_WEBHOOK_VERSION}/{access_key}/enqueue'
+        return f'/monitoring/v1/{access_key}/events'
 
     @staticmethod
     def _check_plugin_capability(capability):

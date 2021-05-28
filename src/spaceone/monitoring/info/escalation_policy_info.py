@@ -48,5 +48,5 @@ def EscalationPolicyInfo(escalation_policy_vo: EscalationPolicy, minimal=False):
 
 
 def EscalationPoliciesInfo(escalation_policy_vos, total_count, **kwargs):
-    return escalation_policy_pb2.EscalationPolicyInfo(results=list(
+    return escalation_policy_pb2.EscalationPoliciesInfo(results=list(
         map(functools.partial(EscalationPolicyInfo, **kwargs), escalation_policy_vos)), total_count=total_count)

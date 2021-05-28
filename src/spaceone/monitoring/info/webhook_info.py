@@ -2,6 +2,7 @@ import functools
 from spaceone.api.monitoring.v1 import webhook_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.core import utils
+from spaceone.core import config
 from spaceone.monitoring.model.webhook_model import Webhook
 
 __all__ = ['WebhookInfo', 'WebhooksInfo']
@@ -22,11 +23,16 @@ def PluginInfo(vo):
 
 
 def WebhookInfo(webhook_vo: Webhook, minimal=False):
+    if webhook_vo.webhook_url:
+        webhook_url = f'{config.get_global("WEBHOOK_DOMAIN")}{webhook_vo.webhook_url}'
+    else:
+        webhook_url = None
+
     info = {
         'webhook_id': webhook_vo.webhook_id,
         'name': webhook_vo.name,
         'state': webhook_vo.state,
-        'webhook_url': webhook_vo.webhook_url,
+        'webhook_url': webhook_url,
         'project_id': webhook_vo.project_id
     }
 
