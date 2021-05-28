@@ -2,7 +2,7 @@ import logging
 
 from spaceone.core.service import *
 from spaceone.monitoring.model.maintenance_window_model import MaintenanceWindow
-from spaceone.monitoring.manager.identity_manager import IdentityManager
+from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.maintenance_window_manager import MaintenanceWindowManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class MaintenanceWindowService(BaseService):
 
         params['created_by'] = self.transaction.get_meta('user_id')
 
-        identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+        project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
 
         # Check projects and user permissions
 
@@ -77,7 +77,7 @@ class MaintenanceWindowService(BaseService):
         maintenance_window_vo = self.maintenance_window_mgr.get_maintenance_window(maintenance_window_id, domain_id)
 
         if projects:
-            identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+            project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
 
             # Check projects and user permissions
 
