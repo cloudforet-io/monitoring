@@ -45,7 +45,8 @@ class AlertService(BaseService):
 
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
 
-        project_alert_config_vo: ProjectAlertConfig = project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+        project_alert_config_vo: ProjectAlertConfig = project_alert_config_mgr.get_project_alert_config(project_id,
+                                                                                                        domain_id)
         escalation_policy_vo: EscalationPolicy = project_alert_config_vo.escalation_policy
 
         params['escalation_policy_id'] = escalation_policy_vo.escalation_policy_id
@@ -106,6 +107,11 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
+        if alert_vo.state == params['state']:
+            raise
+
+        params['status_message'] = params.get('status_message', '')
+
         return self.alert_mgr.update_alert_by_vo(params, alert_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
@@ -148,6 +154,8 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
+        # Check end_times
+
         params['is_snoozed'] = True
         params['snoozed_end_time'] = params['end_time']
 
@@ -169,6 +177,8 @@ class AlertService(BaseService):
         Returns:
             alert_vo (object)
         """
+
+        # Check resource_type and resource_id
 
         return self.alert_mgr.add_responder(params)
 

@@ -1,6 +1,7 @@
 import logging
 
 from spaceone.core.service import *
+from spaceone.monitoring.error.maintenance_window import *
 from spaceone.monitoring.model.maintenance_window_model import MaintenanceWindow
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.maintenance_window_manager import MaintenanceWindowManager
@@ -75,6 +76,9 @@ class MaintenanceWindowService(BaseService):
         projects = params.get('projects')
 
         maintenance_window_vo = self.maintenance_window_mgr.get_maintenance_window(maintenance_window_id, domain_id)
+
+        if maintenance_window_vo.state == 'CLOSED':
+            raise ERROR_CLOSED_MAINTENANCE_WINDOW(maintenance_window_id=maintenance_window_id)
 
         if projects:
             project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
