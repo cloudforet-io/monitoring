@@ -1,9 +1,13 @@
+import copy
 import logging
 
+from spaceone.core import cache
 from spaceone.core.service import *
+from spaceone.monitoring.error.escalation_policy import *
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
+from spaceone.monitoring.conf.default_escalation_policy import DEFAULT_ESCALATION_POLICY
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +45,7 @@ class EscalationPolicyService(BaseService):
             escalation_policy_vo (object)
         """
 
-        project_id = params['project_id']
+        project_id = params.get('project_id')
         domain_id = params['domain_id']
 
         identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
@@ -95,7 +99,19 @@ class EscalationPolicyService(BaseService):
             escalation_policy_vo (object)
         """
 
-        return self.escalation_policy_mgr.set_default_escalation_policy(params)
+        escalation_policy_id = params['escalation_policy_id']
+        domain_id = params['domain_id']
+
+        escalation_policy_vo: EscalationPolicy = self.escalation_policy_mgr.get_escalation_policy(escalation_policy_id,
+                                                                                                  domain_id)
+
+        if escalation_policy_vo.scope != 'GLOBAL':
+            raise ERROR_INVALID_ESCALATION_POLICY_SCOPE(escalation_policy_id=escalation_policy_id)
+
+        if escalation_policy_vo.is_default:
+            return escalation_policy_vo
+        else:
+            return self.escalation_policy_mgr.set_default_escalation_policy(params, escalation_policy_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['escalation_policy_id', 'domain_id'])
@@ -162,6 +178,7 @@ class EscalationPolicyService(BaseService):
             total_count
         """
 
+        self._create_default_escalation_policy(params['domain_id'])
         query = params.get('query', {})
         return self.escalation_policy_mgr.list_escalation_policies(query)
 
@@ -188,3 +205,24 @@ class EscalationPolicyService(BaseService):
 
         query = params.get('query', {})
         return self.escalation_policy_mgr.stat_escalation_policies(query)
+
+    @cache.cacheable(key='escalation-policy:{domain_id}:default:init', expire=300)
+    def _create_default_escalation_policy(self, domain_id):
+        query = {
+            'count_only': True,
+            'filter': [
+                {
+                    'k': 'domain_id',
+                    'v': domain_id,
+                    'o': 'eq'
+                }
+            ]
+        }
+        escalation_policy_vos, total_count = self.escalation_policy_mgr.list_escalation_policies(query)
+        if total_count == 0:
+            default_escalation_policy = copy.deepcopy(DEFAULT_ESCALATION_POLICY)
+            default_escalation_policy['domain_id'] = domain_id
+
+            self.escalation_policy_mgr.create_escalation_policy(default_escalation_policy)
+
+        return True

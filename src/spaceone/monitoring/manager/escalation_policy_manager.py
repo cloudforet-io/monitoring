@@ -1,6 +1,7 @@
 import copy
 import logging
 
+from spaceone.monitoring.error.escalation_policy import *
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.conf.default_escalation_policy import DEFAULT_ESCALATION_POLICY
@@ -41,17 +42,14 @@ class EscalationPolicyManager(BaseManager):
 
         return escalation_policy_vo.update(params)
 
-    def set_default_escalation_policy(self, params):
-        escalation_policy_vos = self.escalation_policy_model.get(domain_id=params['domain_id'])
-        updated_escalation_policy_vo = None
-        for escalation_policy_vo in escalation_policy_vos:
-            if params['escalation_policy_id'] == escalation_policy_vo.escalation_policy_id:
-                escalation_policy_vo.update({'is_default': True})
-                updated_escalation_policy_vo = escalation_policy_vo
-            else:
-                escalation_policy_vo.update({'is_default': False})
+    def set_default_escalation_policy(self, params, escalation_policy_vo):
+        global_escalation_policy_vos = self.escalation_policy_model.filter(domain_id=params['domain_id'],
+                                                                           scope='GLOBAL')
 
-        return updated_escalation_policy_vo
+        for global_escalation_policy_vo in global_escalation_policy_vos:
+            global_escalation_policy_vo.update({'is_default': False})
+
+        return escalation_policy_vo.update({'is_default': True})
 
     def get_default_escalation_policy(self, domain_id):
         escalation_policy_vos = self.escalation_policy_model.get(is_default=True, domain_id=domain_id)
@@ -64,6 +62,10 @@ class EscalationPolicyManager(BaseManager):
 
     def delete_escalation_policy(self, escalation_policy_id, domain_id):
         escalation_policy_vo: EscalationPolicy = self.get_escalation_policy(escalation_policy_id, domain_id)
+
+        if escalation_policy_vo.is_default:
+            raise ERROR_DEFAULT_ESCALATION_POLICY_NOT_ALLOW_DELETION(escalation_policy_id=escalation_policy_id)
+
         escalation_policy_vo.delete()
 
     def get_escalation_policy(self, escalation_policy_id, domain_id, only=None):
