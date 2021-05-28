@@ -52,7 +52,7 @@ class EscalationPolicyManager(BaseManager):
         return escalation_policy_vo.update({'is_default': True})
 
     def get_default_escalation_policy(self, domain_id):
-        escalation_policy_vos = self.escalation_policy_model.get(is_default=True, domain_id=domain_id)
+        escalation_policy_vos = self.escalation_policy_model.filter(is_default=True, domain_id=domain_id)
         if escalation_policy_vos.count() > 0:
             return escalation_policy_vos[0]
         else:

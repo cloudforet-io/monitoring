@@ -12,7 +12,6 @@ from spaceone.monitoring.manager.plugin_manager import PluginManager
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
 
 _LOGGER = logging.getLogger(__name__)
-_WEBHOOK_VERSION = 'v1'
 
 
 @authentication_handler
@@ -295,7 +294,7 @@ class WebhookService(BaseService):
 
     @staticmethod
     def _make_webhook_url(access_key):
-        return f'{WEBHOOK_DOMAIN}/{_WEBHOOK_VERSION}/{access_key}/enqueue'
+        return f'{WEBHOOK_DOMAIN}/monitoring/v1/{access_key}/events'
 
     @staticmethod
     def _check_plugin_capability(capability):

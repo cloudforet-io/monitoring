@@ -1,6 +1,7 @@
 import logging
 
 from spaceone.core.service import *
+from spaceone.monitoring.error import *
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
@@ -46,7 +47,12 @@ class ProjectAlertConfigService(BaseService):
         identity_mgr.get_project(project_id, domain_id)
 
         if escalation_policy_id:
-            params['escalation_policy'] = escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
+            escalation_policy_vo = escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
+            if escalation_policy_vo.scope == 'PROJECT' and escalation_policy_vo.project_id != project_id:
+                raise ERROR_INVALID_ESCALATION_POLICY(escalation_policy_id=escalation_policy_id)
+
+            params['escalation_policy'] = escalation_policy_vo
+
         else:
             escalation_policy_vo = escalation_policy_mgr.get_default_escalation_policy(domain_id)
             params['escalation_policy_id'] = escalation_policy_vo.escalation_policy_id
@@ -79,7 +85,11 @@ class ProjectAlertConfigService(BaseService):
 
         if escalation_policy_id:
             escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager('EscalationPolicyManager')
-            params['escalation_policy'] = escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
+            escalation_policy_vo = escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
+            if escalation_policy_vo.scope == 'PROJECT' and escalation_policy_vo.project_id != project_id:
+                raise ERROR_INVALID_ESCALATION_POLICY(escalation_policy_id=escalation_policy_id)
+
+            params['escalation_policy'] = escalation_policy_vo
 
         return self.project_alert_config_mgr.update_project_alert_config_by_vo(params, project_alert_config_vo)
 
@@ -102,6 +112,7 @@ class ProjectAlertConfigService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_id', 'domain_id'])
+    @change_only_key({'escalation_policy_info': 'escalation_policy'})
     def get(self, params):
         """ Get project alert configuration
 
@@ -123,6 +134,7 @@ class ProjectAlertConfigService(BaseService):
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
     @check_required(['domain_id'])
+    @change_only_key({'escalation_policy_info': 'escalation_policy'}, key_path='query.only')
     @append_query_filter(['project_id', 'escalation_policy_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['project_id'])
     def list(self, params):

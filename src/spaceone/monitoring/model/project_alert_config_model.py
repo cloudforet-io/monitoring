@@ -13,7 +13,7 @@ class NotificationOptions(EmbeddedDocument):
 
 class ProjectAlertConfig(MongoModel):
     project_id = StringField(max_length=40, unique=True)
-    notification_options = EmbeddedDocumentField(NotificationOptions, required=True)
+    notification_options = EmbeddedDocumentField(NotificationOptions, default=NotificationOptions)
     escalation_policy = ReferenceField('EscalationPolicy', reverse_delete_rule=DENY)
     escalation_policy_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
