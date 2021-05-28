@@ -4,7 +4,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class Note(MongoModel):
-    note_id = StringField(max_length=40, generate_id='mw', unique=True)
+    note_id = StringField(max_length=40, generate_id='note', unique=True)
     note = StringField()
     alert_id = StringField(max_length=40)
     alert = ReferenceField('Alert', reverse_delete_rule=CASCADE)
