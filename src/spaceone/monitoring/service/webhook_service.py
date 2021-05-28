@@ -4,7 +4,6 @@ from spaceone.core.service import *
 from spaceone.core import utils
 
 from spaceone.monitoring.error import *
-from spaceone.monitoring.conf.global_conf import WEBHOOK_DOMAIN
 from spaceone.monitoring.model.webhook_model import Webhook
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
@@ -294,7 +293,7 @@ class WebhookService(BaseService):
 
     @staticmethod
     def _make_webhook_url(access_key):
-        return f'{WEBHOOK_DOMAIN}/monitoring/v1/{access_key}/events'
+        return f'/monitoring/v1/{access_key}/events'
 
     @staticmethod
     def _check_plugin_capability(capability):
