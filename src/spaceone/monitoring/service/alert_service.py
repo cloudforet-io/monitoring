@@ -69,6 +69,7 @@ class AlertService(BaseService):
                 'description': 'str',
                 'assignee': 'str',
                 'urgency': 'str',
+                'project_id': 'str',
                 'domain_id': 'str'
             }
 
@@ -78,6 +79,18 @@ class AlertService(BaseService):
         
         alert_id = params['alert_id']
         domain_id = params['domain_id']
+        project_id = params.get('project_id')
+
+        if project_id:
+            project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
+
+            project_alert_config_vo: ProjectAlertConfig = project_alert_config_mgr.get_project_alert_config(project_id,
+                                                                                                            domain_id)
+            escalation_policy_vo: EscalationPolicy = project_alert_config_vo.escalation_policy
+
+            params['escalation_policy_id'] = escalation_policy_vo.escalation_policy_id
+            params['escalation_ttl'] = escalation_policy_vo.repeat_count
+            params['escalation_level'] = 1
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 

@@ -8,7 +8,7 @@ class Note(MongoModel):
     note = StringField()
     alert_id = StringField(max_length=40)
     alert = ReferenceField('Alert', reverse_delete_rule=CASCADE)
-    user_id = StringField(max_length=40)
+    created_by = StringField(max_length=40)
     project_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
@@ -22,7 +22,7 @@ class Note(MongoModel):
             'note_id',
             'note',
             'alert_id',
-            'user_id'
+            'created_by'
         ],
         'change_query_keys': {
             'user_projects': 'project_id'
@@ -33,7 +33,7 @@ class Note(MongoModel):
         'indexes': [
             'note_id',
             'alert_id',
-            'user_id',
+            'created_by',
             'domain_id'
         ]
     }

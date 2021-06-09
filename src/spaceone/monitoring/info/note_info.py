@@ -11,6 +11,7 @@ def NoteInfo(note_vo: Note, minimal=False):
         'note_id': note_vo.note_id,
         'note': note_vo.note,
         'alert_id': note_vo.alert_id,
+        'created_by': note_vo.created_by,
     }
 
     if not minimal:
