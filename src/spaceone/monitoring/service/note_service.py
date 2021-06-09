@@ -41,7 +41,7 @@ class NoteService(BaseService):
 
         params['alert'] = alert_vo
         params['project_id'] = alert_vo.project_id
-        params['user_id'] = user_id
+        params['created_by'] = user_id
 
         return self.note_mgr.create_note(params)
 
@@ -110,7 +110,7 @@ class NoteService(BaseService):
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
     @check_required(['domain_id'])
-    @append_query_filter(['note_id', 'alert_id', 'user_id', 'project_id', 'domain_id', 'user_projects'])
+    @append_query_filter(['note_id', 'alert_id', 'created_by', 'project_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['note_id', 'note'])
     def list(self, params):
         """ List alert notes
@@ -119,7 +119,7 @@ class NoteService(BaseService):
             params (dict): {
                 'note_id': 'str',
                 'alert_id': 'str',
-                'user_id': 'str',
+                'created_by': 'str',
                 'project_id': 'str',
                 'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)',
