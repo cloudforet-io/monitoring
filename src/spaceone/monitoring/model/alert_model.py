@@ -48,6 +48,7 @@ class Alert(MongoModel):
             'escalation_ttl',
             'responders',
             'project_id',
+            'escalation_policy_id',
             'acknowledged_at',
             'resolved_at',
             'escalated_at'
