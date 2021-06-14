@@ -11,8 +11,8 @@ from spaceone.monitoring.manager.alert_manager import AlertManager
 _LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler
-@authorization_handler
+@authentication_handler(exclude=['update_state'])
+@authorization_handler(exclude=['update_state'])
 @mutation_handler
 @event_handler
 class AlertService(BaseService):
@@ -65,6 +65,7 @@ class AlertService(BaseService):
             params (dict): {
                 'alert_id': 'str',
                 'title': 'str',
+                'state': 'str',
                 'status_message': 'str',
                 'description': 'str',
                 'assignee': 'str',
@@ -98,34 +99,30 @@ class AlertService(BaseService):
 
         return self.alert_mgr.update_alert_by_vo(params, alert_vo)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['alert_id', 'state', 'domain_id'])
+    @transaction
+    @check_required(['alert_id', 'access_key', 'state'])
     def update_state(self, params):
         """Update alert state
 
         Args:
             params (dict): {
                 'alert_id': 'str',
-                'state': 'str',
-                'status_message': 'str',
-                'domain_id': 'str'
+                'access_key': 'str',
+                'state': 'str'
             }
 
         Returns:
             alert_vo (object)
         """
 
+        # Check Access Key
+
+        # Check State
+
         alert_id = params['alert_id']
-        domain_id = params['domain_id']
+        alert_vo = self.alert_mgr.get_alert_by_id(alert_id)
 
-        alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
-
-        if alert_vo.state == params['state']:
-            raise
-
-        params['status_message'] = params.get('status_message', '')
-
-        return self.alert_mgr.update_alert_by_vo(params, alert_vo)
+        return self.alert_mgr.update_alert_by_vo({'state': params['state']}, alert_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alerts', 'merge_to', 'domain_id'])
