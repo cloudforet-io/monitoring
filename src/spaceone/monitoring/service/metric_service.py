@@ -8,7 +8,7 @@ from spaceone.monitoring.error import *
 from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
-from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.manager.data_source_plugin_manager import DataSourcePluginManager
 
 _LOGGER = logging.getLogger(__name__)
 MAX_CONCURRENT_WORKER = [10, 5]
@@ -37,7 +37,7 @@ class MetricService(BaseService):
         self.inventory_mgr: InventoryManager = self.locator.get_manager('InventoryManager')
         self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
         self.data_source_mgr: DataSourceManager = self.locator.get_manager('DataSourceManager')
-        self.plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
+        self.ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'resource_type', 'resources', 'domain_id'])
@@ -71,7 +71,7 @@ class MetricService(BaseService):
         version = data_source_vo.plugin_info.version
 
         self._check_resource_type(plugin_metadata, resource_type)
-        self.plugin_mgr.initialize(plugin_id, version, domain_id)
+        self.ds_plugin_mgr.initialize(plugin_id, version, domain_id)
 
         response = {
             'metrics': None,
@@ -163,7 +163,7 @@ class MetricService(BaseService):
         version = data_source_vo.plugin_info.version
 
         self._check_resource_type(plugin_metadata, resource_type)
-        self.plugin_mgr.initialize(plugin_id, version, domain_id)
+        self.ds_plugin_mgr.initialize(plugin_id, version, domain_id)
 
         response = {
             'labels': [],
@@ -265,15 +265,15 @@ class MetricService(BaseService):
                             'resource_values': {}}
 
         try:
-            metric_data_info = self.plugin_mgr.get_metric_data(param.get('schema'),
-                                                               param.get('plugin_metadata'),
-                                                               param.get('secret_data'),
-                                                               param.get('resources'),
-                                                               param.get('metric'),
-                                                               param.get('start'),
-                                                               param.get('end'),
-                                                               param.get('period'),
-                                                               param.get('stat'))
+            metric_data_info = self.ds_plugin_mgr.get_metric_data(param.get('schema'),
+                                                                  param.get('plugin_metadata'),
+                                                                  param.get('secret_data'),
+                                                                  param.get('resources'),
+                                                                  param.get('metric'),
+                                                                  param.get('start'),
+                                                                  param.get('end'),
+                                                                  param.get('period'),
+                                                                  param.get('stat'))
 
         except Exception as e:
             print(e)
@@ -383,10 +383,10 @@ class MetricService(BaseService):
 
         if not is_invalid:
             try:
-                metrics_info = self.plugin_mgr.list_metrics(metric_param.get('schema'),
-                                                            plugin_metadata,
-                                                            metric_param.get('secret_data'),
-                                                            resource_info)
+                metrics_info = self.ds_plugin_mgr.list_metrics(metric_param.get('schema'),
+                                                               plugin_metadata,
+                                                               metric_param.get('secret_data'),
+                                                               resource_info)
 
                 metric_param.update({'metrics_info': metrics_info})
 

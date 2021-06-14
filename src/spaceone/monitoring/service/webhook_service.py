@@ -7,7 +7,7 @@ from spaceone.monitoring.error import *
 from spaceone.monitoring.model.webhook_model import Webhook
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
-from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,15 +48,14 @@ class WebhookService(BaseService):
 
         project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
 
-        # self._check_plugin_info(params['plugin_info'])
-        # plugin_info = self._get_plugin(params['plugin_info'], domain_id)
-        # params['capability'] = plugin_info.get('capability', {})
-        #
-        # self._check_plugin_capability(params['capability'])
+        self._check_plugin_info(params['plugin_info'])
+        plugin_info = self._get_plugin(params['plugin_info'], domain_id)
+        params['capability'] = plugin_info.get('capability', {})
 
-        # Init Plugin
-        # plugin_metadata = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
-        params['plugin_info']['metadata'] = {}
+        self._check_plugin_capability(params['capability'])
+
+        plugin_metadata = self._init_plugin(params['plugin_info'], domain_id)
+        params['plugin_info']['metadata'] = plugin_metadata
 
         webhook_vo: Webhook = self.webhook_mgr.create_webhook(params)
 
@@ -325,20 +324,20 @@ class WebhookService(BaseService):
 
         return plugin_info
 
-    def _init_plugin(self, plugin_info, monitoring_type, domain_id):
+    def _init_plugin(self, plugin_info, domain_id):
         plugin_id = plugin_info['plugin_id']
         version = plugin_info['version']
         options = plugin_info['options']
 
-        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        plugin_mgr.initialize(plugin_id, version, domain_id)
-        return plugin_mgr.init_plugin(options, monitoring_type)
+        webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
+        webhook_plugin_mgr.initialize(plugin_id, version, domain_id)
+        return webhook_plugin_mgr.init_plugin(options)
 
     def _verify_plugin(self, plugin_info, domain_id):
         plugin_id = plugin_info['plugin_id']
         version = plugin_info['version']
         options = plugin_info['options']
 
-        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        plugin_mgr.initialize(plugin_id, version, domain_id)
-        plugin_mgr.verify_plugin(options)
+        webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
+        webhook_plugin_mgr.initialize(plugin_id, version, domain_id)
+        webhook_plugin_mgr.verify_plugin(options)

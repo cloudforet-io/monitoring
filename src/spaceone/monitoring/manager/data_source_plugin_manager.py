@@ -3,44 +3,45 @@ import logging
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.error import *
 from spaceone.monitoring.connector.plugin_connector import PluginConnector
-from spaceone.monitoring.connector.monitoring_plugin_connector import MonitoringPluginConnector
+from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
 from spaceone.monitoring.model.plugin_metadata_model import MetricPluginMetadataModel, LogPluginMetadataModel
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class PluginManager(BaseManager):
+class DataSourcePluginManager(BaseManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.plugin_connector: PluginConnector = self.locator.get_connector('PluginConnector')
-        self.mp_connector: MonitoringPluginConnector = self.locator.get_connector('MonitoringPluginConnector')
+        self.dsp_connector: DataSourcePluginConnector = self.locator.get_connector('DataSourcePluginConnector')
 
     def initialize(self, plugin_id, version, domain_id):
         endpoint = self.plugin_connector.get_plugin_endpoint(plugin_id, version, domain_id)
         _LOGGER.debug(f'[init_plugin] endpoint: {endpoint}')
-        self.mp_connector.initialize(endpoint)
+        self.dsp_connector.initialize(endpoint)
 
     def init_plugin(self, options, monitoring_type):
-        plugin_info = self.mp_connector.init(options)
+        plugin_info = self.dsp_connector.init(options)
 
         _LOGGER.debug(f'[plugin_info] {plugin_info}')
         plugin_metadata = plugin_info.get('metadata', {})
 
         self._validate_plugin_metadata(plugin_metadata, monitoring_type)
+
         return plugin_metadata
 
     def verify_plugin(self, options, secret_data, schema):
-        self.mp_connector.verify(options, secret_data, schema)
+        self.dsp_connector.verify(options, secret_data, schema)
 
     def list_metrics(self, schema, options, secret_data, resource):
-        return self.mp_connector.list_metrics(schema, options, secret_data, resource)
+        return self.dsp_connector.list_metrics(schema, options, secret_data, resource)
 
     def get_metric_data(self, schema, options, secret_data, resource, *args):
-        return self.mp_connector.get_metric_data(schema, options, secret_data, resource, *args)
+        return self.dsp_connector.get_metric_data(schema, options, secret_data, resource, *args)
 
     def list_logs(self, schema, options, secret_data, resource, *args):
-        response_stream = self.mp_connector.list_logs(schema, options, secret_data, resource, *args)
+        response_stream = self.dsp_connector.list_logs(schema, options, secret_data, resource, *args)
 
         logs = []
         for result in self._process_stream(response_stream, return_resource_type='monitoring.Log'):

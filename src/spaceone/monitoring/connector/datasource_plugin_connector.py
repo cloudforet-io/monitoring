@@ -5,15 +5,14 @@ from google.protobuf.json_format import MessageToDict
 from spaceone.core.connector import BaseConnector
 from spaceone.core import pygrpc
 from spaceone.core.utils import parse_endpoint
-from pprint import pprint
 from spaceone.core.error import *
 
-__all__ = ['MonitoringPluginConnector']
+__all__ = ['DataSourcePluginConnector']
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class MonitoringPluginConnector(BaseConnector):
+class DataSourcePluginConnector(BaseConnector):
 
     def __init__(self, transaction, config):
         super().__init__(transaction, config)

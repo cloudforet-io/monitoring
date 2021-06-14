@@ -36,5 +36,6 @@ CONNECTORS = {
     },
     'DataSourcePluginConnector': {
     },
-
+    'WebhookPluginConnector': {
+    },
 }
