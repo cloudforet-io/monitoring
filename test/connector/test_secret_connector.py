@@ -16,6 +16,8 @@ class TestSecretConnector(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.monitoring')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         config_path = os.environ.get('TEST_CONFIG')
         test_config = utils.load_yaml_from_file(config_path)
 
@@ -45,6 +47,7 @@ class TestSecretConnector(unittest.TestCase):
 
         response = self.secret_connector.get_secret_data(secret_id, self.domain_id)
         print_data(response, 'test_get_secret_data')
+
 
 if __name__ == "__main__":
     unittest.main(testRunner=RichTestRunner)

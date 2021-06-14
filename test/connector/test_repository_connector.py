@@ -16,6 +16,8 @@ class TestRepositoryConnector(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.monitoring')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         config_path = os.environ.get('TEST_CONFIG')
         test_config = utils.load_yaml_from_file(config_path)
 
@@ -43,6 +45,7 @@ class TestRepositoryConnector(unittest.TestCase):
 
         response = self.repo_connector.get_plugin_versions(plugin_id, self.domain_id)
         print_data(response, 'test_get_plugin_versions')
+
 
 if __name__ == "__main__":
     unittest.main(testRunner=RichTestRunner)

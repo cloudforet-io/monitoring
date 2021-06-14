@@ -6,7 +6,7 @@ from spaceone.monitoring.error import *
 from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
-from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.manager.data_source_plugin_manager import DataSourcePluginManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -340,9 +340,9 @@ class DataSourceService(BaseService):
         version = plugin_info['version']
         options = plugin_info['options']
 
-        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        plugin_mgr.initialize(plugin_id, version, domain_id)
-        return plugin_mgr.init_plugin(options, monitoring_type)
+        ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
+        ds_plugin_mgr.initialize(plugin_id, version, domain_id)
+        return ds_plugin_mgr.init_plugin(options, monitoring_type)
 
     def _verify_plugin(self, plugin_info, capability, domain_id):
         plugin_id = plugin_info['plugin_id']
@@ -354,6 +354,6 @@ class DataSourceService(BaseService):
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
         secret_data, schema = secret_mgr.get_plugin_secret(plugin_id, secret_id, provider, capability, domain_id)
 
-        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        plugin_mgr.initialize(plugin_id, version, domain_id)
-        plugin_mgr.verify_plugin(options, secret_data, schema)
+        ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
+        ds_plugin_mgr.initialize(plugin_id, version, domain_id)
+        ds_plugin_mgr.verify_plugin(options, secret_data, schema)

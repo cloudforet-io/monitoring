@@ -7,7 +7,7 @@ from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
-from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.manager.data_source_plugin_manager import DataSourcePluginManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class LogService(BaseService):
         self.inventory_mgr: InventoryManager = self.locator.get_manager('InventoryManager')
         self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
         self.data_source_mgr: DataSourceManager = self.locator.get_manager('DataSourceManager')
-        self.plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
+        self.ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'resource_type', 'resource_id', 'domain_id'])
@@ -65,7 +65,7 @@ class LogService(BaseService):
 
         self._check_resource_type(plugin_metadata, resource_type)
 
-        self.plugin_mgr.initialize(plugin_id, version, domain_id)
+        self.ds_plugin_mgr.initialize(plugin_id, version, domain_id)
 
         plugin_filter = {}
 
@@ -75,9 +75,9 @@ class LogService(BaseService):
 
         secret_data, schema = self._get_secret_data(resource_id, resource_type, resource_info, data_source_vo, domain_id)
 
-        logs_info = self.plugin_mgr.list_logs(schema, plugin_options, secret_data, resource_info, plugin_filter,
-                                              params.get('start'), params.get('end'), params.get('sort', {}),
-                                              params.get('limit', 100))
+        logs_info = self.ds_plugin_mgr.list_logs(schema, plugin_options, secret_data, resource_info, plugin_filter,
+                                                 params.get('start'), params.get('end'), params.get('sort', {}),
+                                                 params.get('limit', 100))
 
         return {
             'logs': logs_info['logs'],

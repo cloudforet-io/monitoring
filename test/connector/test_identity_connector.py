@@ -16,6 +16,8 @@ class TestIdentityConnector(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.monitoring')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         config_path = os.environ.get('TEST_CONFIG')
         test_config = utils.load_yaml_from_file(config_path)
 

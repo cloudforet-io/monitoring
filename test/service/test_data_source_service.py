@@ -11,7 +11,7 @@ from spaceone.core.transaction import Transaction
 from spaceone.monitoring.error import *
 from spaceone.monitoring.service.data_source_service import DataSourceService
 from spaceone.monitoring.model.data_source_model import DataSource
-from spaceone.monitoring.connector.monitoring_plugin_connector import MonitoringPluginConnector
+from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
 from spaceone.monitoring.connector.plugin_connector import PluginConnector
 from spaceone.monitoring.connector.repository_connector import RepositoryConnector
 from spaceone.monitoring.connector.secret_connector import SecretConnector
@@ -25,6 +25,8 @@ class TestDataSourceService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.monitoring')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         connect('test', host='mongomock://localhost')
 
         cls.domain_id = utils.generate_id('domain')
@@ -39,24 +41,22 @@ class TestDataSourceService(unittest.TestCase):
         super().tearDownClass()
         disconnect()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def tearDown(self, *args) -> None:
         print()
         print('(tearDown) ==> Delete all data_sources')
         data_source_vos = DataSource.objects.filter()
         data_source_vos.delete()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(RepositoryConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(MonitoringPluginConnector, 'initialize', return_value=None)
+    @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'init')
+    @patch.object(DataSourcePluginConnector, 'init')
     def test_register_metric_data_source_with_secret_id(self, mock_plugin_verify, mock_list_secrets,
                                                         mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
@@ -113,17 +113,16 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(RepositoryConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(MonitoringPluginConnector, 'initialize', return_value=None)
+    @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'init')
+    @patch.object(DataSourcePluginConnector, 'init')
     def test_register_metric_data_source_with_provider(self, mock_plugin_init, mock_list_secrets,
                                                        mock_get_plugin, *args):
         plugin_id = utils.generate_id('plugin')
@@ -180,14 +179,13 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(MonitoringPluginConnector, 'initialize', return_value=None)
+    @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'init')
+    @patch.object(DataSourcePluginConnector, 'init')
     def test_update_data_source(self, mock_plugin_init, mock_list_secrets, *args):
         mock_plugin_init.return_value = {
             'metadata': {
@@ -232,7 +230,6 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(params['name'], data_source_vo.name)
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_enable_data_source(self, *args):
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id, state='DISABLED')
         params = {
@@ -251,7 +248,6 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
         self.assertEqual('ENABLED', data_source_vo.state)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_disable_data_source(self, *args):
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id, state='ENABLED')
         params = {
@@ -270,7 +266,6 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
         self.assertEqual('DISABLED', data_source_vo.state)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_deregister_data_source(self, *args):
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
         params = {
@@ -284,7 +279,6 @@ class TestDataSourceService(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_get_data_source(self, *args):
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
         params = {
@@ -301,7 +295,6 @@ class TestDataSourceService(unittest.TestCase):
 
         self.assertIsInstance(data_source_vo, DataSource)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_data_sources_by_data_source_id(self, *args):
         data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), data_source_vos))
@@ -320,7 +313,6 @@ class TestDataSourceService(unittest.TestCase):
         self.assertIsInstance(data_sources_vos[0], DataSource)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_data_sources_by_name(self, *args):
         data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), data_source_vos))
@@ -339,7 +331,6 @@ class TestDataSourceService(unittest.TestCase):
         self.assertIsInstance(data_sources_vos[0], DataSource)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_data_sources_by_monitoring_type(self, *args):
         data_source_vos = DataSourceFactory.build_batch(10, monitoring_type='METRIC', domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), data_source_vos))
@@ -358,7 +349,6 @@ class TestDataSourceService(unittest.TestCase):
         self.assertIsInstance(data_sources_vos[0], DataSource)
         self.assertEqual(total_count, 10)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_data_sources_by_tag(self, *args):
         DataSourceFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
         data_source_vos = DataSourceFactory.build_batch(9, domain_id=self.domain_id)
@@ -384,7 +374,6 @@ class TestDataSourceService(unittest.TestCase):
         self.assertIsInstance(data_sources_vos[0], DataSource)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_data_source(self, *args):
         data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), data_source_vos))
@@ -419,7 +408,6 @@ class TestDataSourceService(unittest.TestCase):
 
         print_data(values, 'test_stat_data_source')
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_data_source_distinct(self, *args):
         data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), data_source_vos))

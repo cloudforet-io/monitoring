@@ -14,7 +14,7 @@ from spaceone.monitoring.error import *
 from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.service.metric_service import MetricService
 from spaceone.monitoring.connector.inventory_connector import InventoryConnector
-from spaceone.monitoring.connector.monitoring_plugin_connector import MonitoringPluginConnector
+from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
 from spaceone.monitoring.connector.plugin_connector import PluginConnector
 from spaceone.monitoring.connector.secret_connector import SecretConnector
 from spaceone.monitoring.info.metric_info import *
@@ -26,6 +26,8 @@ class TestMetricService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.monitoring')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         connect('test', host='mongomock://localhost')
 
         cls.domain_id = utils.generate_id('domain')
@@ -40,7 +42,6 @@ class TestMetricService(unittest.TestCase):
         super().tearDownClass()
         disconnect()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def tearDown(self, *args) -> None:
         print()
         print('(tearDown) ==> Delete all data_sources')
@@ -50,16 +51,15 @@ class TestMetricService(unittest.TestCase):
     def _new_iter(self):
         return
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(InventoryConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(MonitoringPluginConnector, 'initialize', return_value=None)
+    @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(InventoryConnector, 'list_servers')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'list_metrics')
+    @patch.object(DataSourcePluginConnector, 'list_metrics')
     def test_list_metrics(self, mock_list_metrics, mock_list_secrets, mock_list_servers, *args):
         server_id_1 = utils.generate_id('server')
         server_id_2 = utils.generate_id('server')
@@ -126,16 +126,15 @@ class TestMetricService(unittest.TestCase):
 
         self.assertEqual(params['domain_id'], metrics_info['domain_id'])
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(InventoryConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(MonitoringPluginConnector, 'initialize', return_value=None)
+    @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(InventoryConnector, 'list_servers')
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'get_metric_data')
+    @patch.object(DataSourcePluginConnector, 'get_metric_data')
     def test_get_metric_data(self, mock_get_metric_data, mock_list_secrets, mock_list_servers, *args):
         server_id_1 = utils.generate_id('server')
         server_id_2 = utils.generate_id('server')
