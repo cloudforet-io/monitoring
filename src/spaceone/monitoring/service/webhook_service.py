@@ -52,8 +52,6 @@ class WebhookService(BaseService):
         plugin_info = self._get_plugin(params['plugin_info'], domain_id)
         params['capability'] = plugin_info.get('capability', {})
 
-        self._check_plugin_capability(params['capability'])
-
         plugin_metadata = self._init_plugin(params['plugin_info'], domain_id)
         params['plugin_info']['metadata'] = plugin_metadata
 
@@ -296,11 +294,6 @@ class WebhookService(BaseService):
     @staticmethod
     def _make_webhook_url(webhook_id, access_key):
         return f'/monitoring/v1/webhook/{webhook_id}/{access_key}/events'
-
-    @staticmethod
-    def _check_plugin_capability(capability):
-        if 'supported_schema' not in capability:
-            raise ERROR_WRONG_PLUGIN_SETTINGS(key='capability.supported_schema')
 
     @staticmethod
     def _check_plugin_info(plugin_info_params):
