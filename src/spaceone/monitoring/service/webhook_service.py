@@ -57,10 +57,16 @@ class WebhookService(BaseService):
         # Init Plugin
         # plugin_metadata = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
         params['plugin_info']['metadata'] = {}
-        params['access_key'] = self._generate_access_key()
-        params['webhook_url'] = self._make_webhook_url(params['access_key'])
 
-        return self.webhook_mgr.create_webhook(params)
+        webhook_vo: Webhook = self.webhook_mgr.create_webhook(params)
+
+        access_key = self._generate_access_key()
+        webhook_url = self._make_webhook_url(webhook_vo.webhook_id, access_key)
+
+        return self.webhook_mgr.update_webhook_by_vo({
+            'access_key': access_key,
+            'webhook_url': webhook_url
+        }, webhook_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['webhook_id', 'domain_id'])
@@ -165,8 +171,6 @@ class WebhookService(BaseService):
 
         # Verify Plugin
         # self._verify_plugin(webhook_vo.plugin_info, domain_id)
-
-        return {'status': True}
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['webhook_id', 'domain_id'])
@@ -292,8 +296,8 @@ class WebhookService(BaseService):
         return utils.random_string(16)
 
     @staticmethod
-    def _make_webhook_url(access_key):
-        return f'/monitoring/v1/{access_key}/events'
+    def _make_webhook_url(webhook_id, access_key):
+        return f'/monitoring/v1/webhook/{webhook_id}/{access_key}/events'
 
     @staticmethod
     def _check_plugin_capability(capability):

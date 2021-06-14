@@ -31,6 +31,8 @@ class Webhook(MongoModel):
         'updatable_fields': [
             'name',
             'state',
+            'access_key',
+            'webhook_url',
             'capability',
             'plugin_info',
             'tags'
