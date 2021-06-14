@@ -1,19 +1,20 @@
 import functools
 from spaceone.api.monitoring.v1 import project_alert_config_pb2
 from spaceone.core import utils
-from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig, NotificationOptions
+from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig, AlertOptions
 from spaceone.monitoring.info.escalation_policy_info import EscalationPolicyInfo
 
 __all__ = ['ProjectAlertConfigInfo', 'ProjectAlertConfigsInfo']
 
 
-def NotificationOptionsInfo(vo: NotificationOptions):
+def AlertOptionsInfo(vo: AlertOptions):
     if vo:
         info = {
-            'urgency': vo.urgency
+            'notification_urgency': vo.notification_urgency,
+            'auto_recovery': vo.auto_recovery,
         }
 
-        return project_alert_config_pb2.NotificationOptions(**info)
+        return project_alert_config_pb2.AlertOptions(**info)
     else:
         return None
 
@@ -21,7 +22,7 @@ def NotificationOptionsInfo(vo: NotificationOptions):
 def ProjectAlertConfigInfo(project_alert_config_vo: ProjectAlertConfig, minimal=False):
     info = {
         'project_id': project_alert_config_vo.project_id,
-        'notification_options': NotificationOptionsInfo(project_alert_config_vo.notification_options)
+        'options': AlertOptionsInfo(project_alert_config_vo.options)
     }
 
     if not minimal:
