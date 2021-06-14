@@ -4,8 +4,9 @@ from spaceone.core.model.mongo_model import MongoModel
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 
 
-class NotificationOptions(EmbeddedDocument):
-    urgency = StringField(max_length=20, default='ALL', choices=('ALL', 'HIGH_ONLY'))
+class AlertOptions(EmbeddedDocument):
+    notification_urgency = StringField(max_length=20, default='ALL', choices=('ALL', 'HIGH_ONLY'))
+    auto_recovery = BooleanField(default=False)
 
     def to_dict(self):
         return self.to_mongo()
@@ -13,7 +14,7 @@ class NotificationOptions(EmbeddedDocument):
 
 class ProjectAlertConfig(MongoModel):
     project_id = StringField(max_length=40, unique=True)
-    notification_options = EmbeddedDocumentField(NotificationOptions, default=NotificationOptions)
+    options = EmbeddedDocumentField(AlertOptions, default=AlertOptions)
     escalation_policy = ReferenceField('EscalationPolicy', reverse_delete_rule=DENY)
     escalation_policy_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
@@ -21,13 +22,13 @@ class ProjectAlertConfig(MongoModel):
 
     meta = {
         'updatable_fields': [
-            'notification_options',
+            'options',
             'escalation_policy',
             'escalation_policy_id'
         ],
         'minimal_fields': [
             'project_id',
-            'notification_options'
+            'options'
         ],
         'change_query_keys': {
             'user_projects': 'project_id'

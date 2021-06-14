@@ -29,7 +29,7 @@ class ProjectAlertConfigService(BaseService):
             params (dict): {
                 'project_id': 'str',
                 'escalation_policy_id': 'str',
-                'notification_options': 'dict',
+                'options': 'dict',
                 'domain_id': 'str'
             }
 
@@ -69,7 +69,7 @@ class ProjectAlertConfigService(BaseService):
             params (dict): {
                 'project_id': 'str',
                 'escalation_policy_id': 'dict',
-                'notification_options': 'dict',
+                'options': 'dict',
                 'domain_id': 'str'
             }
 

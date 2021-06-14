@@ -1,6 +1,7 @@
 import logging
 
 from spaceone.core.manager import BaseManager
+from spaceone.monitoring.error.project_alert_config import *
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,7 +44,12 @@ class ProjectAlertConfigManager(BaseManager):
         project_alert_config_vo.delete()
 
     def get_project_alert_config(self, project_id, domain_id, only=None):
-        return self.project_alert_config_model.get(project_id=project_id, domain_id=domain_id, only=only)
+        try:
+            return self.project_alert_config_model.get(project_id=project_id, domain_id=domain_id, only=only)
+        except ERROR_NOT_FOUND as e:
+            raise ERROR_ALERT_FEATURE_IS_NOT_ACTIVATED(project_id=project_id)
+        except Exception as e:
+            raise e
 
     def list_project_alert_configs(self, query={}):
         return self.project_alert_config_model.query(**query)
