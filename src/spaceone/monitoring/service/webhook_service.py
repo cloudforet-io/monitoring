@@ -168,8 +168,7 @@ class WebhookService(BaseService):
         domain_id = params['domain_id']
         webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id)
 
-        # Verify Plugin
-        # self._verify_plugin(webhook_vo.plugin_info, domain_id)
+        self._verify_plugin(webhook_vo.plugin_info, domain_id)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['webhook_id', 'domain_id'])
@@ -204,8 +203,8 @@ class WebhookService(BaseService):
             repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
             plugin_info['version'] = version
-            metadata = self._init_plugin(webhook_dict['plugin_info'], webhook_vo.monitoring_type, domain_id)
-            plugin_info['metadata'] = metadata
+            plugin_metadata = self._init_plugin(webhook_dict['plugin_info'], domain_id)
+            plugin_info['metadata'] = plugin_metadata
 
         if options or options == {}:
             # Overwriting
