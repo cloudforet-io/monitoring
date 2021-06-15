@@ -25,6 +25,20 @@ def RespondersInfo(vos: List[Responder]):
         return None
 
 
+def AlertResourceInfo(vo):
+    if vo:
+        info = {
+            'resource_id': vo.resource_id,
+            'resource_type': vo.resource_type,
+            'name': vo.name,
+            'ip_address': vo.ip_address
+        }
+
+        return alert_pb2.AlertResource(**info)
+    else:
+        return None
+
+
 def AlertInfo(alert_vo: Alert, minimal=False):
     info = {
         'alert_number': alert_vo.alert_number,
@@ -34,7 +48,7 @@ def AlertInfo(alert_vo: Alert, minimal=False):
         'status_message': alert_vo.status_message,
         'assignee': alert_vo.assignee,
         'urgency': alert_vo.urgency,
-        'escalation_level': alert_vo.escalation_level,
+        'escalation_step': alert_vo.escalation_step,
         'project_id': alert_vo.project_id
     }
 
@@ -42,10 +56,13 @@ def AlertInfo(alert_vo: Alert, minimal=False):
         info.update({
             'description': alert_vo.description,
             'severity': alert_vo.severity,
+            'rule': alert_vo.rule,
+            'resource': AlertResourceInfo(alert_vo.resource),
             'is_snoozed': alert_vo.is_snoozed,
             'snoozed_end_time': utils.datetime_to_iso8601(alert_vo.snoozed_end_time),
             'escalation_ttl': alert_vo.escalation_ttl,
             'responders': RespondersInfo(alert_vo.responders),
+            'project_dependencies': alert_vo.project_dependencies,
             'webhook_id': alert_vo.webhook_id,
             'escalation_policy_id': alert_vo.escalation_policy_id,
             'domain_id': alert_vo.domain_id,
