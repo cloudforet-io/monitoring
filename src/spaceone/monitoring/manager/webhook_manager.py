@@ -45,6 +45,9 @@ class WebhookManager(BaseManager):
     def get_webhook(self, webhook_id, domain_id, only=None):
         return self.webhook_model.get(webhook_id=webhook_id, domain_id=domain_id, only=only)
 
+    def get_webhook_by_id(self, webhook_id):
+        return self.webhook_model.get(webhook_id=webhook_id)
+
     def list_webhooks(self, query={}):
         return self.webhook_model.query(**query)
 
