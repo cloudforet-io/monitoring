@@ -6,3 +6,4 @@ from spaceone.monitoring.model.webhook_model import Webhook
 from spaceone.monitoring.model.maintenance_window_model import MaintenanceWindow
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.note_model import Note
+from spaceone.monitoring.model.event_model import Event

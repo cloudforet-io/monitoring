@@ -8,3 +8,4 @@ from spaceone.monitoring.info.webhook_info import *
 from spaceone.monitoring.info.maintenance_window_info import *
 from spaceone.monitoring.info.alert_info import *
 from spaceone.monitoring.info.note_info import *
+from spaceone.monitoring.info.event_info import *

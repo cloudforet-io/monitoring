@@ -8,6 +8,13 @@ class Responder(EmbeddedDocument):
     resource_id = StringField(max_length=255)
 
 
+class AlertResource(EmbeddedDocument):
+    resource_id = StringField(default=None, null=True)
+    resource_type = StringField(default=None, null=True)
+    name = StringField(default=None, null=True)
+    ip_address = StringField(default=None, null=True)
+
+
 class Alert(MongoModel):
     alert_number = SequenceField()
     alert_id = StringField(max_length=40, generate_id='alert', unique=True)
@@ -15,15 +22,19 @@ class Alert(MongoModel):
     state = StringField(max_length=20, default='TRIGGERED', choices=('TRIGGERED', 'ACKNOWLEDGED', 'RESOLVED'))
     status_message = StringField(default='')
     description = StringField(default='')
-    assignee = StringField(default='')
+    assignee = StringField(default=None, null=True)
     urgency = StringField(max_length=20, default='HIGH', choices=('HIGH', 'LOW'))
     severity = StringField(max_length=20, default='NONE', choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                                                    'NOT_AVAILABLE', 'NONE'))
+    rule = StringField(default='')
+    resource = EmbeddedDocumentField(AlertResource)
+    additional_info = DictField()
     is_snoozed = BooleanField(default=False)
     snoozed_end_time = DateTimeField(default=None, null=True)
-    escalation_level = IntField(default=1)
+    escalation_step = IntField(default=1)
     escalation_ttl = IntField(default=0)
     responders = ListField(EmbeddedDocumentField(Responder))
+    project_dependencies = ListField(StringField(max_length=40))
     webhook_id = StringField(max_length=40, default=None, null=True)
     escalation_policy_id = StringField(max_length=40)
     project_id = StringField(max_length=40)
@@ -44,11 +55,12 @@ class Alert(MongoModel):
             'urgency',
             'is_snoozed',
             'snoozed_end_time',
-            'escalation_level',
+            'escalation_ㄴㅅ데',
             'escalation_ttl',
             'responders',
-            'project_id',
+            'project_dependencies',
             'escalation_policy_id',
+            'project_id',
             'acknowledged_at',
             'resolved_at',
             'escalated_at'
@@ -61,10 +73,11 @@ class Alert(MongoModel):
             'status_message',
             'assignee',
             'urgency',
-            'escalation_level',
+            'escalation_step',
             'project_id'
         ],
         'change_query_keys': {
+            'resource_id': 'resource.resource_id',
             'user_projects': 'project_id'
         },
         'ordering': [
@@ -78,9 +91,14 @@ class Alert(MongoModel):
             'urgency',
             'severity',
             'is_snoozed',
-            'escalation_level',
+            'resource.resource_id',
+            'resource.resource_type',
+            'resource.name',
+            'resource.ip_address',
+            'escalation_step',
             'responders.resource_type',
             'responders.resource_id',
+            'project_dependencies',
             'webhook_id',
             'escalation_policy_id',
             'project_id',
