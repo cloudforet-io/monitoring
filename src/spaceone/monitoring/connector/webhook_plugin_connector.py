@@ -28,7 +28,7 @@ class WebhookPluginConnector(BaseConnector):
         self.client = pygrpc.client(endpoint=f'{e.get("hostname")}:{e.get("port")}', version='plugin')
 
     def init(self, options):
-        response = self.client.DataSource.init({
+        response = self.client.Webhook.init({
             'options': options,
         }, metadata=self.transaction.get_connection_meta())
 
@@ -39,7 +39,7 @@ class WebhookPluginConnector(BaseConnector):
             'options': options
         }
 
-        self.client.DataSource.verify(params, metadata=self.transaction.get_connection_meta())
+        self.client.Webhook.verify(params, metadata=self.transaction.get_connection_meta())
 
     def parse_event(self, options, data):
         params = {
