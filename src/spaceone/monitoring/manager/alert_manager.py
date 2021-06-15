@@ -72,6 +72,30 @@ class AlertManager(BaseManager):
 
         raise ERROR_RESPONDER_NOT_EXIST(resource_type=resource_type, resource_id=resource_id)
 
+    def add_project_dependency(self, params):
+        project_id = params['project_id']
+
+        alert_vo: Alert = self.get_alert(params['alert_id'], params['domain_id'])
+
+        for project_dependency in alert_vo.project_dependencies:
+            if project_dependency == project_id:
+                raise ERROR_SAME_PROJECT_DEPENDENCY_ALREADY_EXISTS(project_id=project_id)
+
+        alert_vo = alert_vo.append('project_dependencies', project_id)
+        return alert_vo
+
+    def remove_project_dependency(self, params):
+        project_id = params['project_id']
+
+        alert_vo: Alert = self.get_alert(params['alert_id'], params['domain_id'])
+
+        for project_dependency in alert_vo.project_dependencies:
+            if project_dependency == project_id:
+                alert_vo = alert_vo.remove('project_dependencies', project_id)
+                return alert_vo
+
+        raise ERROR_PROJECT_DEPENDENCY_NOT_EXIST(project_id=project_id)
+
     def delete_alert(self, alert_id, domain_id):
         alert_vo: Alert = self.get_alert(alert_id, domain_id)
         alert_vo.delete()

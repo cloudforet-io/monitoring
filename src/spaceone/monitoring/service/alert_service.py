@@ -91,7 +91,7 @@ class AlertService(BaseService):
 
             params['escalation_policy_id'] = escalation_policy_vo.escalation_policy_id
             params['escalation_ttl'] = escalation_policy_vo.repeat_count
-            params['escalation_level'] = 1
+            params['escalation_step'] = 1
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
@@ -195,7 +195,7 @@ class AlertService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alert_id', 'resource_type', 'resource_id', 'domain_id'])
     def remove_responder(self, params):
-        """Add alert responder
+        """Remove alert responder
 
         Args:
             params (dict): {
@@ -210,6 +210,44 @@ class AlertService(BaseService):
         """
 
         return self.alert_mgr.remove_responder(params)
+
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @check_required(['alert_id', 'project_id', 'domain_id'])
+    def add_project_dependency(self, params):
+        """Add dependent project
+
+        Args:
+            params (dict): {
+                'alert_id': 'str',
+                'project_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            alert_vo (object)
+        """
+
+        # Check project_id
+
+        return self.alert_mgr.add_project_dependency(params)
+
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @check_required(['alert_id', 'project_id', 'domain_id'])
+    def remove_project_dependency(self, params):
+        """Remove dependent project
+
+        Args:
+            params (dict): {
+                'alert_id': 'str',
+                'project_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            alert_vo (object)
+        """
+
+        return self.alert_mgr.remove_project_dependency(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alert_id', 'domain_id'])
@@ -252,7 +290,8 @@ class AlertService(BaseService):
     })
     @check_required(['domain_id'])
     @append_query_filter(['alert_number', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
-                          'webhook_id', 'escalation_policy_id', 'project_id', 'domain_id', 'user_projects'])
+                          'resource_id', 'webhook_id', 'escalation_policy_id', 'project_id', 'domain_id',
+                          'user_projects'])
     @append_keyword_filter(['alert_number', 'alert_id', 'title'])
     def list(self, params):
         """ List alerts
@@ -267,6 +306,7 @@ class AlertService(BaseService):
                 'urgency': 'str',
                 'severity': 'str',
                 'is_snoozed': 'bool',
+                'resource_id': 'str',
                 'webhook_id': 'bool',
                 'escalation_policy_id': 'str',
                 'project_id': 'str',
