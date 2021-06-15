@@ -7,3 +7,4 @@ from spaceone.monitoring.service.webhook_service import WebhookService
 from spaceone.monitoring.service.maintenance_window_service import MaintenanceWindowService
 from spaceone.monitoring.service.alert_service import AlertService
 from spaceone.monitoring.service.note_service import NoteService
+from spaceone.monitoring.service.event_service import EventService

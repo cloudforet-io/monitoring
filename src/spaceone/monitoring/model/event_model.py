@@ -22,6 +22,7 @@ class Event(MongoModel):
     resource = EmbeddedDocumentField(EventResource)
     raw_data = DictField()
     additional_info = DictField()
+    alert = ReferenceField('Alert', reverse_delete_rule=CASCADE)
     alert_id = StringField(max_length=40)
     webhook_id = StringField(max_length=40)
     project_id = StringField(max_length=40)
@@ -58,6 +59,7 @@ class Event(MongoModel):
             'resource.resource_type',
             'resource.name',
             'resource.ip_address',
+            'alert',
             'alert_id',
             'webhook_id',
             'project_id',
