@@ -56,6 +56,7 @@ class EventService(BaseService):
 
         for event_data in response.get('results', []):
             # Check event data using schematics
+            _LOGGER.debug(f'[Event.create] event_data: {event_data}')
             self._create_event(event_data, params['data'], webhook_data)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
