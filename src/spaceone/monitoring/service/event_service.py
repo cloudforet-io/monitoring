@@ -44,23 +44,19 @@ class EventService(BaseService):
             event_vo (object)
         """
 
-        webhook_vo = self._check_access_key(params['access_key'], params['webhook_id'])
+        webhook_data = self._get_webhook_data(params['webhook_id'])
 
-        self._check_webhook_state(webhook_vo)
+        self._check_access_key(params['access_key'], webhook_data['access_key'])
+        self._check_webhook_state(webhook_data)
 
         webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
-
-        domain_id = webhook_vo.domain_id
-        plugin_id = webhook_vo.plugin_info.plugin_id
-        version = webhook_vo.plugin_info.version
-        options = webhook_vo.plugin_info.options
-
-        webhook_plugin_mgr.initialize(plugin_id, version, domain_id)
-        response = webhook_plugin_mgr.parse_event(options, params['data'])
+        webhook_plugin_mgr.initialize(webhook_data['plugin_id'], webhook_data['plugin_version'],
+                                      webhook_data['domain_id'])
+        response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], params['data'])
 
         for event_data in response.get('results', []):
             # Check event data using schematics
-            self._create_event(event_data, params['data'], webhook_vo)
+            self._create_event(event_data, params['data'], webhook_data)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['event_id', 'domain_id'])
@@ -138,27 +134,37 @@ class EventService(BaseService):
         query = params.get('query', {})
         return self.event_mgr.stat_events(query)
 
-    @cache.cacheable(key='webhook:access-key:{request_access_key}:{webhook_id}', expire=86400)
-    def _check_access_key(self, request_access_key, webhook_id):
-        webhook_mgr: WebhookManager = self.locator.get_manager('Webhook')
+    @cache.cacheable(key='webhook-data:{webhook_id}', expire=300)
+    def _get_webhook_data(self, webhook_id):
+        webhook_mgr: WebhookManager = self.locator.get_manager('WebhookManager')
         webhook_vo: Webhook = webhook_mgr.get_webhook_by_id(webhook_id)
-
-        if request_access_key != webhook_vo.access_key:
-            raise ERROR_PERMISSION_DENIED()
-
-        return webhook_vo
+        return {
+            'webhook_id': webhook_vo.webhook_id,
+            'project_id': webhook_vo.project_id,
+            'domain_id': webhook_vo.domain_id,
+            'state': webhook_vo.state,
+            'access_key': webhook_vo.access_key,
+            'plugin_id': webhook_vo.plugin_info.plugin_id,
+            'plugin_version': webhook_vo.plugin_info.version,
+            'plugin_options': webhook_vo.plugin_info.options
+        }
 
     @staticmethod
-    def _check_webhook_state(webhook_vo):
-        if webhook_vo.state == 'DISABLED':
-            raise ERROR_WEBHOOK_STATE_DISABLED(webhook_id=webhook_vo.webhook_id)
+    def _check_access_key(request_access_key, webhook_access_key):
+        if request_access_key != webhook_access_key:
+            raise ERROR_PERMISSION_DENIED()
 
-    def _create_event(self, event_data, raw_data, webhook_vo):
+    @staticmethod
+    def _check_webhook_state(webhook_data):
+        if webhook_data['state'] == 'DISABLED':
+            raise ERROR_WEBHOOK_STATE_DISABLED(webhook_id=webhook_data['webhook_id'])
+
+    def _create_event(self, event_data, raw_data, webhook_data):
         event_data['raw_data'] = copy.deepcopy(raw_data)
         event_data['occurred_at'] = utils.iso8601_to_datetime(event_data.get('occurred_at'))
-        event_data['webhook_id'] = webhook_vo.webhook_id
-        event_data['project_id'] = webhook_vo.project_id
-        event_data['domain_id'] = webhook_vo.domain_id
+        event_data['webhook_id'] = webhook_data['webhook_id']
+        event_data['project_id'] = webhook_data['project_id']
+        event_data['domain_id'] = webhook_data['domain_id']
 
         # Change event data by event rule
 
