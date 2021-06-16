@@ -45,6 +45,7 @@ class EventService(BaseService):
         """
 
         webhook_data = self._get_webhook_data(params['webhook_id'])
+        request_data = copy.deepcopy(params['data'])
 
         self._check_access_key(params['access_key'], webhook_data['access_key'])
         self._check_webhook_state(webhook_data)
@@ -52,7 +53,7 @@ class EventService(BaseService):
         webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
         webhook_plugin_mgr.initialize(webhook_data['plugin_id'], webhook_data['plugin_version'],
                                       webhook_data['domain_id'])
-        response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], params['data'])
+        response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], request_data)
 
         for event_data in response.get('results', []):
             # Check event data using schematics
