@@ -16,7 +16,7 @@ class AlertManager(BaseManager):
     def create_alert(self, params):
         def _rollback(alert_vo):
             _LOGGER.info(f'[create_alert._rollback] '
-                         f'Delete alert : #{str(alert_vo.number)} '
+                         f'Delete alert : #{str(alert_vo.alert_number)} '
                          f'({alert_vo.alert_id})')
             alert_vo.delete()
 
