@@ -15,7 +15,7 @@ class PluginInfo(EmbeddedDocument):
 
 class Webhook(MongoModel):
     webhook_id = StringField(max_length=40, generate_id='webhook', unique=True)
-    name = StringField(max_length=255, unique_with='domain_id')
+    name = StringField(max_length=255, unique_with=['project_id', 'domain_id'])
     state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
     access_key = StringField(max_length=255)
     webhook_url = StringField(max_length=255)
