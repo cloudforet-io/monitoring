@@ -19,7 +19,7 @@ class Event(MongoModel):
     severity = StringField(max_length=20, default='NONE', choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                                                    'NOT_AVAILABLE', 'NONE'))
     rule = StringField(default=None, null=True)
-    resource = EmbeddedDocumentField(EventResource)
+    resource = EmbeddedDocumentField(EventResource, default={})
     raw_data = DictField()
     additional_info = DictField()
     alert = ReferenceField('Alert', reverse_delete_rule=CASCADE)
