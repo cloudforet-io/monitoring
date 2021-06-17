@@ -77,6 +77,3 @@ class EscalationPolicyManager(BaseManager):
 
     def stat_escalation_policies(self, query):
         return self.escalation_policy_model.stat(**query)
-
-    def _create_default_escalation_policy(self, domain_id):
-        pass
