@@ -1,5 +1,6 @@
 import logging
 import copy
+from datetime import datetime
 
 from spaceone.core.service import *
 from spaceone.core import cache
@@ -174,7 +175,7 @@ class EventService(BaseService):
         # Check resolved event
         event_vo = self.event_mgr.get_event_by_key(event_key)
 
-        if event_vo is None:
+        if event_vo is None or event_vo.alert.state == 'RESOLVED':
             alert_vo = self._create_alert(event_data)
             event_data['alert_id'] = alert_vo.alert_id
             event_data['alert'] = alert_vo
@@ -196,6 +197,7 @@ class EventService(BaseService):
 
         alert_data['escalation_policy_id'] = escalation_policy_id
         alert_data['escalation_ttl'] = escalation_ttl
+        alert_data['escalated_at'] = datetime.utcnow()
 
         return alert_mgr.create_alert(alert_data)
 
