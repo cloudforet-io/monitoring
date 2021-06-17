@@ -3,6 +3,7 @@ from spaceone.monitoring.service.metric_service import MetricService
 from spaceone.monitoring.service.log_service import LogService
 from spaceone.monitoring.service.project_alert_config_service import ProjectAlertConfigService
 from spaceone.monitoring.service.escalation_policy_service import EscalationPolicyService
+from spaceone.monitoring.service.event_rule_service import EventRuleService
 from spaceone.monitoring.service.webhook_service import WebhookService
 from spaceone.monitoring.service.maintenance_window_service import MaintenanceWindowService
 from spaceone.monitoring.service.alert_service import AlertService
