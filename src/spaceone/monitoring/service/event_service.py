@@ -170,10 +170,7 @@ class EventService(BaseService):
 
         # Change event data by event rule
 
-        event_key = event_data['event_key']
-
-        # Check resolved event
-        event_vo = self.event_mgr.get_event_by_key(event_key)
+        event_vo = self.event_mgr.get_event_by_key(event_data['event_key'])
 
         if event_vo is None or event_vo.alert.state == 'RESOLVED':
             alert_vo = self._create_alert(event_data)
