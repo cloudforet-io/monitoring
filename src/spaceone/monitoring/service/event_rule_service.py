@@ -1,4 +1,5 @@
 import logging
+import fnmatch
 
 from spaceone.core.service import *
 from spaceone.monitoring.error.event_rule import *
@@ -9,7 +10,7 @@ from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
 _LOGGER = logging.getLogger(__name__)
 
 _SUPPORTED_CONDITION_KEYS = ['title', 'description', 'rule', 'resource_id', 'resource_type',
-                             'webhook_id', 'project_id']
+                             'webhook_id', 'project_id', 'additional_info.<key>']
 _SUPPORTED_CONDITION_OPERATORS = ['eq', 'contain', 'not', 'not_contain']
 
 
@@ -256,7 +257,7 @@ class EventRuleService(BaseService):
             if not (key and value and operator):
                 raise ERROR_INVALID_PARAMETER(key='conditions', reason='Condition should have key, value and operator.')
 
-            if key not in _SUPPORTED_CONDITION_KEYS:
+            if key not in _SUPPORTED_CONDITION_KEYS and not fnmatch.fnmatch(key, 'additional_info.*'):
                 raise ERROR_INVALID_PARAMETER(key='conditions.key',
                                               reason=f'Unsupported key. '
                                                      f'({" | ".join(_SUPPORTED_CONDITION_KEYS)})')
