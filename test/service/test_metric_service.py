@@ -8,14 +8,12 @@ from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
 from spaceone.core import utils
-from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
 from spaceone.monitoring.error import *
 from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.service.metric_service import MetricService
 from spaceone.monitoring.manager.plugin_manager import PluginManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
-from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
 from spaceone.monitoring.info.metric_info import *

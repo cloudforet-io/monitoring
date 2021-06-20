@@ -7,7 +7,6 @@ from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
 from spaceone.core import utils
-from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
 from spaceone.monitoring.error import *
 from spaceone.monitoring.model.data_source_model import DataSource
