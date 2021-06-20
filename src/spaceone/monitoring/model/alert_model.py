@@ -55,7 +55,7 @@ class Alert(MongoModel):
             'urgency',
             'is_snoozed',
             'snoozed_end_time',
-            'escalation_ㄴㅅ데',
+            'escalation_step',
             'escalation_ttl',
             'responders',
             'project_dependencies',
@@ -91,6 +91,7 @@ class Alert(MongoModel):
             'urgency',
             'severity',
             'is_snoozed',
+            'snoozed_end_time',
             'resource.resource_id',
             'resource.resource_type',
             'resource.name',
@@ -106,6 +107,11 @@ class Alert(MongoModel):
             'created_at',
             'acknowledged_at',
             'resolved_at',
-            'escalated_at'
+            'escalated_at',
+            {
+                "fields": ['domain_id', 'state', 'is_snoozed', 'escalation_step', 'escalation_ttl',
+                           'escalation_policy_id', 'escalated_at'],
+                "name": "COMPOUND_INDEX_FOR_ESCALATION"
+            },
         ]
     }
