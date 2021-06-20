@@ -9,4 +9,4 @@ from spaceone.monitoring.service.maintenance_window_service import MaintenanceWi
 from spaceone.monitoring.service.alert_service import AlertService
 from spaceone.monitoring.service.note_service import NoteService
 from spaceone.monitoring.service.event_service import EventService
-from spaceone.monitoring.service.domain_service import DomainService
+from spaceone.monitoring.service.job_service import JobService
