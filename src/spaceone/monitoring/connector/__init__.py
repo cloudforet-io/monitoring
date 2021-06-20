@@ -1,7 +1,2 @@
-from spaceone.monitoring.connector.identity_connector import IdentityConnector
-from spaceone.monitoring.connector.inventory_connector import InventoryConnector
-from spaceone.monitoring.connector.repository_connector import RepositoryConnector
-from spaceone.monitoring.connector.secret_connector import SecretConnector
-from spaceone.monitoring.connector.plugin_connector import PluginConnector
 from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
 from spaceone.monitoring.connector.webhook_plugin_connector import WebhookPluginConnector

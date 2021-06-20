@@ -1,8 +1,7 @@
 import logging
 
 from spaceone.core.manager import BaseManager
-from spaceone.monitoring.error import *
-from spaceone.monitoring.connector.plugin_connector import PluginConnector
+from spaceone.monitoring.manager.plugin_manager import PluginManager
 from spaceone.monitoring.connector.webhook_plugin_connector import WebhookPluginConnector
 
 _LOGGER = logging.getLogger(__name__)
@@ -12,12 +11,12 @@ class WebhookPluginManager(BaseManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.plugin_connector: PluginConnector = self.locator.get_connector('PluginConnector')
         self.wp_connector: WebhookPluginConnector = self.locator.get_connector('WebhookPluginConnector')
 
     def initialize(self, plugin_id, version, domain_id):
-        endpoint = self.plugin_connector.get_plugin_endpoint(plugin_id, version, domain_id)
-        _LOGGER.debug(f'[init_plugin] endpoint: {endpoint}')
+        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
+        endpoint = plugin_mgr.get_plugin_endpoint(plugin_id, version, domain_id)
+
         self.wp_connector.initialize(endpoint)
 
     def init_plugin(self, options):

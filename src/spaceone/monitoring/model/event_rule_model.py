@@ -4,8 +4,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class EventRuleCondition(EmbeddedDocument):
-    key = StringField(choices=('title', 'description', 'rule', 'resource_id', 'resource_type',
-                               'webhook_id', 'project_id'))
+    key = StringField(required=True)
     value = StringField(required=True)
     operator = StringField(choices=('eq', 'contain', 'not', 'not_contain'))
 

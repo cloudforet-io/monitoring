@@ -70,8 +70,7 @@ class LogService(BaseService):
         plugin_filter = {}
 
         resource_mgr = self._get_resource_manager(resource_type)
-        resource_info = resource_mgr.get_resource(resource_id, resource_type, domain_id)
-        # resource_key = resource_mgr.get_resource_key(resource_type, resource_info, reference_keys)
+        resource_info = resource_mgr.get_resource(resource_type, resource_id, domain_id)
 
         secret_data, schema = self._get_secret_data(resource_id, resource_type, resource_info, data_source_vo, domain_id)
 
