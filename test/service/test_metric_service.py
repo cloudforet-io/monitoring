@@ -13,10 +13,11 @@ from spaceone.core.transaction import Transaction
 from spaceone.monitoring.error import *
 from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.service.metric_service import MetricService
-from spaceone.monitoring.connector.inventory_connector import InventoryConnector
+from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.manager.secret_manager import SecretManager
+from spaceone.monitoring.manager.identity_manager import IdentityManager
+from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
-from spaceone.monitoring.connector.plugin_connector import PluginConnector
-from spaceone.monitoring.connector.secret_connector import SecretConnector
 from spaceone.monitoring.info.metric_info import *
 from test.factory.data_source_factory import DataSourceFactory
 
@@ -51,14 +52,11 @@ class TestMetricService(unittest.TestCase):
     def _new_iter(self):
         return
 
-    @patch.object(InventoryConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(InventoryConnector, 'list_servers')
-    @patch.object(SecretConnector, 'list_secrets')
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
+    @patch.object(InventoryManager, 'list_servers')
+    @patch.object(SecretManager, 'list_secrets')
     @patch.object(DataSourcePluginConnector, 'list_metrics')
     def test_list_metrics(self, mock_list_metrics, mock_list_secrets, mock_list_servers, *args):
         server_id_1 = utils.generate_id('server')
@@ -126,14 +124,11 @@ class TestMetricService(unittest.TestCase):
 
         self.assertEqual(params['domain_id'], metrics_info['domain_id'])
 
-    @patch.object(InventoryConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(InventoryConnector, 'list_servers')
-    @patch.object(SecretConnector, 'list_secrets')
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
+    @patch.object(InventoryManager, 'list_servers')
+    @patch.object(SecretManager, 'list_secrets')
     @patch.object(DataSourcePluginConnector, 'get_metric_data')
     def test_get_metric_data(self, mock_get_metric_data, mock_list_secrets, mock_list_servers, *args):
         server_id_1 = utils.generate_id('server')

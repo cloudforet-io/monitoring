@@ -1,20 +1,10 @@
 import logging
 
-from spaceone.core import utils
 from spaceone.core.manager import BaseManager
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.monitoring.error import *
-from spaceone.monitoring.connector.inventory_connector import InventoryConnector
-_LOGGER = logging.getLogger(__name__)
 
-_DEFAULT_REFERENCE_KEY = 'reference.resource_id'
-_RESOURCE_GET_METHODS = {
-    'inventory.Server': 'get_server',
-    'inventory.CloudService': 'get_cloud_service',
-}
-_RESOURCE_LIST_METHODS = {
-    'inventory.Server': 'list_servers',
-    'inventory.CloudService': 'list_cloud_services',
-}
+_LOGGER = logging.getLogger(__name__)
 _RESOURCE_KEYS = {
     'inventory.Server': 'server_id',
     'inventory.CloudService': 'cloud_service_id'
@@ -25,31 +15,44 @@ class InventoryManager(BaseManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.inventory_connector: InventoryConnector = self.locator.get_connector('InventoryConnector')
+        self.inventory_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='inventory')
 
-    def get_resource(self, resource_id, resource_type, domain_id):
-        get_method = _RESOURCE_GET_METHODS[resource_type]
-        return getattr(self.inventory_connector, get_method)(resource_id, domain_id)
+    def get_server(self, server_id, domain_id):
+        return self.inventory_connector.dispatch('Server.get', {'server_id': server_id, 'domain_id': domain_id})
 
-    def list_resources(self, resources, resource_type, required_keys, domain_id):
+    def list_servers(self, query, domain_id):
+        return self.inventory_connector.dispatch('Server.list', {'query': query, 'domain_id': domain_id})
+
+    def get_cloud_service(self, cloud_service_id, domain_id):
+        return self.inventory_connector.dispatch('CloudService.get', {'cloud_service_id': cloud_service_id,
+                                                                      'domain_id': domain_id})
+
+    def list_cloud_services(self, query, domain_id):
+        return self.inventory_connector.dispatch('CloudService.list', {'query': query, 'domain_id': domain_id})
+
+    def get_resource(self, resource_type, resource_id, domain_id):
+        if resource_type == 'inventory.Server':
+            return self.get_server(resource_id, domain_id)
+        elif resource_type == 'inventory.CloudService':
+            return self.get_cloud_service(resource_id, domain_id)
+
+    def list_resources(self, resource_type, resources, required_keys, domain_id):
         query = self._make_query(resource_type, resources, required_keys)
-        get_method = _RESOURCE_LIST_METHODS[resource_type]
 
-        response = getattr(self.inventory_connector, get_method)(query, domain_id)
+        if resource_type == 'inventory.Server':
+            response = self.list_servers(query, domain_id)
+        elif resource_type == 'inventory.CloudService':
+            response = self.list_cloud_services(query, domain_id)
+        else:
+            response = {
+                'total_count': 0,
+                'results': []
+            }
 
         if response.get('total_count', 0) == 0:
             raise ERROR_NOT_FOUND(key='resources', value=resources)
 
         return self._change_resources_info(resource_type, response)
-
-    def get_resource_key(self, resource_type, resource_info, required_keys):
-        reference_key = self._get_reference_key(resource_type, required_keys)
-        resource_key = utils.get_dict_value(resource_info, reference_key)
-
-        if resource_key is None:
-            raise ERROR_NOT_FOUND_REFERENCE_KEY(reference_keys=str(required_keys))
-
-        return resource_key
 
     @staticmethod
     def _change_resources_info(resource_type, response):
@@ -75,14 +78,3 @@ class InventoryManager(BaseManager):
             }],
             'only': only_keys
         }
-
-    @staticmethod
-    def _get_reference_key(resource_type: str, reference_keys: list) -> dict:
-        reference_key = _DEFAULT_REFERENCE_KEY
-
-        for key in reference_keys:
-            if resource_type == key['resource_type']:
-                reference_key = key['reference_key']
-                break
-
-        return reference_key

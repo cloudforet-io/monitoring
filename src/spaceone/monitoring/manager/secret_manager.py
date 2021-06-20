@@ -1,10 +1,9 @@
 import logging
 
-from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.monitoring.error import *
-from spaceone.monitoring.connector.secret_connector import SecretConnector
-from pprint import pprint
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -12,13 +11,13 @@ class SecretManager(BaseManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.secret_connector: SecretConnector = self.locator.get_connector('SecretConnector')
+        self.secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
 
     def list_secrets(self, query, domain_id):
-        return self.secret_connector.list_secrets(query, domain_id)
+        return self.secret_connector.dispatch('Secret.list', {'query': query, 'domain_id': domain_id})
 
     def get_secret_data(self, secret_id, domain_id):
-        response = self.secret_connector.get_secret_data(secret_id, domain_id)
+        response = self.secret_connector.dispatch('Secret.get_data', {'secret_id': secret_id, 'domain_id': domain_id})
         return response['data']
 
     def get_plugin_secret_data(self, secret_id, supported_schema, domain_id):

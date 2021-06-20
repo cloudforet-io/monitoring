@@ -84,7 +84,7 @@ class MetricService(BaseService):
         for resource_id in resources:
             response['available_resources'][resource_id] = False
 
-        resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
+        resources_info = self.inventory_mgr.list_resources(resource_type, resources, required_keys, domain_id)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER[0]) as executor:
             future_executors = []
@@ -171,7 +171,7 @@ class MetricService(BaseService):
             'domain_id': domain_id
         }
 
-        resources_info = self.inventory_mgr.list_resources(resources, resource_type, required_keys, domain_id)
+        resources_info = self.inventory_mgr.list_resources(resource_type, resources, required_keys, domain_id)
         filtered_resources = self.get_filtered_resources_info(resources_info, data_source_vo, domain_id)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER[1]) as executor:

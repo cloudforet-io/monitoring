@@ -6,15 +6,14 @@ from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
 from spaceone.core import utils
-from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
 from spaceone.monitoring.error import *
 from spaceone.monitoring.service.data_source_service import DataSourceService
 from spaceone.monitoring.model.data_source_model import DataSource
+from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.manager.secret_manager import SecretManager
+from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
-from spaceone.monitoring.connector.plugin_connector import PluginConnector
-from spaceone.monitoring.connector.repository_connector import RepositoryConnector
-from spaceone.monitoring.connector.secret_connector import SecretConnector
 from spaceone.monitoring.info.data_source_info import *
 from spaceone.monitoring.info.common_info import StatisticsInfo
 from test.factory.data_source_factory import DataSourceFactory
@@ -47,15 +46,12 @@ class TestDataSourceService(unittest.TestCase):
         data_source_vos = DataSource.objects.filter()
         data_source_vos.delete()
 
-    @patch.object(RepositoryConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
-    @patch.object(RepositoryConnector, 'get_plugin')
-    @patch.object(SecretConnector, 'list_secrets')
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
+    @patch.object(RepositoryManager, 'check_plugin_version', return_value=None)
+    @patch.object(RepositoryManager, 'get_plugin')
+    @patch.object(SecretManager, 'list_secrets')
     @patch.object(DataSourcePluginConnector, 'init')
     def test_register_metric_data_source_with_secret_id(self, mock_plugin_verify, mock_list_secrets,
                                                         mock_get_plugin, *args):
@@ -113,15 +109,12 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
-    @patch.object(RepositoryConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
-    @patch.object(RepositoryConnector, 'get_plugin')
-    @patch.object(SecretConnector, 'list_secrets')
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
+    @patch.object(RepositoryManager, 'check_plugin_version', return_value=None)
+    @patch.object(RepositoryManager, 'get_plugin')
+    @patch.object(SecretManager, 'list_secrets')
     @patch.object(DataSourcePluginConnector, 'init')
     def test_register_metric_data_source_with_provider(self, mock_plugin_init, mock_list_secrets,
                                                        mock_get_plugin, *args):
@@ -179,12 +172,10 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(SecretConnector, 'list_secrets')
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
+    @patch.object(SecretManager, 'list_secrets')
     @patch.object(DataSourcePluginConnector, 'init')
     def test_update_data_source(self, mock_plugin_init, mock_list_secrets, *args):
         mock_plugin_init.return_value = {
