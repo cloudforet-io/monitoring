@@ -1,6 +1,5 @@
 import logging
 import copy
-from datetime import datetime
 
 from spaceone.core.service import *
 from spaceone.core import cache
@@ -193,8 +192,7 @@ class EventService(BaseService):
                                                                                 event_data['domain_id'])
 
         alert_data['escalation_policy_id'] = escalation_policy_id
-        alert_data['escalation_ttl'] = escalation_ttl
-        alert_data['escalated_at'] = datetime.utcnow()
+        alert_data['escalation_ttl'] = escalation_ttl + 1
 
         return alert_mgr.create_alert(alert_data)
 

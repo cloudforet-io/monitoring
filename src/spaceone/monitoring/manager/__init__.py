@@ -15,3 +15,4 @@ from spaceone.monitoring.manager.data_source_plugin_manager import DataSourcePlu
 from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
 from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.manager.job_manager import JobManager
+from spaceone.monitoring.manager.notification_manager import NotificationManager

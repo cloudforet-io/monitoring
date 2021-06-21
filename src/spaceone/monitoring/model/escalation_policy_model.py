@@ -7,6 +7,9 @@ class EscalationRule(EmbeddedDocument):
     notification_level = StringField(max_length=20, default='ALL')
     escalate_minutes = IntField(default=0)
 
+    def to_dict(self):
+        return self.to_mongo()
+
 
 class EscalationPolicy(MongoModel):
     escalation_policy_id = StringField(max_length=40, generate_id='ep', unique=True)
