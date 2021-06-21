@@ -41,7 +41,8 @@ CONNECTORS = {
             'inventory': 'grpc://inventory:50051',
             'plugin': 'grpc://plugin:50051',
             'repository': 'grpc://repository:50051',
-            'secret': 'grpc://secret:50051'
+            'secret': 'grpc://secret:50051',
+            'notification': 'grpc://notification:50051'
 
         }
     },

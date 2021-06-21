@@ -1,12 +1,11 @@
 import logging
+from typing import List
 from datetime import datetime
-from typing import Union
 
 from spaceone.core.error import *
 from spaceone.core import queue, utils
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.model.job_model import Job
-from spaceone.monitoring.model.alert_model import Alert
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,41 +15,58 @@ class JobManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.job_model: Job = self.locator.get_model('Job')
-        self.job_vo: Union[Job, None] = None
 
     def is_domain_job_running(self, domain_id):
         job_vos = self.job_model.filter(domain_id=domain_id, status='IN_PROGRESS')
 
-        if job_vos.count() == 0:
-            return False
+        running_job_count = job_vos.count()
 
         for job_vo in job_vos:
+            if job_vo.remained_tasks == 0 and job_vo.status != 'ERROR':
+                self.change_success_status(job_vo)
+                running_job_count -= 1
+
             # Old jobs change to timeout status
             pass
 
-        return True
+        if running_job_count > 0:
+            return True
+        else:
+            return False
 
     def create_job(self, domain_id):
-        self.job_vo = self.job_model.create({'domain_id': domain_id})
+        return self.job_model.create({'domain_id': domain_id})
 
-    def start_job(self):
-        try:
-            _LOGGER.debug(f'[start_job] Start Job: {self.job_vo.domain_id} ({self.job_vo.job_id})')
-            self.job_vo.delete()
-        except ERROR_BASE as e:
-            self._change_error_status(e)
-        except Exception as e:
-            self._change_error_status(ERROR_UNKNOWN(message=str(e)))
+    def get_job(self, job_id, domain_id):
+        return self.job_model.get(job_id=job_id, domain_id=domain_id)
 
-    def _change_error_status(self, e):
-        _LOGGER.error(f'Job Error: {e.message}')
-        self.job_vo.update({
+    @staticmethod
+    def decrease_remained_tasks(job_vo: Job):
+        job_vo.decrement('remained_tasks', 1)
+
+    @staticmethod
+    def change_success_status(job_vo: Job):
+        job_vo.delete()
+        # job_vo.update({
+        #     'status': 'SUCCESS',
+        #     'finished_at': datetime.utcnow()
+        # })
+
+    @staticmethod
+    def change_error_status(job_vo: Job, e):
+        if not isinstance(e, ERROR_BASE):
+            e = ERROR_UNKNOWN(message=str(e))
+
+        _LOGGER.error(f'Job Error ({job_vo.job_id}): {e.message}', exc_info=True)
+
+        job_vo.update({
             'status': 'ERROR',
-            'error': {
-                'error_code': e.error_code,
-                'message': e.message
-            },
             'finished_at': datetime.utcnow()
+        })
+
+        job_vo.append('errors', {
+            'error_code': e.error_code,
+            'message': e.message
         })
 
     def push_task(self, task_name, class_name, method, params):

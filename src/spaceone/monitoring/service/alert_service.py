@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from spaceone.core.service import *
 from spaceone.monitoring.model.alert_model import Alert
@@ -51,8 +50,8 @@ class AlertService(BaseService):
         escalation_policy_vo: EscalationPolicy = project_alert_config_vo.escalation_policy
 
         params['escalation_policy_id'] = escalation_policy_vo.escalation_policy_id
-        params['escalation_ttl'] = escalation_policy_vo.repeat_count
-        params['escalated_at'] = datetime.utcnow()
+        params['escalation_ttl'] = escalation_policy_vo.repeat_count + 1
+        params['escalated_at'] = None
 
         # Check Assignee
 
@@ -94,6 +93,7 @@ class AlertService(BaseService):
             params['escalation_policy_id'] = escalation_policy_vo.escalation_policy_id
             params['escalation_ttl'] = escalation_policy_vo.repeat_count
             params['escalation_step'] = 1
+            params['escalated_at'] = None
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
