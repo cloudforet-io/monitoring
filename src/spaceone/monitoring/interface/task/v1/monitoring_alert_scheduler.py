@@ -22,8 +22,8 @@ class MonitoringAlertScheduler(IntervalScheduler):
         self._metadata = {
             'token': self._token,
             'service': 'monitoring',
-            'resource': 'Domain',
-            'verb': 'list'
+            'resource': 'Job',
+            'verb': 'create_jobs_by_domain'
         }
 
     def create_task(self):
@@ -33,13 +33,11 @@ class MonitoringAlertScheduler(IntervalScheduler):
             'executionEngine': 'BaseWorker',
             'stages': [{
                 'locator': 'SERVICE',
-                'name': 'DomainService',
+                'name': 'JobService',
                 'metadata': self._metadata,
-                'method': 'list',
+                'method': 'create_jobs_by_domain',
                 'params': {
-                    'params': {
-                        'from': 'monitoring_alert_scheduler'
-                    }
+                    'params': {}
                 }
             }]
         }

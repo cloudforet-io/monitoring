@@ -9,7 +9,7 @@ from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
 
 _LOGGER = logging.getLogger(__name__)
 
-_SUPPORTED_CONDITION_KEYS = ['title', 'description', 'rule', 'resource_id', 'resource_type',
+_SUPPORTED_CONDITION_KEYS = ['title', 'description', 'rule', 'resource_id', 'resource_name', 'resource_type',
                              'webhook_id', 'project_id', 'additional_info.<key>']
 _SUPPORTED_CONDITION_OPERATORS = ['eq', 'contain', 'not', 'not_contain']
 
@@ -28,7 +28,7 @@ class EventRuleService(BaseService):
         'authorization.scope': 'PROJECT',
         'authorization.require_project_id': True
     })
-    @check_required(['conditions', 'actions'])
+    @check_required(['conditions', 'conditions_policy', 'actions'])
     def create(self, params):
         """Create event rule
 
@@ -36,6 +36,7 @@ class EventRuleService(BaseService):
             params (dict): {
                 'name': 'str',
                 'conditions': 'list',
+                'conditions_policy': 'str',
                 'actions': 'dict',
                 'options': 'dict',
                 'project_id': 'str',
@@ -75,6 +76,7 @@ class EventRuleService(BaseService):
                 'event_rule_id': 'dict',
                 'name': 'str',
                 'conditions': 'list',
+                'conditions_policy': 'str',
                 'actions': 'dict',
                 'options': 'dict',
                 'tags': 'dict',

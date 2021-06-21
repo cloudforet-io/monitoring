@@ -14,3 +14,4 @@ from spaceone.monitoring.manager.note_manager import NoteManager
 from spaceone.monitoring.manager.data_source_plugin_manager import DataSourcePluginManager
 from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
 from spaceone.monitoring.manager.event_manager import EventManager
+from spaceone.monitoring.manager.job_manager import JobManager

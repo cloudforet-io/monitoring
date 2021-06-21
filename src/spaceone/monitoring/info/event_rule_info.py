@@ -82,6 +82,7 @@ def EventRuleInfo(event_rule_vo: EventRule, minimal=False):
     if not minimal:
         info.update({
             'conditions': EventRuleConditionsInfo(event_rule_vo.conditions),
+            'conditions_policy': event_rule_vo.conditions_policy,
             'actions': EventRuleActionsInfo(event_rule_vo.actions),
             'options': EventRuleOptionsInfo(event_rule_vo.options),
             'tags': change_struct_type(event_rule_vo.tags),

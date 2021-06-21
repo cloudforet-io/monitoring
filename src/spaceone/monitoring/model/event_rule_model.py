@@ -18,6 +18,7 @@ class EventRule(MongoModel):
     name = StringField(max_length=255, default='')
     order = IntField(required=True)
     conditions = ListField(EmbeddedDocumentField(EventRuleCondition))
+    conditions_policy = StringField(max_length=20, choices=('ALL', 'ANY'))
     actions = DictField()
     options = EmbeddedDocumentField(EventRuleOptions, default=EventRuleOptions)
     tags = DictField()
@@ -31,6 +32,7 @@ class EventRule(MongoModel):
             'name',
             'order',
             'conditions',
+            'conditions_policy',
             'actions',
             'options',
             'tags'
@@ -47,6 +49,7 @@ class EventRule(MongoModel):
         'indexes': [
             'event_rule_id',
             'order',
+            'conditions_policy',
             'scope',
             'project_id',
             'domain_id'
