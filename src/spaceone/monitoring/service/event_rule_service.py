@@ -94,7 +94,7 @@ class EventRuleService(BaseService):
             self._check_conditions(params['conditions'])
 
         if 'actions' in params:
-            self._check_conditions(params['actions'])
+            self._check_actions(params['actions'])
 
         event_rule_vo = self.event_rule_mgr.get_event_rule(event_rule_id, domain_id)
         return self.event_rule_mgr.update_event_rule_by_vo(params, event_rule_vo)
