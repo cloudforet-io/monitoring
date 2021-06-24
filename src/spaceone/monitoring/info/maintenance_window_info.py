@@ -21,6 +21,7 @@ def MaintenanceWindowInfo(maintenance_window_vo: MaintenanceWindow, minimal=Fals
         info.update({
             'tags': change_struct_type(maintenance_window_vo.tags),
             'domain_id': maintenance_window_vo.domain_id,
+            'created_by': maintenance_window_vo.created_by,
             'created_at': utils.datetime_to_iso8601(maintenance_window_vo.created_at),
             'updated_at': utils.datetime_to_iso8601(maintenance_window_vo.updated_at),
             'closed_at': utils.datetime_to_iso8601(maintenance_window_vo.closed_at)
