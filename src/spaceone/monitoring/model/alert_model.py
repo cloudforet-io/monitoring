@@ -35,6 +35,7 @@ class Alert(MongoModel):
     escalation_ttl = IntField(default=0)
     responders = ListField(EmbeddedDocumentField(Responder))
     project_dependencies = ListField(StringField(max_length=40))
+    triggered_by = StringField(default=None, null=True)
     webhook_id = StringField(max_length=40, default=None, null=True)
     escalation_policy_id = StringField(max_length=40)
     project_id = StringField(max_length=40)
@@ -100,6 +101,7 @@ class Alert(MongoModel):
             'responders.resource_type',
             'responders.resource_id',
             'project_dependencies',
+            'triggered_by',
             'webhook_id',
             'escalation_policy_id',
             'project_id',

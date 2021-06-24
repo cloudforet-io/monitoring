@@ -194,6 +194,8 @@ class EventService(BaseService):
         alert_data['escalation_policy_id'] = escalation_policy_id
         alert_data['escalation_ttl'] = escalation_ttl + 1
 
+        alert_data['triggered_by'] = alert_data['webhook_id']
+
         return alert_mgr.create_alert(alert_data)
 
     @staticmethod
