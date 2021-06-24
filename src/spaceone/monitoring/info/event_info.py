@@ -12,8 +12,7 @@ def EventResourceInfo(vo):
         info = {
             'resource_id': vo.resource_id,
             'resource_type': vo.resource_type,
-            'name': vo.name,
-            'ip_address': vo.ip_address
+            'name': vo.name
         }
 
         return event_pb2.EventResource(**info)

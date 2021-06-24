@@ -30,8 +30,7 @@ def AlertResourceInfo(vo):
         info = {
             'resource_id': vo.resource_id,
             'resource_type': vo.resource_type,
-            'name': vo.name,
-            'ip_address': vo.ip_address
+            'name': vo.name
         }
 
         return alert_pb2.AlertResource(**info)
