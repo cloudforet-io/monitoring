@@ -12,7 +12,6 @@ class AlertResource(EmbeddedDocument):
     resource_id = StringField(default=None, null=True)
     resource_type = StringField(default=None, null=True)
     name = StringField(default=None, null=True)
-    ip_address = StringField(default=None, null=True)
 
 
 class Alert(MongoModel):
@@ -96,7 +95,6 @@ class Alert(MongoModel):
             'resource.resource_id',
             'resource.resource_type',
             'resource.name',
-            'resource.ip_address',
             'escalation_step',
             'responders.resource_type',
             'responders.resource_id',
