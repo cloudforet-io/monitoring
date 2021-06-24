@@ -63,6 +63,7 @@ def AlertInfo(alert_vo: Alert, minimal=False):
             'escalation_ttl': alert_vo.escalation_ttl,
             'responders': RespondersInfo(alert_vo.responders),
             'project_dependencies': alert_vo.project_dependencies,
+            'triggered_by': alert_vo.triggered_by,
             'webhook_id': alert_vo.webhook_id,
             'escalation_policy_id': alert_vo.escalation_policy_id,
             'domain_id': alert_vo.domain_id,

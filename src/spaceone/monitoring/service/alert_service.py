@@ -55,6 +55,8 @@ class AlertService(BaseService):
 
         # Check Assignee
 
+        params['triggered_by'] = self.transaction.get_meta('user_id')
+
         return self.alert_mgr.create_alert(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
@@ -292,9 +294,9 @@ class AlertService(BaseService):
     })
     @check_required(['domain_id'])
     @append_query_filter(['alert_number', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
-                          'resource_id', 'webhook_id', 'escalation_policy_id', 'project_id', 'domain_id',
-                          'user_projects'])
-    @append_keyword_filter(['alert_number', 'alert_id', 'title'])
+                          'resource_id', 'triggered_by', 'webhook_id', 'escalation_policy_id', 'project_id',
+                          'domain_id', 'user_projects'])
+    @append_keyword_filter(['alert_id', 'title'])
     def list(self, params):
         """ List alerts
 
@@ -331,7 +333,7 @@ class AlertService(BaseService):
     })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
-    @append_keyword_filter(['alert_number', 'alert_id', 'title'])
+    @append_keyword_filter(['alert_id', 'title'])
     def stat(self, params):
         """
         Args:
