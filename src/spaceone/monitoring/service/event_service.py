@@ -183,7 +183,6 @@ class EventService(BaseService):
             event_data['alert'] = event_vo.alert
 
         self.event_mgr.create_event(event_data)
-        self.jo
 
     def _create_alert(self, event_data):
         alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
