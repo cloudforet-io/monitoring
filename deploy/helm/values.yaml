@@ -20,11 +20,24 @@ database: {}
 # Overwrite application config
 application: {}
 
+# Overwrite application rest config
+application_rest: {}
+
 # Overwrite scheduler config
-application_scheduler: {}
+application_scheduler:
+  SCHEDULERS:
+    monitoring_scheduler:
+      backend: spaceone.monitoring.interface.task.v1.monitoring_alert_scheduler.MonitoringAlertScheduler
+      queue: monitoring_q
+      interval: 60
 
 # Overwrite worker config
-application_worker: {}
+application_worker:
+  WORKERS:
+    monitoring_worker:
+      backend: spaceone.core.scheduler.worker.BaseWorker
+      queue: monitoring_q
+      pool: 1
 
 # local sidecar
 ##########################
