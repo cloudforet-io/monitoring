@@ -18,6 +18,9 @@ class IdentityManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.identity_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='identity')
 
+    def get_user(self, user_id, domain_id):
+        return self.identity_connector.dispatch('User.get', {'user_id': user_id, 'domain_id': domain_id})
+
     def get_project(self, project_id, domain_id):
         return self.identity_connector.dispatch('Project.get', {'project_id': project_id, 'domain_id': domain_id})
 

@@ -6,12 +6,14 @@ from spaceone.core import cache
 from spaceone.core import utils
 from spaceone.monitoring.error.webhook import *
 from spaceone.monitoring.model.event_model import Event
+from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.webhook_model import Webhook
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.alert_manager import AlertManager
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
 from spaceone.monitoring.manager.event_manager import EventManager
+from spaceone.monitoring.manager.job_manager import JobManager
 from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 
@@ -181,6 +183,7 @@ class EventService(BaseService):
             event_data['alert'] = event_vo.alert
 
         self.event_mgr.create_event(event_data)
+        self.jo
 
     def _create_alert(self, event_data):
         alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
@@ -226,3 +229,13 @@ class EventService(BaseService):
     def _get_project_alert_config(self, project_id, domain_id):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
         return project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+
+    def _create_notification(self, alert_vo: Alert):
+        job_mgr: JobManager = self.locator.get_manager('JobManager')
+        job_mgr.push_task('monitoring_alert_notification_from_webhook',
+                          'JobService',
+                          'create_notification',
+                          {
+                               'alert_id': alert_vo.alert_id,
+                               'domain_id': alert_vo.domain_id
+                           })
