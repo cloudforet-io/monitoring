@@ -38,16 +38,10 @@ GLOBAL:
     authorization:
     - backend: spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler
       uri: grpc://identity:50051/v1/Authorization/verify
-  CONNECTORS:
-    IdentityConnector:
-      endpoint:
-        v1: grpc://identity:50051
-    SecretConnector:
-      endpoint:
-        v1: grpc://secret:50051
-    PluginConnector:
-      endpoint:
-        v1: grpc://plugin:50051
-    RepositoryConnector:
-      endpoint:
-        v1: grpc://repository:50051
+  QUEUES:
+    collector_q:
+      backend: spaceone.core.queue.redis_queue.RedisQueue
+      host: redis
+      port: 6379
+      db: 1
+      channel: monitoring_alert
