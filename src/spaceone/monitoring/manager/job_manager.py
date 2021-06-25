@@ -1,9 +1,9 @@
 import logging
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from spaceone.core.error import *
-from spaceone.core import queue, utils
+from spaceone.core import queue, utils, config
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.model.job_model import Job
 
@@ -15,19 +15,21 @@ class JobManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.job_model: Job = self.locator.get_model('Job')
+        self.job_timeout = config.get_global('JOB_TIMEOUT', 600)
 
     def is_domain_job_running(self, domain_id):
-        job_vos = self.job_model.filter(domain_id=domain_id, status='IN_PROGRESS')
+        job_vos: List[Job] = self.job_model.filter(domain_id=domain_id, status='IN_PROGRESS')
 
         running_job_count = job_vos.count()
 
         for job_vo in job_vos:
-            if job_vo.remained_tasks == 0 and job_vo.status != 'ERROR':
+            if job_vo.remained_tasks == 0 and job_vo.status not in ['ERROR', 'TIMEOUT']:
                 self.change_success_status(job_vo)
                 running_job_count -= 1
 
-            # Old jobs change to timeout status
-            pass
+            if datetime.utcnow() > (job_vo.created_at + timedelta(seconds=self.job_timeout)):
+                self.change_timeout_status(job_vo)
+                running_job_count -= 1
 
         if running_job_count > 0:
             return True
@@ -51,6 +53,15 @@ class JobManager(BaseManager):
         #     'status': 'SUCCESS',
         #     'finished_at': datetime.utcnow()
         # })
+
+    @staticmethod
+    def change_timeout_status(job_vo: Job):
+        _LOGGER.error(f'Job Timeout ({job_vo.job_id}): {job_vo.domain_id}')
+
+        job_vo.update({
+            'status': 'TIMEOUT',
+            'finished_at': datetime.utcnow()
+        })
 
     @staticmethod
     def change_error_status(job_vo: Job, e):

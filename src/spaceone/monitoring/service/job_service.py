@@ -4,11 +4,13 @@ from datetime import timedelta, datetime
 
 from spaceone.core.service import *
 from spaceone.core.error import *
-from spaceone.core import utils
+from spaceone.core import utils, cache
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.alert_manager import AlertManager
+from spaceone.monitoring.manager.identity_manager import IdentityManager
+from spaceone.monitoring.manager.webhook_manager import WebhookManager
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 from spaceone.monitoring.manager.notification_manager import NotificationManager
@@ -56,7 +58,9 @@ class JobService(BaseService):
 
                 for alert_vo in alert_vos:
                     _LOGGER.debug(f'[create_job] Push task (JobService.create_notification): {alert_vo.alert_id}')
-                    self.job_mgr.push_task('monitoring_alert_notification', 'JobService', 'create_notification',
+                    self.job_mgr.push_task('monitoring_alert_notification_from_scheduler',
+                                           'JobService',
+                                           'create_notification',
                                            {
                                                'job_id': job_vo.job_id,
                                                'alert_id': alert_vo.alert_id,
@@ -69,7 +73,7 @@ class JobService(BaseService):
             self.transaction.execute_rollback()
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
-    @check_required(['job_id', 'alert_id', 'domain_id'])
+    @check_required(['alert_id', 'domain_id'])
     def create_notification(self, params):
         """ Create job
 
@@ -84,12 +88,11 @@ class JobService(BaseService):
             None
         """
 
-        job_id = params['job_id']
+        job_id = params.get('job_id')
         alert_id = params['alert_id']
         domain_id = params['domain_id']
 
         job_mgr: JobManager = self.locator.get_manager('JobManager')
-        job_vo = self.job_mgr.get_job(job_id, domain_id)
 
         try:
             alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
@@ -115,9 +118,15 @@ class JobService(BaseService):
                     message = self._create_notification_message(alert_vo, rules)
                     notification_mgr.create_notification(message)
 
-            job_mgr.decrease_remained_tasks(job_vo)
+            if job_id:
+                job_vo = self.job_mgr.get_job(job_id, domain_id)
+                job_mgr.decrease_remained_tasks(job_vo)
         except Exception as e:
-            job_mgr.change_error_status(job_vo, e)
+            if job_id:
+                job_vo = self.job_mgr.get_job(job_id, domain_id)
+                job_mgr.change_error_status(job_vo, e)
+
+            _LOGGER.error(f'[create_notification] Job Error: {e}', exc_info=True)
             self.transaction.execute_rollback()
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
@@ -182,6 +191,7 @@ class JobService(BaseService):
 
         return alert_mgr.list_alerts(query)
 
+    @cache.cacheable(key='project-alert-options:{domain_id}:{project_id}', expire=300)
     def _get_project_alert_options(self, project_id, domain_id):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
         project_alert_config_vo: ProjectAlertConfig = project_alert_config_mgr.get_project_alert_config(project_id,
@@ -189,6 +199,7 @@ class JobService(BaseService):
 
         return dict(project_alert_config_vo.options.to_dict())
 
+    @cache.cacheable(key='escalation-policy-condition:{domain_id}:{escalation_policy_id}', expire=300)
     def _get_escalation_policy_rules_and_finish_condition(self, escalation_policy_id, domain_id):
         escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager('EscalationPolicyManager')
         escalation_policy_vo: EscalationPolicy = escalation_policy_mgr.get_escalation_policy(escalation_policy_id,
@@ -270,43 +281,96 @@ class JobService(BaseService):
             else:
                 return False, alert_vo
 
-    @staticmethod
-    def _create_notification_message(alert_vo: Alert, rules):
+    def _create_notification_message(self, alert_vo: Alert, rules):
+        domain_id = alert_vo.domain_id
         current_step = rules[alert_vo.escalation_step - 1]
 
         tags = {
-            'state': alert_vo.state,
-            'project_id': alert_vo.project_id,
-            'urgency': alert_vo.urgency,
-            'created_at': utils.iso8601_to_datetime(alert_vo.created_at)
+            'State': alert_vo.state,
+            'Project': self._get_project_name(alert_vo.project_id, domain_id),
+            'Urgency': alert_vo.urgency,
+            'Triggered By': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
+            'Created': utils.datetime_to_iso8601(alert_vo.created_at)
         }
 
         if alert_vo.status_message != '':
-            tags['status_details'] = alert_vo.status_message
+            tags['Status Message'] = alert_vo.status_message
 
         if alert_vo.assignee:
-            tags['assignee'] = alert_vo.assignee
+            tags['Assignee'] = self._get_user_name(alert_vo.assignee, domain_id)
 
         resource = alert_vo.resource or {}
 
         if 'name' in resource:
-            tags['resource_name'] = resource['name']
+            tags['Resource Name'] = resource['name']
 
         if 'resource_id' in resource:
-            tags['resource_id'] = resource['resource_id']
+            tags['Resource ID'] = resource['resource_id']
 
         if 'resource_type' in resource:
-            tags['resource_id'] = resource['resource_type']
+            tags['Resource Type'] = resource['resource_type']
+
+        title = f'[Alerting] {alert_vo.title}'
+        description = alert_vo.description
+
+        # Need to change multiple language
+        if 'name' in resource:
+            short_message = f'경고! {resource["name"]}에 장애가 발생했습니다.'
+        else:
+            short_message = f'경고! 장애 발생. {alert_vo.title}'
 
         return {
             'resource_type': 'identity.Project',
             'resource_id': alert_vo.project_id,
+            "notification_type": "ERROR",
             'topic': 'monitoring.Alert',
             'message': {
-                'title': alert_vo.title,
-                'description': alert_vo.description,
-                'tags': tags
+                'title': title,
+                'description': description,
+                'tags': tags,
+                'short_message': short_message
             },
             'notification_level': current_step['notification_level'],
             'domain_id': alert_vo.domain_id
         }
+
+    @cache.cacheable(key='project-name:{domain_id}:{project_id}', expire=300)
+    def _get_project_name(self, project_id, domain_id):
+        try:
+            identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+            project_info = identity_mgr.get_project(project_id, domain_id)
+            return f'{project_info["project_group_info"]["name"]} > {project_info["name"]}'
+        except Exception as e:
+            _LOGGER.error(f'[_get_project_name] Failed to get project: {e}', exc_info=True)
+
+        return project_id
+
+    @cache.cacheable(key='triggered-by-name:{domain_id}:{triggered_by}', expire=300)
+    def _get_triggered_by_name(self, triggered_by, domain_id):
+        if triggered_by.startswith('webhook-'):
+            try:
+                webhook_mgr: WebhookManager = self.locator.get_manager('WebhookManager')
+                webhook_info = webhook_mgr.get_webhook(triggered_by, domain_id)
+
+                return webhook_info['name']
+            except Exception as e:
+                _LOGGER.error(f'[_get_triggered_by_name] Failed to get webhook: {e}', exc_info=True)
+        else:
+            return self._get_user_name(triggered_by, domain_id)
+
+        return triggered_by
+
+    @cache.cacheable(key='user-name:{domain_id}:{user_id}', expire=300)
+    def _get_user_name(self, user_id, domain_id):
+        try:
+            identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+            user_info = identity_mgr.get_user(user_id, domain_id)
+
+            if len(user_info.get('name', '').strip()) == 0:
+                return user_info['user_id']
+            else:
+                return f'{user_info["user_id"]} ({user_info["name"]})'
+        except Exception as e:
+            _LOGGER.error(f'[_get_user_name] Failed to get user: {e}', exc_info=True)
+
+        return user_id

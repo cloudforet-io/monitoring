@@ -7,6 +7,7 @@ from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 from spaceone.monitoring.manager.alert_manager import AlertManager
+from spaceone.monitoring.manager.job_manager import JobManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +58,11 @@ class AlertService(BaseService):
 
         params['triggered_by'] = self.transaction.get_meta('user_id')
 
-        return self.alert_mgr.create_alert(params)
+        alert_vo = self.alert_mgr.create_alert(params)
+
+        self._create_notification(alert_vo)
+
+        return alert_vo
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alert_id', 'domain_id'])
@@ -350,3 +355,13 @@ class AlertService(BaseService):
 
         query = params.get('query', {})
         return self.alert_mgr.stat_alerts(query)
+
+    def _create_notification(self, alert_vo: Alert):
+        job_mgr: JobManager = self.locator.get_manager('JobManager')
+        job_mgr.push_task('monitoring_alert_notification_from_manual',
+                          'JobService',
+                          'create_notification',
+                          {
+                               'alert_id': alert_vo.alert_id,
+                               'domain_id': alert_vo.domain_id
+                           })
