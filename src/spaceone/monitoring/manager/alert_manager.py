@@ -103,9 +103,6 @@ class AlertManager(BaseManager):
     def get_alert(self, alert_id, domain_id, only=None):
         return self.alert_model.get(alert_id=alert_id, domain_id=domain_id, only=only)
 
-    def get_alert_by_id(self, alert_id):
-        return self.alert_model.get(alert_id=alert_id)
-
     def list_alerts(self, query={}):
         return self.alert_model.query(**query)
 
