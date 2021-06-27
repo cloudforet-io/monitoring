@@ -118,6 +118,9 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
+        if alert_vo.state == 'ERROR':
+            raise ERROR_INVALID_PARAMETER(key='state', reason='The error state cannot be changed.')
+
         # TODO: Check Assignee
 
         return self.alert_mgr.update_alert_by_vo(params, alert_vo)
@@ -151,6 +154,8 @@ class AlertService(BaseService):
 
         if alert_vo.state != 'TRIGGERED':
             raise ERROR_ALERT_ALREADY_PROCESSED(alert_id=alert_id)
+        elif alert_vo.state == 'ERROR':
+            raise ERROR_INVALID_PARAMETER(key='state', reason='The error state cannot be changed.')
 
         update_params = {
             'state': state

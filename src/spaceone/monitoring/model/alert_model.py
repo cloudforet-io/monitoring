@@ -18,7 +18,7 @@ class Alert(MongoModel):
     alert_number = SequenceField()
     alert_id = StringField(max_length=40, generate_id='alert', unique=True)
     title = StringField()
-    state = StringField(max_length=20, default='TRIGGERED', choices=('TRIGGERED', 'ACKNOWLEDGED', 'RESOLVED'))
+    state = StringField(max_length=20, default='TRIGGERED', choices=('TRIGGERED', 'ACKNOWLEDGED', 'RESOLVED', 'ERROR'))
     status_message = StringField(default='')
     description = StringField(default='')
     assignee = StringField(default=None, null=True)
