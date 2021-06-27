@@ -51,13 +51,22 @@ class EventService(BaseService):
         self._check_access_key(params['access_key'], webhook_data['access_key'])
         self._check_webhook_state(webhook_data)
 
-        webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
-        webhook_plugin_mgr.initialize(webhook_data['plugin_id'], webhook_data['plugin_version'],
-                                      webhook_data['domain_id'])
-        response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], params['data'])
+        try:
+            webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
+            webhook_plugin_mgr.initialize(webhook_data['plugin_id'], webhook_data['plugin_version'],
+                                          webhook_data['domain_id'])
+            response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], params['data'])
+
+        except Exception as e:
+            if not isinstance(e, ERROR_BASE):
+                e = ERROR_UNKNOWN(message=str(e))
+
+            _LOGGER.error(f'[create] Event parsing failed: {e.message}')
+            response = self._create_error_event(webhook_data['name'], e.message)
 
         for event_data in response.get('results', []):
             # TODO: Check event data using schematics
+
             _LOGGER.debug(f'[Event.create] event_data: {event_data}')
             self._create_event(event_data, params['data'], webhook_data)
 
@@ -137,12 +146,13 @@ class EventService(BaseService):
         query = params.get('query', {})
         return self.event_mgr.stat_events(query)
 
-    @cache.cacheable(key='webhook-data:{webhook_id}', expire=300)
+    # @cache.cacheable(key='webhook-data:{webhook_id}', expire=300)
     def _get_webhook_data(self, webhook_id):
         webhook_mgr: WebhookManager = self.locator.get_manager('WebhookManager')
         webhook_vo: Webhook = webhook_mgr.get_webhook_by_id(webhook_id)
         return {
             'webhook_id': webhook_vo.webhook_id,
+            'name': webhook_vo.name,
             'project_id': webhook_vo.project_id,
             'domain_id': webhook_vo.domain_id,
             'state': webhook_vo.state,
@@ -169,7 +179,7 @@ class EventService(BaseService):
         event_data['project_id'] = webhook_data['project_id']
         event_data['domain_id'] = webhook_data['domain_id']
 
-        # Change event data by event rule
+        # TODO Change event data by event rule
 
         event_vo = self.event_mgr.get_event_by_key(event_data['event_key'])
 
@@ -198,7 +208,14 @@ class EventService(BaseService):
 
         alert_data['triggered_by'] = alert_data['webhook_id']
 
-        return alert_mgr.create_alert(alert_data)
+        if event_data.get('event_type', 'ERROR') == 'ERROR':
+            alert_data['state'] = 'ERROR'
+
+        alert_vo = alert_mgr.create_alert(alert_data)
+
+        self._create_notification(alert_vo)
+
+        return alert_vo
 
     @staticmethod
     def _get_urgency_from_severity(severity):
@@ -230,11 +247,27 @@ class EventService(BaseService):
         return project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
 
     def _create_notification(self, alert_vo: Alert):
-        job_mgr: JobManager = self.locator.get_manager('JobManager')
-        job_mgr.push_task('monitoring_alert_notification_from_webhook',
-                          'JobService',
-                          'create_notification',
-                          {
-                               'alert_id': alert_vo.alert_id,
-                               'domain_id': alert_vo.domain_id
-                           })
+        if alert_vo.state != 'ERROR':
+            job_mgr: JobManager = self.locator.get_manager('JobManager')
+            job_mgr.push_task('monitoring_alert_notification_from_webhook',
+                              'JobService',
+                              'create_notification',
+                              {
+                                   'alert_id': alert_vo.alert_id,
+                                   'domain_id': alert_vo.domain_id
+                               })
+
+    def _create_error_event(self, webhook_name, error_message):
+        response = {
+            'results': [
+                {
+                    'event_key': utils.generate_id('error'),
+                    'event_type': 'ERROR',
+                    'title': f'Webhook Event Parsing Error - {webhook_name}',
+                    'description': error_message,
+                    'severity': 'CRITICAL'
+                }
+            ]
+        }
+
+        return response

@@ -380,13 +380,13 @@ class JobService(BaseService):
         title = f'[Alerting] {alert_vo.title}'
         description = alert_vo.description
 
-        # Need to change multiple language
+        # TODO: Need to change multiple language
         if 'name' in resource:
             short_message = f'경고! {resource["name"]}에 장애가 발생했습니다.'
         else:
             short_message = f'경고! 장애 발생. {alert_vo.title}'
 
-        # Callback
+        # Callback for state change
         access_key = self._generate_access_key()
         callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
 

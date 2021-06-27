@@ -57,7 +57,7 @@ class AlertService(BaseService):
         params['escalation_ttl'] = escalation_policy_vo.repeat_count + 1
         params['escalated_at'] = None
 
-        # Check Assignee
+        # TODO: Check Assignee
 
         params['triggered_by'] = self.transaction.get_meta('user_id')
 
@@ -118,7 +118,10 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
-        # Check Assignee
+        if alert_vo.state == 'ERROR':
+            raise ERROR_INVALID_PARAMETER(key='state', reason='The error state cannot be changed.')
+
+        # TODO: Check Assignee
 
         return self.alert_mgr.update_alert_by_vo(params, alert_vo)
 
@@ -151,6 +154,8 @@ class AlertService(BaseService):
 
         if alert_vo.state != 'TRIGGERED':
             raise ERROR_ALERT_ALREADY_PROCESSED(alert_id=alert_id)
+        elif alert_vo.state == 'ERROR':
+            raise ERROR_INVALID_PARAMETER(key='state', reason='The error state cannot be changed.')
 
         update_params = {
             'state': state
@@ -203,7 +208,7 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
-        # Check end_times
+        # TODO: Check end_times
 
         params['is_snoozed'] = True
         params['snoozed_end_time'] = params['end_time']
@@ -227,7 +232,7 @@ class AlertService(BaseService):
             alert_vo (object)
         """
 
-        # Check resource_type and resource_id
+        # TODO: Check resource_type and resource_id
 
         return self.alert_mgr.add_responder(params)
 
@@ -266,7 +271,7 @@ class AlertService(BaseService):
             alert_vo (object)
         """
 
-        # Check project_id
+        # TODO: Check project_id
 
         return self.alert_mgr.add_project_dependency(params)
 

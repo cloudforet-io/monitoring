@@ -12,7 +12,7 @@ class EventResource(EmbeddedDocument):
 class Event(MongoModel):
     event_id = StringField(max_length=40, generate_id='event', unique=True)
     event_key = StringField()
-    event_type = StringField(max_length=20, default='ALERT', choices=('ALERT', 'RECOVERY'))
+    event_type = StringField(max_length=20, default='ALERT', choices=('ALERT', 'RECOVERY', 'ERROR'))
     title = StringField()
     description = StringField(default=None, null=True)
     severity = StringField(max_length=20, default='NONE', choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO',
