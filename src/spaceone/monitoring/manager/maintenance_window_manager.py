@@ -48,6 +48,9 @@ class MaintenanceWindowManager(BaseManager):
         return self.maintenance_window_model.get(maintenance_window_id=maintenance_window_id,
                                                  domain_id=domain_id, only=only)
 
+    def list_open_maintenance_windows(self):
+        return self.maintenance_window_model.filter(state='OPEN')
+
     def list_maintenance_windows(self, query={}):
         return self.maintenance_window_model.query(**query)
 

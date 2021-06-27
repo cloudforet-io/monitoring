@@ -8,9 +8,11 @@ from spaceone.core import utils, cache, config
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
+from spaceone.monitoring.model.maintenance_window_model import MaintenanceWindow
 from spaceone.monitoring.manager.alert_manager import AlertManager
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
+from spaceone.monitoring.manager.maintenance_window_manager import MaintenanceWindowManager
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 from spaceone.monitoring.manager.notification_manager import NotificationManager
@@ -28,6 +30,42 @@ class JobService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.job_mgr: JobManager = self.locator.get_manager('JobManager')
+
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
+    def close_maintenance_window(self, params):
+        """ Close out of time maintenance window
+
+        Args:
+            params (dict): {}
+
+        Returns:
+            None
+        """
+        maintenance_window_mgr: MaintenanceWindowManager = self.locator.get_manager('MaintenanceWindowManager')
+        maintenance_window_vos: List[MaintenanceWindow] = maintenance_window_mgr.list_open_maintenance_windows()
+
+        current_time = datetime.utcnow()
+
+        for maintenance_window_vo in maintenance_window_vos:
+            if current_time > maintenance_window_vo.end_time:
+                _LOGGER.debug(f'[close_maintenance_window] Close out of time maintenance window: '
+                              f'{maintenance_window_vo.maintenance_window_id}')
+                maintenance_window_mgr.update_maintenance_window_by_vo({'state': 'CLOSED'}, maintenance_window_vo)
+
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
+    def create_jobs_by_domain(self, params):
+        """ Create jobs by domain
+
+        Args:
+            params (dict): {}
+
+        Returns:
+            None
+        """
+
+        for domain_id in self._list_domains_of_alerts():
+            _LOGGER.debug(f'[create_jobs_by_domain] Push task (JobService.create): {domain_id}')
+            self.job_mgr.push_task('monitoring_alert_job', 'JobService', 'create_job', {'domain_id': domain_id})
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     @check_required(['domain_id'])
@@ -75,7 +113,7 @@ class JobService(BaseService):
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     @check_required(['alert_id', 'domain_id'])
     def create_notification(self, params):
-        """ Create job
+        """ Create alert notification
 
         Args:
             params (dict): {
@@ -104,10 +142,12 @@ class JobService(BaseService):
             alert_options = self._get_project_alert_options(project_id, domain_id)
             rules, finish_condition = self._get_escalation_policy_rules_and_finish_condition(escalation_policy_id,
                                                                                              domain_id)
+            maintenance_window_state = self._get_project_maintenance_window_state(project_id, domain_id)
 
             # Check Notification Urgency and Finish Condition
-            if not (self._check_notification_options(alert_vo, alert_options)
-                    and self._check_finish_condition(alert_vo, finish_condition)):
+            if not (self._check_notification_options(alert_vo.urgency, alert_id, alert_options)
+                    and self._check_finish_condition(alert_vo.state, alert_id, finish_condition)
+                    and self._check_maintenance_window(project_id, alert_id, maintenance_window_state)):
                 alert_mgr.update_alert_by_vo({'escalation_ttl': 0}, alert_vo)
 
             else:
@@ -128,21 +168,6 @@ class JobService(BaseService):
 
             _LOGGER.error(f'[create_notification] Job Error: {e}', exc_info=True)
             self.transaction.execute_rollback()
-
-    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
-    def create_jobs_by_domain(self, params):
-        """ Create jobs by domain
-
-        Args:
-            params (dict): {}
-
-        Returns:
-            None
-        """
-
-        for domain_id in self._list_domains_of_alerts():
-            _LOGGER.debug(f'[create_jobs_by_domain] Push task (JobService.create): {domain_id}')
-            self.job_mgr.push_task('monitoring_alert_job', 'JobService', 'create_job', {'domain_id': domain_id})
 
     def _list_domains_of_alerts(self):
         query = {
@@ -210,26 +235,66 @@ class JobService(BaseService):
 
         return rules, escalation_policy_vo.finish_condition
 
+    @cache.cacheable(key='maintenance-window-state:{domain_id}:{project_id}', expire=300)
+    def _get_project_maintenance_window_state(self, project_id, domain_id):
+        query = {
+            'filter': [
+                {
+                    'k': 'projects',
+                    'v': project_id,
+                    'o': 'eq'
+                },
+                {
+                    'k': 'state',
+                    'v': 'OPEN',
+                    'o': 'eq'
+                },
+                {
+                    'k': 'domain_id',
+                    'v': domain_id,
+                    'o': 'eq'
+                }
+            ],
+            'count_only': True
+        }
+
+        maintenance_window_mgr: MaintenanceWindowManager = self.locator.get_manager('MaintenanceWindowManager')
+        maintenance_window_vos, total_count = maintenance_window_mgr.list_maintenance_windows(query)
+
+        if total_count > 0:
+            return 'OPEN'
+        else:
+            return 'CLOSED'
+
     @staticmethod
     def _get_current_escalation_rule(alert_vo: Alert, rules):
         return rules[alert_vo.escalation_step - 1]
 
     @staticmethod
-    def _check_notification_options(alert_vo: Alert, alert_options):
-        if alert_options['notification_urgency'] == 'HIGH' and alert_vo.urgency == 'LOW':
-            _LOGGER.debug(f'[_check_notification_options] End notification. '
-                          f'(notification_urgency = HIGH, alert_urgency = LOW, alert_id = {alert_vo.alert_id})')
+    def _check_notification_options(alert_urgency, alert_id, alert_options):
+        if alert_options['notification_urgency'] == 'HIGH' and alert_urgency == 'LOW':
+            _LOGGER.debug(f'[_check_notification_options] Stop notifications. '
+                          f'(notification_urgency = HIGH, alert_urgency = LOW, alert_id = {alert_id})')
             return False
         else:
             return True
 
     @staticmethod
-    def _check_finish_condition(alert_vo: Alert, finish_condition):
-        if finish_condition == 'ACKNOWLEDGED' and alert_vo.state == 'ACKNOWLEDGED':
-            _LOGGER.debug(f'[_check_finish_condition] End notification. '
+    def _check_finish_condition(alert_state, alert_id, finish_condition):
+        if finish_condition == 'ACKNOWLEDGED' and alert_state == 'ACKNOWLEDGED':
+            _LOGGER.debug(f'[_check_finish_condition] Stop notifications. '
                           f'(finish_condition = ACKNOWLEDGED, alert_state = ACKNOWLEDGED, '
-                          f'alert_id = {alert_vo.alert_id})')
+                          f'alert_id = {alert_id})')
+            return False
+        else:
             return True
+
+    @staticmethod
+    def _check_maintenance_window(project_id, alert_id, maintenance_window_state):
+        if maintenance_window_state == 'OPEN':
+            _LOGGER.debug(f'[_check_maintenance_window] Stop notifications. '
+                          f'(project_id = {project_id}, maintenance_window_state = OPEN, alert_id = {alert_id})')
+            return False
         else:
             return True
 
@@ -286,9 +351,11 @@ class JobService(BaseService):
         current_step = rules[alert_vo.escalation_step - 1]
 
         tags = {
+            'Alert ID': f'#{alert_vo.alert_number} ({alert_vo.alert_id})',
             'State': alert_vo.state,
             'Project': self._get_project_name(alert_vo.project_id, domain_id),
             'Urgency': alert_vo.urgency,
+            'Escalation Step': str(int(alert_vo.escalation_step)),
             'Triggered By': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
             'Created': utils.datetime_to_iso8601(alert_vo.created_at)
         }

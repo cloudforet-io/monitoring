@@ -26,7 +26,7 @@ class Alert(MongoModel):
     severity = StringField(max_length=20, default='NONE', choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                                                    'NOT_AVAILABLE', 'NONE'))
     rule = StringField(default='')
-    resource = EmbeddedDocumentField(AlertResource, default=AlertResource)
+    resource = EmbeddedDocumentField(AlertResource, default=None, null=True)
     additional_info = DictField()
     is_snoozed = BooleanField(default=False)
     snoozed_end_time = DateTimeField(default=None, null=True)
