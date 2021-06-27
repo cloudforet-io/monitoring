@@ -119,7 +119,8 @@ class JobService(BaseService):
             params (dict): {
                 'job_id': 'str',
                 'alert_id': 'str',
-                'domain_id_id':
+                'domain_id_id': 'str',
+                'notification_type': 'str'
             }
 
         Returns:
@@ -129,6 +130,7 @@ class JobService(BaseService):
         job_id = params.get('job_id')
         alert_id = params['alert_id']
         domain_id = params['domain_id']
+        notification_type = params.get('notification_type', 'ERROR')
 
         job_mgr: JobManager = self.locator.get_manager('JobManager')
 
@@ -155,7 +157,7 @@ class JobService(BaseService):
                 is_notify, alert_vo = self._check_escalation_time_and_escalate_alert(alert_mgr, alert_vo, rules)
                 if is_notify:
                     notification_mgr: NotificationManager = self.locator.get_manager('NotificationManager')
-                    message = self._create_notification_message(alert_vo, rules)
+                    message = self._create_notification_message(alert_vo, rules, notification_type)
                     notification_mgr.create_notification(message)
 
             if job_id:
@@ -346,9 +348,12 @@ class JobService(BaseService):
             else:
                 return False, alert_vo
 
-    def _create_notification_message(self, alert_vo: Alert, rules):
+    def _create_notification_message(self, alert_vo: Alert, rules, notification_type):
         domain_id = alert_vo.domain_id
         current_step = rules[alert_vo.escalation_step - 1]
+
+        if notification_type not in ['ERROR', 'SUCCESS']:
+            notification_type = 'ERROR'
 
         tags = {
             'Alert ID': f'#{alert_vo.alert_number} ({alert_vo.alert_id})',
@@ -377,7 +382,6 @@ class JobService(BaseService):
         if 'resource_type' in resource:
             tags['Resource Type'] = resource['resource_type']
 
-        title = f'[Alerting] {alert_vo.title}'
         description = alert_vo.description
 
         # TODO: Need to change multiple language
@@ -386,26 +390,36 @@ class JobService(BaseService):
         else:
             short_message = f'경고! 장애 발생. {alert_vo.title}'
 
-        # Callback for state change
-        access_key = self._generate_access_key()
-        callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
+        callbacks = []
+
+        if notification_type == 'SUCCESS':
+            title = f'[OK] {alert_vo.title}'
+            tags['Resolved'] = alert_vo.resolved_at
+
+        else:
+            title = f'[Alerting] {alert_vo.title}'
+
+            # Callback for state change
+            access_key = self._generate_access_key()
+            callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
+            callbacks.append(
+                {
+                    'label': 'Acknowledge Alerts',
+                    'url': callback_url
+                }
+            )
 
         return {
             'resource_type': 'identity.Project',
             'resource_id': alert_vo.project_id,
-            "notification_type": "ERROR",
+            "notification_type": notification_type,
             'topic': 'monitoring.Alert',
             'message': {
                 'title': title,
                 'description': description,
                 'tags': tags,
                 'short_message': short_message,
-                'callbacks': [
-                    {
-                        'label': 'Acknowledge Alerts',
-                        'url': callback_url
-                    }
-                ]
+                'callbacks': callbacks
             },
             'notification_level': current_step['notification_level'],
             'domain_id': alert_vo.domain_id
