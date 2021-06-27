@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from spaceone.core.service import *
 from spaceone.core import cache
@@ -91,6 +92,7 @@ class AlertService(BaseService):
         alert_id = params['alert_id']
         domain_id = params['domain_id']
         project_id = params.get('project_id')
+        state = params.get('state')
 
         if project_id:
             project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
@@ -103,6 +105,16 @@ class AlertService(BaseService):
             params['escalation_ttl'] = escalation_policy_vo.repeat_count
             params['escalation_step'] = 1
             params['escalated_at'] = None
+
+        if state:
+            if state == 'ACKNOWLEDGED':
+                params['acknowledged_at'] = datetime.utcnow()
+                params['resolved_at'] = None
+            elif state == 'RESOLVED':
+                params['resolved_at'] = datetime.utcnow()
+            elif state == 'TRIGGERED':
+                params['acknowledged_at'] = None
+                params['resolved_at'] = None
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
@@ -140,7 +152,16 @@ class AlertService(BaseService):
         if alert_vo.state != 'TRIGGERED':
             raise ERROR_ALERT_ALREADY_PROCESSED(alert_id=alert_id)
 
-        return self.alert_mgr.update_alert_by_vo({'state': state}, alert_vo)
+        update_params = {
+            'state': state
+        }
+
+        if state == 'ACKNOWLEDGED':
+            update_params['acknowledged_at'] = datetime.utcnow()
+        elif state == 'RESOLVED':
+            update_params['resolved_at'] = datetime.utcnow()
+
+        return self.alert_mgr.update_alert_by_vo(update_params, alert_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alerts', 'merge_to', 'domain_id'])

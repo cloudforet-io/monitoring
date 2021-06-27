@@ -32,7 +32,9 @@ class Event(MongoModel):
     meta = {
         'updatable_fields': [
             'alert_id',
-            'project_id'
+            'project_id',
+            'alert',
+            'alert_id'
         ],
         'minimal_fields': [
             'event_id',
