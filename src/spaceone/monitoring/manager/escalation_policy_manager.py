@@ -1,8 +1,9 @@
 import copy
 import logging
 
-from spaceone.monitoring.error.escalation_policy import *
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.monitoring.error.escalation_policy import *
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.conf.default_escalation_policy import DEFAULT_ESCALATION_POLICY
 
@@ -40,7 +41,11 @@ class EscalationPolicyManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, escalation_policy_vo.to_dict())
 
-        return escalation_policy_vo.update(params)
+        updated_vo: EscalationPolicy = escalation_policy_vo.update(params)
+
+        cache.delete(f'escalation-policy-condition:{updated_vo.domain_id}:{updated_vo.escalation_policy_id}')
+
+        return updated_vo
 
     def set_default_escalation_policy(self, params, escalation_policy_vo):
         global_escalation_policy_vos = self.escalation_policy_model.filter(domain_id=params['domain_id'],
@@ -65,6 +70,8 @@ class EscalationPolicyManager(BaseManager):
 
         if escalation_policy_vo.is_default:
             raise ERROR_DEFAULT_ESCALATION_POLICY_NOT_ALLOW_DELETION(escalation_policy_id=escalation_policy_id)
+
+        cache.delete(f'escalation-policy-condition:{domain_id}:{escalation_policy_id}')
 
         escalation_policy_vo.delete()
 

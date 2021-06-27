@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.model.webhook_model import Webhook
 
@@ -36,10 +37,17 @@ class WebhookManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, webhook_vo.to_dict())
 
-        return webhook_vo.update(params)
+        updated_vo: Webhook = webhook_vo.update(params)
+
+        cache.delete(f'webhook-data:{updated_vo.webhook_id}')
+
+        return updated_vo
 
     def delete_webhook(self, webhook_id, domain_id):
         webhook_vo: Webhook = self.get_webhook(webhook_id, domain_id)
+
+        cache.delete(f'webhook-data:{webhook_vo.webhook_id}')
+
         webhook_vo.delete()
 
     def get_webhook(self, webhook_id, domain_id, only=None):

@@ -235,7 +235,7 @@ class JobService(BaseService):
 
         return rules, escalation_policy_vo.finish_condition
 
-    @cache.cacheable(key='maintenance-window-state:{domain_id}:{project_id}', expire=300)
+    @cache.cacheable(key='maintenance-window-state:{domain_id}:{project_id}', expire=60)
     def _get_project_maintenance_window_state(self, project_id, domain_id):
         query = {
             'filter': [

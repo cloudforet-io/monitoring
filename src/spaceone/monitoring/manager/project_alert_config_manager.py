@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.error.project_alert_config import *
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
@@ -37,10 +38,21 @@ class ProjectAlertConfigManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, project_alert_config_vo.to_dict())
 
-        return project_alert_config_vo.update(params)
+        updated_vo: ProjectAlertConfig = project_alert_config_vo.update(params)
+
+        cache.delete(f'project-alert-options:{updated_vo.domain_id}:{updated_vo.project_id}')
+        cache.delete(f'escalation-policy-info:{updated_vo.domain_id}:{updated_vo.project_id}')
+        cache.delete(f'auto-recovery:{updated_vo.domain_id}:{updated_vo.project_id}')
+
+        return updated_vo
 
     def delete_project_alert_config(self, project_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self.get_project_alert_config(project_id, domain_id)
+
+        cache.delete(f'project-alert-options:{domain_id}:{project_id}')
+        cache.delete(f'escalation-policy-info:{domain_id}:{project_id}')
+        cache.delete(f'auto-recovery::{domain_id}:{project_id}')
+
         project_alert_config_vo.delete()
 
     def get_project_alert_config(self, project_id, domain_id, only=None):

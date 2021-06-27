@@ -54,9 +54,6 @@ class DataSourceService(BaseService):
 
         # Update metadata
         plugin_metadata = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
-
-        # params['plugin_info']['options'].update(plugin_metadata)
-        # TODO: Change plugin_info.options to metadata
         params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.register_data_source(params)
