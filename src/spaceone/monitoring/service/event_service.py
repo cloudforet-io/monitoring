@@ -184,9 +184,9 @@ class EventService(BaseService):
         event_vo: Event = self.event_mgr.get_event_by_key(event_data['event_key'])
 
         # Skip health event
-        # if event_data['event_type'] == 'RECOVERY' and event_vo is None:
-        #     _LOGGER.debug(f'[_create_event] Skip health event: {event_data.get("title")} (event_type = RECOVERY)')
-        #     return None
+        if event_data['event_type'] == 'RECOVERY' and event_vo is None:
+            _LOGGER.debug(f'[_create_event] Skip health event: {event_data.get("title")} (event_type = RECOVERY)')
+            return None
 
         if event_vo and event_vo.alert.state != 'RESOLVED':
             if event_data['event_type'] == 'RECOVERY':
