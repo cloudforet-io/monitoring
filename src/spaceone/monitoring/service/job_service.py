@@ -4,7 +4,7 @@ from datetime import timedelta, datetime
 
 from spaceone.core.service import *
 from spaceone.core.error import *
-from spaceone.core import utils, cache
+from spaceone.core import utils, cache, config
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
@@ -319,6 +319,10 @@ class JobService(BaseService):
         else:
             short_message = f'경고! 장애 발생. {alert_vo.title}'
 
+        # Callback
+        access_key = self._generate_access_key()
+        callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
+
         return {
             'resource_type': 'identity.Project',
             'resource_id': alert_vo.project_id,
@@ -328,7 +332,13 @@ class JobService(BaseService):
                 'title': title,
                 'description': description,
                 'tags': tags,
-                'short_message': short_message
+                'short_message': short_message,
+                'callbacks': [
+                    {
+                        'label': 'Acknowledge Alerts',
+                        'url': callback_url
+                    }
+                ]
             },
             'notification_level': current_step['notification_level'],
             'domain_id': alert_vo.domain_id
@@ -374,3 +384,20 @@ class JobService(BaseService):
             _LOGGER.error(f'[_get_user_name] Failed to get user: {e}', exc_info=True)
 
         return user_id
+
+    @staticmethod
+    def _generate_access_key():
+        return utils.random_string(16)
+
+    def _make_callback_url(self, alert_id, domain_id, access_key):
+        def _rollback(alert_id, access_key):
+            _LOGGER.info(f'[_make_callback_url._rollback] '
+                         f'Delete cache : {alert_id} '
+                         f'({access_key})')
+            cache.delete(f'alert-notification-callback:{alert_id}:{access_key}')
+
+        cache.set(f'alert-notification-callback:{alert_id}:{access_key}', domain_id, expire=600)
+        self.transaction.add_rollback(_rollback, alert_id, access_key)
+
+        webhook_domain = config.get_global('WEBHOOK_DOMAIN')
+        return f'{webhook_domain}/monitoring/v1/alert/{alert_id}/{access_key}/ACKNOWLEDGED'

@@ -1,6 +1,8 @@
 import logging
 
 from spaceone.core.service import *
+from spaceone.core import cache
+from spaceone.monitoring.error.alert import *
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
@@ -123,15 +125,22 @@ class AlertService(BaseService):
         Returns:
             alert_vo (object)
         """
+        alert_id = params['alert_id']
+        access_key = params['access_key']
+        state = params['state']
 
         # Check Access Key
+        domain_id = self._check_access_key(alert_id, access_key)
 
         # Check State
+        self._check_state(state)
 
-        alert_id = params['alert_id']
-        alert_vo = self.alert_mgr.get_alert_by_id(alert_id)
+        alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
-        return self.alert_mgr.update_alert_by_vo({'state': params['state']}, alert_vo)
+        if alert_vo.state != 'TRIGGERED':
+            raise ERROR_ALERT_ALREADY_PROCESSED(alert_id=alert_id)
+
+        return self.alert_mgr.update_alert_by_vo({'state': state}, alert_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alerts', 'merge_to', 'domain_id'])
@@ -365,3 +374,17 @@ class AlertService(BaseService):
                                'alert_id': alert_vo.alert_id,
                                'domain_id': alert_vo.domain_id
                            })
+
+    @staticmethod
+    def _check_access_key(alert_id, access_key):
+        domain_id = cache.get(f'alert-notification-callback:{alert_id}:{access_key}')
+
+        if domain_id is None:
+            raise ERROR_PERMISSION_DENIED()
+
+        return domain_id
+
+    @staticmethod
+    def _check_state(state):
+        if state not in ['ACKNOWLEDGED', 'RESOLVED']:
+            raise ERROR_INVALID_PARAMETER(key='state', reason='Unsupported state. (ACKNOWLEDGED | RESOLVED)')

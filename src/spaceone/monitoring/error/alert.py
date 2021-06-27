@@ -16,3 +16,6 @@ class ERROR_SAME_PROJECT_DEPENDENCY_ALREADY_EXISTS(ERROR_INVALID_ARGUMENT):
 class ERROR_PROJECT_DEPENDENCY_NOT_EXIST(ERROR_INVALID_ARGUMENT):
     _message = 'Project does not exist. (project_id = {project_id})'
 
+
+class ERROR_ALERT_ALREADY_PROCESSED(ERROR_INVALID_ARGUMENT):
+    _message = 'Alert has already been processed. (alert_id = {alert_id})'
