@@ -52,6 +52,7 @@ class WebhookService(BaseService):
         plugin_info = self._get_plugin(params['plugin_info'], domain_id)
         params['capability'] = plugin_info.get('capability', {})
 
+        _LOGGER.debug(f'[create] Init Plugin: {params["plugin_info"]}')
         plugin_metadata = self._init_plugin(params['plugin_info'], domain_id)
         params['plugin_info']['metadata'] = plugin_metadata
 

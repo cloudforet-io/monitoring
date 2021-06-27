@@ -57,7 +57,7 @@ class EventService(BaseService):
         response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], params['data'])
 
         for event_data in response.get('results', []):
-            # Check event data using schematics
+            # TODO: Check event data using schematics
             _LOGGER.debug(f'[Event.create] event_data: {event_data}')
             self._create_event(event_data, params['data'], webhook_data)
 
@@ -207,7 +207,7 @@ class EventService(BaseService):
         else:
             return 'LOW'
 
-    @cache.cacheable(key='escalation-policy-info:{domain_id}:{project_id}', expire=60)
+    @cache.cacheable(key='escalation-policy-info:{domain_id}:{project_id}', expire=300)
     def _get_escalation_policy_info(self, project_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(project_id, domain_id)
         escalation_policy_vo: EscalationPolicy = project_alert_config_vo.escalation_policy
@@ -220,7 +220,7 @@ class EventService(BaseService):
                 alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
                 alert_mgr.update_alert_by_vo({'state': 'RESOLVED'}, alert_vo)
 
-    @cache.cacheable(key='auto-recovery:{domain_id}:{project_id}', expire=60)
+    @cache.cacheable(key='auto-recovery:{domain_id}:{project_id}', expire=300)
     def _is_auto_recovery(self, project_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_escalation_policy(project_id, domain_id)
         return project_alert_config_vo.options.auto_recovery
