@@ -46,7 +46,7 @@ class MaintenanceWindowService(BaseService):
 
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
 
-        # Check projects and user permissions
+        # TODO: Check projects and user permissions
 
         return self.maintenance_window_mgr.create_maintenance_window(params)
 
@@ -83,7 +83,7 @@ class MaintenanceWindowService(BaseService):
         if projects:
             project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
 
-            # Check projects and user permissions
+            # TODO: Check projects and user permissions
 
         return self.maintenance_window_mgr.update_maintenance_window_by_vo(params, maintenance_window_vo)
 

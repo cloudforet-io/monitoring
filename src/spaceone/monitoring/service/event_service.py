@@ -58,6 +58,7 @@ class EventService(BaseService):
 
         for event_data in response.get('results', []):
             # TODO: Check event data using schematics
+
             _LOGGER.debug(f'[Event.create] event_data: {event_data}')
             self._create_event(event_data, params['data'], webhook_data)
 
@@ -169,7 +170,7 @@ class EventService(BaseService):
         event_data['project_id'] = webhook_data['project_id']
         event_data['domain_id'] = webhook_data['domain_id']
 
-        # Change event data by event rule
+        # TODO Change event data by event rule
 
         event_vo = self.event_mgr.get_event_by_key(event_data['event_key'])
 
