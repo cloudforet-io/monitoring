@@ -181,16 +181,27 @@ class EventService(BaseService):
 
         # TODO Change event data by event rule
 
-        event_vo = self.event_mgr.get_event_by_key(event_data['event_key'])
+        event_vo: Event = self.event_mgr.get_event_by_key(event_data['event_key'])
 
-        if event_vo is None or event_vo.alert.state == 'RESOLVED':
-            alert_vo = self._create_alert(event_data)
-            event_data['alert_id'] = alert_vo.alert_id
-            event_data['alert'] = alert_vo
+        # Skip health event
+        # if event_data['event_type'] == 'RECOVERY' and event_vo is None:
+        #     _LOGGER.debug(f'[_create_event] Skip health event: {event_data.get("title")} (event_type = RECOVERY)')
+        #     return None
 
-        else:
+        if event_vo and event_vo.alert.state != 'RESOLVED':
+            if event_data['event_type'] == 'RECOVERY':
+                self._update_alert_state(event_vo.alert)
+
             event_data['alert_id'] = event_vo.alert_id
             event_data['alert'] = event_vo.alert
+        else:
+            # Create new alert
+            _LOGGER.debug(f'[_create_event] Create new alert: {event_data.get("title")} '
+                          f'(event_type = {event_data["event_type"]})')
+            alert_vo = self._create_alert(event_data)
+
+            event_data['alert_id'] = alert_vo.alert_id
+            event_data['alert'] = alert_vo
 
         self.event_mgr.create_event(event_data)
 
@@ -231,11 +242,12 @@ class EventService(BaseService):
 
         return escalation_policy_vo.escalation_policy_id, escalation_policy_vo.repeat_count
 
-    def _update_alert_state(self, event_type, alert_vo, project_id, domain_id):
-        if event_type == 'RECOVERY':
-            if self._is_auto_recovery(project_id, domain_id) and alert_vo.state != 'RESOLVED':
-                alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
-                alert_mgr.update_alert_by_vo({'state': 'RESOLVED'}, alert_vo)
+    def _update_alert_state(self, alert_vo: Alert):
+        if self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id) and alert_vo.state != 'RESOLVED':
+            alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
+            alert_mgr.update_alert_by_vo({'state': 'RESOLVED'}, alert_vo)
+
+            self._create_notification(alert_vo, 'SUCCESS')
 
     @cache.cacheable(key='auto-recovery:{domain_id}:{project_id}', expire=300)
     def _is_auto_recovery(self, project_id, domain_id):
@@ -246,18 +258,21 @@ class EventService(BaseService):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
         return project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
 
-    def _create_notification(self, alert_vo: Alert):
+    def _create_notification(self, alert_vo: Alert, notification_type=None):
         if alert_vo.state != 'ERROR':
-            job_mgr: JobManager = self.locator.get_manager('JobManager')
-            job_mgr.push_task('monitoring_alert_notification_from_webhook',
-                              'JobService',
-                              'create_notification',
-                              {
-                                   'alert_id': alert_vo.alert_id,
-                                   'domain_id': alert_vo.domain_id
-                               })
+            params = {
+                'alert_id': alert_vo.alert_id,
+                'domain_id': alert_vo.domain_id
+            }
 
-    def _create_error_event(self, webhook_name, error_message):
+            if notification_type:
+                params['notification_type'] = notification_type
+
+            job_mgr: JobManager = self.locator.get_manager('JobManager')
+            job_mgr.push_task('monitoring_alert_notification_from_webhook', 'JobService', 'create_notification', params)
+
+    @staticmethod
+    def _create_error_event(webhook_name, error_message):
         response = {
             'results': [
                 {
