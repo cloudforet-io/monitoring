@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post('/alert/{alert_id}/{access_key}/{state}')
+@router.get('/alert/{alert_id}/{access_key}/{state}')
 async def update_alert_state(alert_id: str, access_key: str, state: str):
     locator = Locator()
     try:
