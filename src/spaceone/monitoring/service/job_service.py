@@ -286,9 +286,11 @@ class JobService(BaseService):
         current_step = rules[alert_vo.escalation_step - 1]
 
         tags = {
+            'Alert ID': f'#{alert_vo.alert_number} ({alert_vo.alert_id})',
             'State': alert_vo.state,
             'Project': self._get_project_name(alert_vo.project_id, domain_id),
             'Urgency': alert_vo.urgency,
+            'Escalation Step': str(int(alert_vo.escalation_step)),
             'Triggered By': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
             'Created': utils.datetime_to_iso8601(alert_vo.created_at)
         }
