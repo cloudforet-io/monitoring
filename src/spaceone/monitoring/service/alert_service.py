@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from spaceone.core.service import *
-from spaceone.core import cache
+from spaceone.core import cache, config
 from spaceone.monitoring.error.alert import *
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
@@ -404,6 +404,13 @@ class AlertService(BaseService):
     @staticmethod
     def _check_access_key(alert_id, access_key):
         domain_id = cache.get(f'alert-notification-callback:{alert_id}:{access_key}')
+
+        print("========")
+        print(config.get_global())
+        print('cache_key', f'alert-notification-callback:{alert_id}:{access_key}')
+        print('domain_id', domain_id)
+        print(cache.get(f'alert-notification-callback:{alert_id}:{access_key}'))
+        print("========")
 
         if domain_id is None:
             raise ERROR_PERMISSION_DENIED()
