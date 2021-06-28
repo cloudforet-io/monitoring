@@ -381,6 +381,8 @@ class JobService(BaseService):
         if notification_type not in ['ERROR', 'SUCCESS']:
             notification_type = 'ERROR'
 
+        project_name = self._get_project_name(alert_vo.project_id, domain_id)
+
         tags = [
             {
                 'key': 'Alert Number',
@@ -412,7 +414,7 @@ class JobService(BaseService):
             },
             {
                 'key': 'Project',
-                'value': self._get_project_name(alert_vo.project_id, domain_id)
+                'value': project_name
             }
         ]
 
@@ -439,7 +441,7 @@ class JobService(BaseService):
         description = alert_vo.description
 
         # TODO: Need to change multiple language
-        short_message = f'경고! 장애 발생! {tags["Project"].replace(" >", "의")} 프로젝트에 장애가 발생했습니다.'
+        short_message = f'경고! 장애 발생! {project_name.replace(" >", "의")} 프로젝트에 장애가 발생했습니다.'
 
         callbacks = []
 
