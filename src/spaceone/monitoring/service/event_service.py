@@ -180,14 +180,7 @@ class EventService(BaseService):
 
         # TODO Change event data by event rule
 
-        print(event_data)
-
         event_vo: Event = self.event_mgr.get_event_by_key(event_data['event_key'], event_data['domain_id'])
-
-        if event_vo:
-            print(event_vo.event_id)
-            print(event_vo.domain_id)
-            print(event_vo.alert_id)
 
         # Skip health event
         if event_data['event_type'] == 'RECOVERY' and event_vo is None:
