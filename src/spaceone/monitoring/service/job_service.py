@@ -361,7 +361,6 @@ class JobService(BaseService):
             'Project': self._get_project_name(alert_vo.project_id, domain_id),
             'Urgency': alert_vo.urgency,
             'Triggered by': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
-            'Escalation Step': alert_vo.escalation_step,
             'Created': utils.datetime_to_iso8601(alert_vo.created_at)
         }
 
