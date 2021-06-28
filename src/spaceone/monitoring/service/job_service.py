@@ -373,10 +373,7 @@ class JobService(BaseService):
         resource = alert_vo.resource or {}
 
         if 'name' in resource:
-            tags['Resource Name'] = resource['name']
-
-        if 'resource_type' in resource:
-            tags['Resource Type'] = resource['resource_type']
+            tags['Resource'] = resource['name']
 
         description = alert_vo.description
 
