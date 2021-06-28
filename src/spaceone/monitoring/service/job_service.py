@@ -392,15 +392,15 @@ class JobService(BaseService):
                 }
             },
             {
-                'key': 'Urgency',
-                'value': alert_vo.urgency,
+                'key': 'State',
+                'value': alert_vo.state,
                 'options': {
                     'short': True
                 }
             },
             {
-                'key': 'State',
-                'value': alert_vo.state,
+                'key': 'Urgency',
+                'value': alert_vo.urgency,
                 'options': {
                     'short': True
                 }
