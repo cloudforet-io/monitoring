@@ -1,5 +1,6 @@
 import logging
 from typing import List, Union
+import time
 from datetime import timedelta, datetime
 
 from spaceone.core.service import *
@@ -380,25 +381,60 @@ class JobService(BaseService):
         if notification_type not in ['ERROR', 'SUCCESS']:
             notification_type = 'ERROR'
 
-        tags = {
-            'Alert Number': f'#{alert_vo.alert_number}',
-            'State': alert_vo.state,
-            'Project': self._get_project_name(alert_vo.project_id, domain_id),
-            'Urgency': alert_vo.urgency,
-            'Triggered by': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
-            'Created': utils.datetime_to_iso8601(alert_vo.created_at)
-        }
-
-        if alert_vo.status_message != '':
-            tags['Status Message'] = alert_vo.status_message
-
-        if alert_vo.assignee:
-            tags['Assigned to'] = self._get_user_name(alert_vo.assignee, domain_id)
+        tags = [
+            {
+                'key': 'Alert Number',
+                'value': f'#{alert_vo.alert_number}',
+                'options': {
+                    'short': True
+                }
+            },
+            {
+                'key': 'Urgency',
+                'value': alert_vo.urgency,
+                'options': {
+                    'short': True
+                }
+            },
+            {
+                'key': 'State',
+                'value': alert_vo.state,
+                'options': {
+                    'short': True
+                }
+            },
+            {
+                'key': 'Triggered by',
+                'value': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
+                'options': {
+                    'short': True
+                }
+            },
+            {
+                'key': 'Project',
+                'value': self._get_project_name(alert_vo.project_id, domain_id)
+            }
+        ]
 
         resource = alert_vo.resource or {}
 
         if 'name' in resource:
-            tags['Resource'] = resource['name']
+            tags.append({
+                'key': 'Resource',
+                'value': resource['name']
+            })
+
+        if alert_vo.assignee:
+            tags.append({
+                'key': 'Assigned to',
+                'value': self._get_user_name(alert_vo.assignee, domain_id)
+            })
+
+        if alert_vo.status_message != '':
+            tags.append({
+                'key': 'Status Message',
+                'value': alert_vo.status_message
+            })
 
         description = alert_vo.description
 
@@ -409,7 +445,6 @@ class JobService(BaseService):
 
         if notification_type == 'SUCCESS':
             title = f'[OK] {alert_vo.title}'
-            tags['Resolved'] = utils.datetime_to_iso8601(alert_vo.resolved_at)
 
         else:
             title = f'[Alerting] {alert_vo.title}'
@@ -435,7 +470,8 @@ class JobService(BaseService):
                 'description': description,
                 'tags': tags,
                 'short_message': short_message,
-                'callbacks': callbacks
+                'callbacks': callbacks,
+                'timestamp': self._change_datetime_to_timestamp(alert_vo.created_at)
             },
             'notification_level': current_rule['notification_level'],
             'domain_id': alert_vo.domain_id
@@ -498,3 +534,10 @@ class JobService(BaseService):
 
         webhook_domain = config.get_global('WEBHOOK_DOMAIN')
         return f'{webhook_domain}/monitoring/v1/alert/{alert_id}/{access_key}/ACKNOWLEDGED'
+
+    @staticmethod
+    def _change_datetime_to_timestamp(dt):
+        try:
+            return int(time.mktime(dt.timetuple()))
+        except Exception as e:
+            return None
