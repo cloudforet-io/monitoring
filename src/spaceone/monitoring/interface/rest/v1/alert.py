@@ -12,7 +12,16 @@ router = APIRouter()
 
 
 @router.get('/alert/{alert_id}/{access_key}/{state}')
-async def update_alert_state(alert_id: str, access_key: str, state: str):
+async def update_alert_state_get(alert_id: str, access_key: str, state: str):
+    _update_alert_state(alert_id, access_key, state)
+
+
+@router.post('/alert/{alert_id}/{access_key}/{state}')
+async def update_alert_state_post(alert_id: str, access_key: str, state: str):
+    _update_alert_state(alert_id, access_key, state)
+
+
+def _update_alert_state(alert_id, access_key, state):
     locator = Locator()
     try:
 
