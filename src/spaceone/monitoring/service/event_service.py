@@ -274,6 +274,9 @@ class EventService(BaseService):
 
     def _set_transaction_token(self):
         self.transaction.set_meta('token', config.get_global('TOKEN'))
+        self.transaction.service = 'monitoring'
+        self.transaction.resource = 'Event'
+        self.transaction.verb = 'create'
 
     @staticmethod
     def _create_error_event(webhook_name, error_message):
