@@ -394,14 +394,15 @@ class JobService(BaseService):
             title = f'[Alerting] {alert_vo.title}'
 
             # Callback for state change
-            access_key = self._generate_access_key()
-            callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
-            callbacks.append(
-                {
-                    'label': 'Acknowledge Alerts',
-                    'url': callback_url
-                }
-            )
+            if alert_vo.state == 'TRIGGERED':
+                access_key = self._generate_access_key()
+                callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
+                callbacks.append(
+                    {
+                        'label': 'Acknowledge Alerts',
+                        'url': callback_url
+                    }
+                )
 
         return {
             'resource_type': 'identity.Project',
