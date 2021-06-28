@@ -383,10 +383,7 @@ class JobService(BaseService):
         description = alert_vo.description
 
         # TODO: Need to change multiple language
-        if 'name' in resource:
-            short_message = f'경고! 장애 발생. {resource["name"]}'
-        else:
-            short_message = f'경고! 장애 발생. {alert_vo.title}'
+        short_message = f'경고! 장애 발생! {tags["Project"].replace(">", "의")} 프로젝트에 장애가 발했습니다.'
 
         callbacks = []
 
