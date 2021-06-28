@@ -327,6 +327,8 @@ class JobService(BaseService):
                             'escalated_at': datetime.utcnow(),
                             'escalation_ttl': escalation_ttl - 1
                         }, alert_vo)
+
+                        return False, escalated_alert_vo
                     else:
                         _LOGGER.debug(f'[_check_escalation_time_and_escalate_alert] Repeat again from the first step. '
                                       f'(alert_id = {alert_vo.alert_id})')
@@ -336,6 +338,8 @@ class JobService(BaseService):
                             'escalation_step': 1,
                             'escalation_ttl': escalation_ttl - 1
                         }, alert_vo)
+
+                        return True, escalated_alert_vo
                 else:
                     _LOGGER.debug(f'[_check_escalation_time_and_escalate_alert] Escalate from {current_step} '
                                   f'to {current_step + 1} steps. (alert_id = {alert_vo.alert_id})')
@@ -344,13 +348,14 @@ class JobService(BaseService):
                         'escalated_at': datetime.utcnow(),
                         'escalation_step': current_step + 1
                     }, alert_vo)
-                return True, escalated_alert_vo
+
+                    return True, escalated_alert_vo
             else:
                 return False, alert_vo
 
     def _create_notification_message(self, alert_vo: Alert, rules, notification_type):
         domain_id = alert_vo.domain_id
-        current_step = rules[alert_vo.escalation_step - 1]
+        current_rule = rules[alert_vo.escalation_step - 1]
 
         if notification_type not in ['ERROR', 'SUCCESS']:
             notification_type = 'ERROR'
@@ -415,7 +420,7 @@ class JobService(BaseService):
                 'short_message': short_message,
                 'callbacks': callbacks
             },
-            'notification_level': current_step['notification_level'],
+            'notification_level': current_rule['notification_level'],
             'domain_id': alert_vo.domain_id
         }
 
