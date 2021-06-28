@@ -145,7 +145,7 @@ class EventService(BaseService):
         query = params.get('query', {})
         return self.event_mgr.stat_events(query)
 
-    # @cache.cacheable(key='webhook-data:{webhook_id}', expire=300)
+    @cache.cacheable(key='webhook-data:{webhook_id}', expire=300)
     def _get_webhook_data(self, webhook_id):
         webhook_mgr: WebhookManager = self.locator.get_manager('WebhookManager')
         webhook_vo: Webhook = webhook_mgr.get_webhook_by_id(webhook_id)
@@ -180,7 +180,7 @@ class EventService(BaseService):
 
         # TODO Change event data by event rule
 
-        event_vo: Event = self.event_mgr.get_event_by_key(event_data['event_key'])
+        event_vo: Event = self.event_mgr.get_event_by_key(event_data['event_key'], event_data['domain_id'])
 
         # Skip health event
         if event_data['event_type'] == 'RECOVERY' and event_vo is None:

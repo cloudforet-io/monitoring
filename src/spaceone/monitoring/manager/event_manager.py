@@ -44,8 +44,8 @@ class EventManager(BaseManager):
     def get_event(self, event_id, domain_id, only=None):
         return self.event_model.get(event_id=event_id, domain_id=domain_id, only=only)
 
-    def get_event_by_key(self, event_key):
-        event_vos = self.event_model.filter(event_key=event_key)
+    def get_event_by_key(self, event_key, domain_id):
+        event_vos = self.event_model.filter(event_key=event_key, domain_id=domain_id)
         if event_vos.count() > 0:
             return event_vos[0]
         else:
