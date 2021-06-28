@@ -2,8 +2,7 @@ import logging
 import copy
 
 from spaceone.core.service import *
-from spaceone.core import cache
-from spaceone.core import utils
+from spaceone.core import utils, cache, config
 from spaceone.monitoring.error.webhook import *
 from spaceone.monitoring.model.event_model import Event
 from spaceone.monitoring.model.alert_model import Alert
@@ -268,8 +267,13 @@ class EventService(BaseService):
             if notification_type:
                 params['notification_type'] = notification_type
 
+            self._set_transaction_token()
+
             job_mgr: JobManager = self.locator.get_manager('JobManager')
             job_mgr.push_task('monitoring_alert_notification_from_webhook', 'JobService', 'create_notification', params)
+
+    def _set_transaction_token(self):
+        self.transaction.set_meta('token', config.get_global('TOKEN'))
 
     @staticmethod
     def _create_error_event(webhook_name, error_message):
