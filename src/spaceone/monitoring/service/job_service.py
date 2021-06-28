@@ -356,12 +356,11 @@ class JobService(BaseService):
             notification_type = 'ERROR'
 
         tags = {
-            'Alert ID': f'#{alert_vo.alert_number} ({alert_vo.alert_id})',
+            'Alert No.': f'#{alert_vo.alert_number}',
             'State': alert_vo.state,
             'Project': self._get_project_name(alert_vo.project_id, domain_id),
             'Urgency': alert_vo.urgency,
-            'Escalation Step': str(int(alert_vo.escalation_step)),
-            'Triggered By': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
+            'Triggered by': self._get_triggered_by_name(alert_vo.triggered_by, domain_id),
             'Created': utils.datetime_to_iso8601(alert_vo.created_at)
         }
 
@@ -369,15 +368,12 @@ class JobService(BaseService):
             tags['Status Message'] = alert_vo.status_message
 
         if alert_vo.assignee:
-            tags['Assignee'] = self._get_user_name(alert_vo.assignee, domain_id)
+            tags['Assigned to'] = self._get_user_name(alert_vo.assignee, domain_id)
 
         resource = alert_vo.resource or {}
 
         if 'name' in resource:
             tags['Resource Name'] = resource['name']
-
-        if 'resource_id' in resource:
-            tags['Resource ID'] = resource['resource_id']
 
         if 'resource_type' in resource:
             tags['Resource Type'] = resource['resource_type']
@@ -386,7 +382,7 @@ class JobService(BaseService):
 
         # TODO: Need to change multiple language
         if 'name' in resource:
-            short_message = f'경고! {resource["name"]}에 장애가 발생했습니다.'
+            short_message = f'경고! 장애 발생. {resource["name"]}'
         else:
             short_message = f'경고! 장애 발생. {alert_vo.title}'
 
@@ -394,7 +390,7 @@ class JobService(BaseService):
 
         if notification_type == 'SUCCESS':
             title = f'[OK] {alert_vo.title}'
-            tags['Resolved'] = alert_vo.resolved_at
+            tags['Resolved'] = utils.datetime_to_iso8601(alert_vo.resolved_at)
 
         else:
             title = f'[Alerting] {alert_vo.title}'
