@@ -251,7 +251,7 @@ class EventService(BaseService):
 
     @cache.cacheable(key='auto-recovery:{domain_id}:{project_id}', expire=300)
     def _is_auto_recovery(self, project_id, domain_id):
-        project_alert_config_vo: ProjectAlertConfig = self._get_escalation_policy(project_id, domain_id)
+        project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(project_id, domain_id)
         return project_alert_config_vo.options.auto_recovery
 
     def _get_project_alert_config(self, project_id, domain_id):
