@@ -394,14 +394,15 @@ class JobService(BaseService):
             title = f'[Alerting] {alert_vo.title}'
 
             # Callback for state change
-            access_key = self._generate_access_key()
-            callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
-            callbacks.append(
-                {
-                    'label': 'Acknowledge Alerts',
-                    'url': callback_url
-                }
-            )
+            if alert_vo.state == 'TRIGGERED':
+                access_key = self._generate_access_key()
+                callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
+                callbacks.append(
+                    {
+                        'label': 'Acknowledge Alerts',
+                        'url': callback_url
+                    }
+                )
 
         return {
             'resource_type': 'identity.Project',
@@ -471,13 +472,7 @@ class JobService(BaseService):
                          f'({access_key})')
             cache.delete(f'alert-notification-callback:{alert_id}:{access_key}')
 
-        print("========")
-        print(config.get_global())
         cache.set(f'alert-notification-callback:{alert_id}:{access_key}', domain_id, expire=600)
-        print('cache_key', f'alert-notification-callback:{alert_id}:{access_key}')
-        print('domain_id', domain_id)
-        print(cache.get(f'alert-notification-callback:{alert_id}:{access_key}'))
-        print("========")
         self.transaction.add_rollback(_rollback, alert_id, access_key)
 
         webhook_domain = config.get_global('WEBHOOK_DOMAIN')
