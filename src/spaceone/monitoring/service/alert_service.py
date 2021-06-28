@@ -405,13 +405,6 @@ class AlertService(BaseService):
     def _check_access_key(alert_id, access_key):
         domain_id = cache.get(f'alert-notification-callback:{alert_id}:{access_key}')
 
-        print("========")
-        print(config.get_global())
-        print('cache_key', f'alert-notification-callback:{alert_id}:{access_key}')
-        print('domain_id', domain_id)
-        print(cache.get(f'alert-notification-callback:{alert_id}:{access_key}'))
-        print("========")
-
         if domain_id is None:
             raise ERROR_PERMISSION_DENIED()
 
