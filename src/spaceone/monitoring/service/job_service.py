@@ -172,6 +172,7 @@ class JobService(BaseService):
             self.transaction.execute_rollback()
 
     def _list_domains_of_alerts(self):
+        alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
         query = {
             'distinct': 'domain_id',
             'filter': [
@@ -188,13 +189,27 @@ class JobService(BaseService):
             ]
         }
 
-        alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
-
         response = alert_mgr.stat_alerts(query)
         return response.get('results', [])
 
     def _list_open_alerts(self, domain_id) -> List[Alert]:
         alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
+        project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
+
+        project_ids = []
+        project_alert_config_vos, total_count = project_alert_config_mgr.list_project_alert_configs({
+            'filter': [
+                {
+                    'k': 'domain_id',
+                    'v': domain_id,
+                    'o': 'eq'
+                }
+            ],
+            'only': ['project_id']
+        })
+
+        for project_alert_config_vo in project_alert_config_vos:
+            project_ids.append(project_alert_config_vo.project_id)
 
         query = {
             'filter': [
@@ -202,6 +217,11 @@ class JobService(BaseService):
                     'k': 'domain_id',
                     'v': domain_id,
                     'o': 'eq'
+                },
+                {
+                    'k': 'project_id',
+                    'v': project_ids,
+                    'o': 'in'
                 },
                 {
                     'k': 'state',
