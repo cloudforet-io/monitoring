@@ -74,6 +74,7 @@ class Alert(MongoModel):
             'assignee',
             'urgency',
             'escalation_step',
+            'escalation_ttl',
             'project_id'
         ],
         'change_query_keys': {
