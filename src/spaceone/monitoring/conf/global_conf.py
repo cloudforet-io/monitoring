@@ -49,7 +49,6 @@ CONNECTORS = {
     'DataSourcePluginConnector': {
     },
     'WebhookPluginConnector': {
-        'endpoint': 'grpc://localhost:50052'
     },
 }
 
