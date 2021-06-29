@@ -12,6 +12,7 @@ from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.alert_manager import AlertManager
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
 from spaceone.monitoring.manager.event_manager import EventManager
+from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
 from spaceone.monitoring.manager.job_manager import JobManager
 from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
@@ -178,7 +179,10 @@ class EventService(BaseService):
         event_data['project_id'] = webhook_data['project_id']
         event_data['domain_id'] = webhook_data['domain_id']
 
-        # TODO Change event data by event rule
+        event_rule_mgr: EventRuleManager = self.locator.get_manager('EventRuleManager')
+
+        # Change event data by event rule
+        event_data = event_rule_mgr.change_event_data(event_data, webhook_data['project_id'], webhook_data['domain_id'])
 
         event_vo: Event = self.event_mgr.get_event_by_key(event_data['event_key'], event_data['domain_id'])
 
@@ -208,7 +212,11 @@ class EventService(BaseService):
         alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
 
         alert_data = copy.deepcopy(event_data)
-        alert_data['urgency'] = self._get_urgency_from_severity(event_data['severity'])
+
+        if 'urgency' in event_data:
+            alert_data['urgency'] = event_data['urgency']
+        else:
+            alert_data['urgency'] = self._get_urgency_from_severity(event_data['severity'])
 
         escalation_policy_id, escalation_ttl = self._get_escalation_policy_info(event_data['project_id'],
                                                                                 event_data['domain_id'])

@@ -57,6 +57,7 @@ def AlertInfo(alert_vo: Alert, minimal=False):
             'severity': alert_vo.severity,
             'rule': alert_vo.rule,
             'resource': AlertResourceInfo(alert_vo.resource),
+            'additional_info': change_struct_type(alert_vo.additional_info),
             'is_snoozed': alert_vo.is_snoozed,
             'snoozed_end_time': utils.datetime_to_iso8601(alert_vo.snoozed_end_time),
             'escalation_ttl': alert_vo.escalation_ttl,

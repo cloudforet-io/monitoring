@@ -1,3 +1,4 @@
+import copy
 import logging
 from typing import List, Union
 import time
@@ -160,6 +161,11 @@ class JobService(BaseService):
                     notification_mgr: NotificationManager = self.locator.get_manager('NotificationManager')
                     message = self._create_notification_message(alert_vo, rules, notification_type)
                     notification_mgr.create_notification(message)
+
+                    for project_id in alert_vo.project_dependencies:
+                        dependent_project_message = copy.deepcopy(message)
+                        dependent_project_message['resource_id'] = project_id
+                        notification_mgr.create_notification(dependent_project_message)
 
             if job_id:
                 job_vo = self.job_mgr.get_job(job_id, domain_id)
@@ -392,15 +398,15 @@ class JobService(BaseService):
                 }
             },
             {
-                'key': 'Urgency',
-                'value': alert_vo.urgency,
+                'key': 'State',
+                'value': alert_vo.state,
                 'options': {
                     'short': True
                 }
             },
             {
-                'key': 'State',
-                'value': alert_vo.state,
+                'key': 'Urgency',
+                'value': alert_vo.urgency,
                 'options': {
                     'short': True
                 }
