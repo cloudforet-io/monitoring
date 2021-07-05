@@ -48,6 +48,7 @@ def AlertInfo(alert_vo: Alert, minimal=False):
         'assignee': alert_vo.assignee,
         'urgency': alert_vo.urgency,
         'escalation_step': alert_vo.escalation_step,
+        'escalation_ttl': alert_vo.escalation_ttl,
         'project_id': alert_vo.project_id
     }
 
@@ -60,7 +61,6 @@ def AlertInfo(alert_vo: Alert, minimal=False):
             'additional_info': change_struct_type(alert_vo.additional_info),
             'is_snoozed': alert_vo.is_snoozed,
             'snoozed_end_time': utils.datetime_to_iso8601(alert_vo.snoozed_end_time),
-            'escalation_ttl': alert_vo.escalation_ttl,
             'responders': RespondersInfo(alert_vo.responders),
             'project_dependencies': alert_vo.project_dependencies,
             'triggered_by': alert_vo.triggered_by,

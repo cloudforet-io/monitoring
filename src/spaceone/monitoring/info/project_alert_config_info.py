@@ -27,10 +27,13 @@ def ProjectAlertConfigInfo(project_alert_config_vo: ProjectAlertConfig, minimal=
 
     if not minimal:
         info.update({
-            'escalation_policy_info': EscalationPolicyInfo(project_alert_config_vo.escalation_policy, minimal=True),
             'domain_id': project_alert_config_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(project_alert_config_vo.created_at)
         })
+
+        if project_alert_config_vo.escalation_policy:
+            info['escalation_policy_info'] = EscalationPolicyInfo(project_alert_config_vo.escalation_policy,
+                                                                  minimal=True)
 
     return project_alert_config_pb2.ProjectAlertConfigInfo(**info)
 
