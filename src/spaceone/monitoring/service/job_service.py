@@ -50,8 +50,9 @@ class JobService(BaseService):
 
         for maintenance_window_vo in maintenance_window_vos:
             if current_time > maintenance_window_vo.end_time:
-                _LOGGER.debug(f'[close_maintenance_window] Close out of time maintenance window: '
-                              f'{maintenance_window_vo.maintenance_window_id}')
+                _LOGGER.debug(f'[close_maintenance_window] Close out of time maintenance window '
+                              f'({maintenance_window_vo.maintenance_window_id}): '
+                              f'Current Time({current_time}) > End Time({maintenance_window_vo.end_time})')
                 maintenance_window_mgr.update_maintenance_window_by_vo({'state': 'CLOSED'}, maintenance_window_vo)
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
