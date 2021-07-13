@@ -1,5 +1,7 @@
 import logging
+from datetime import datetime, timedelta
 
+from spaceone.core import config
 from spaceone.core.manager import BaseManager
 from spaceone.monitoring.model.event_model import Event
 
@@ -44,15 +46,47 @@ class EventManager(BaseManager):
     def get_event(self, event_id, domain_id, only=None):
         return self.event_model.get(event_id=event_id, domain_id=domain_id, only=only)
 
-    def get_event_by_key(self, event_key, domain_id):
-        event_vos = self.event_model.filter(event_key=event_key, domain_id=domain_id)
-        if event_vos.count() > 0:
-            return event_vos[0]
-        else:
-            return None
-
     def list_events(self, query={}):
         return self.event_model.query(**query)
 
     def stat_events(self, query):
         return self.event_model.stat(**query)
+
+    def get_event_by_key(self, event_key, domain_id):
+        same_event_time = config.get_global('SAME_EVENT_TIME', 600)
+        same_event_datetime = datetime.utcnow() - timedelta(seconds=same_event_time)
+
+        query = {
+            'filter': [
+                {
+                    'k': 'event_key',
+                    'v': event_key,
+                    'o': 'eq'
+                },
+                {
+                    'k': 'domain_id',
+                    'v': domain_id,
+                    'o': 'eq'
+                },
+                {
+                    'k': 'event_type',
+                    'v': 'RECOVERY',
+                    'o': 'not'
+                },
+                {
+                    'k': 'created_at',
+                    'v': same_event_datetime,
+                    'o': 'gte'
+                }
+            ],
+            'sort': {
+                'key': 'created_at',
+                'desc': True
+            }
+        }
+
+        event_vos, total_count = self.list_events(query)
+        if event_vos.count() > 0:
+            return event_vos[0]
+        else:
+            return None

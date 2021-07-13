@@ -60,3 +60,6 @@ TOKEN = ""
 
 # Job Settings
 JOB_TIMEOUT = 600
+
+# Event Settings
+SAME_EVENT_TIME = 600
