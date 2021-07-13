@@ -187,6 +187,7 @@ class EventService(BaseService):
         event_vo: Event = self.event_mgr.get_event_by_key(event_data['event_key'], event_data['domain_id'])
 
         if event_vo and event_vo.alert.state != 'RESOLVED':
+            # Resolve alert when receiving recovery event
             if event_data['event_type'] == 'RECOVERY':
                 self._update_alert_state(event_vo.alert)
 
