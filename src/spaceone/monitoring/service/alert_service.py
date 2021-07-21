@@ -105,6 +105,7 @@ class AlertService(BaseService):
             params['escalation_ttl'] = escalation_policy_vo.repeat_count
             params['escalation_step'] = 1
             params['escalated_at'] = None
+            params['assignee'] = None
 
         if state:
             if state == 'ACKNOWLEDGED':
