@@ -10,7 +10,6 @@ from spaceone.core import utils, cache, config
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
-from spaceone.monitoring.model.maintenance_window_model import MaintenanceWindow
 from spaceone.monitoring.manager.alert_manager import AlertManager
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
@@ -32,28 +31,6 @@ class JobService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.job_mgr: JobManager = self.locator.get_manager('JobManager')
-
-    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
-    def close_maintenance_window(self, params):
-        """ Close out of time maintenance window
-
-        Args:
-            params (dict): {}
-
-        Returns:
-            None
-        """
-        maintenance_window_mgr: MaintenanceWindowManager = self.locator.get_manager('MaintenanceWindowManager')
-        maintenance_window_vos: List[MaintenanceWindow] = maintenance_window_mgr.list_open_maintenance_windows()
-
-        current_time = datetime.utcnow()
-
-        for maintenance_window_vo in maintenance_window_vos:
-            if current_time > maintenance_window_vo.end_time:
-                _LOGGER.debug(f'[close_maintenance_window] Close out of time maintenance window '
-                              f'({maintenance_window_vo.maintenance_window_id}): '
-                              f'Current Time({current_time}) > End Time({maintenance_window_vo.end_time})')
-                maintenance_window_mgr.update_maintenance_window_by_vo({'state': 'CLOSED'}, maintenance_window_vo)
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     def create_jobs_by_domain(self, params):
