@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get('/alert/{alert_id}/{access_key}/{state}')
-async def update_alert_state_get(alert_id: str, access_key: str, state: str, request: Request):
+async def update_alert_state_get(alert_id: str, access_key: str, state: str):
     _update_alert_state(alert_id, access_key, state)
 
 
@@ -20,14 +20,12 @@ async def update_alert_state_get(alert_id: str, access_key: str, state: str, req
 async def update_alert_state_post(alert_id: str, access_key: str, state: str, request: Request):
     try:
         data = await request.json()
-        print("======")
-        print(data)
-        print("======")
     except Exception as e:
         _LOGGER.debug(f'JSON Parsing Error: {e}')
         data = {}
 
-    _update_alert_state(alert_id, access_key, state)
+    if data.get('code') == 'TIME_OUT':
+        _update_alert_state(alert_id, access_key, state)
 
 
 def _update_alert_state(alert_id, access_key, state):
