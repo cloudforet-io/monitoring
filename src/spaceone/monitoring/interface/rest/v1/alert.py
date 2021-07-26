@@ -24,10 +24,7 @@ async def update_alert_state_post(alert_id: str, access_key: str, state: str, re
         _LOGGER.debug(f'JSON Parsing Error: {e}')
         data = {}
 
-    if data.get('code') == 'TIME_OUT':
-        # Temporary Code
-        _LOGGER.debug('Exclude timeout callbacks for voice call notifications')
-    else:
+    if data.get('code') != 'TIME_OUT':
         _update_alert_state(alert_id, access_key, state)
 
 
