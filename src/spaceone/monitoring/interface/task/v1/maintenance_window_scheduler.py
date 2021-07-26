@@ -22,7 +22,7 @@ class MaintenanceWindowScheduler(IntervalScheduler):
         self._metadata = {
             'token': self._token,
             'service': 'monitoring',
-            'resource': 'Job',
+            'resource': 'MaintenanceWindow',
             'verb': 'close_maintenance_window'
         }
 
@@ -33,7 +33,7 @@ class MaintenanceWindowScheduler(IntervalScheduler):
             'executionEngine': 'BaseWorker',
             'stages': [{
                 'locator': 'SERVICE',
-                'name': 'JobService',
+                'name': 'MaintenanceWindowService',
                 'metadata': self._metadata,
                 'method': 'close_maintenance_window',
                 'params': {

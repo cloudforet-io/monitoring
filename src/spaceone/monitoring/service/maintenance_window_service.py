@@ -1,4 +1,6 @@
 import logging
+from typing import List
+from datetime import datetime
 
 from spaceone.core.service import *
 from spaceone.monitoring.error.maintenance_window import *
@@ -178,3 +180,25 @@ class MaintenanceWindowService(BaseService):
 
         query = params.get('query', {})
         return self.maintenance_window_mgr.stat_maintenance_windows(query)
+
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
+    def close_maintenance_window(self, params):
+        """ Close out of time maintenance window
+
+        Args:
+            params (dict): {}
+
+        Returns:
+            None
+        """
+        maintenance_window_mgr: MaintenanceWindowManager = self.locator.get_manager('MaintenanceWindowManager')
+        maintenance_window_vos: List[MaintenanceWindow] = maintenance_window_mgr.list_open_maintenance_windows()
+
+        current_time = datetime.utcnow()
+
+        for maintenance_window_vo in maintenance_window_vos:
+            if current_time > maintenance_window_vo.end_time:
+                _LOGGER.debug(f'[close_maintenance_window] Close out of time maintenance window '
+                              f'({maintenance_window_vo.maintenance_window_id}): '
+                              f'Current Time({current_time}) > End Time({maintenance_window_vo.end_time})')
+                maintenance_window_mgr.update_maintenance_window_by_vo({'state': 'CLOSED'}, maintenance_window_vo)
