@@ -17,7 +17,7 @@ class MaintenanceWindowScheduler(IntervalScheduler):
         self._create_metadata()
 
     def _init_config(self):
-        self._token = get_global('TOKEN')
+        self._token = get_token('TOKEN')
 
     def _create_metadata(self):
         self._metadata = {
