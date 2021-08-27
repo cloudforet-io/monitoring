@@ -1,6 +1,7 @@
 import logging
 
 from spaceone.core import config
+from spaceone.core.token import get_token
 from spaceone.core.locator import Locator
 from spaceone.core.scheduler import IntervalScheduler
 
@@ -16,7 +17,7 @@ class MonitoringAlertScheduler(IntervalScheduler):
         self._create_metadata()
 
     def _init_config(self):
-        self._token = config.get_global('TOKEN')
+        self._token = get_token('TOKEN')
 
     def _create_metadata(self):
         self._metadata = {

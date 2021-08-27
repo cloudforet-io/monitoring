@@ -57,6 +57,7 @@ QUEUES = {}
 SCHEDULERS = {}
 WORKERS = {}
 TOKEN = ""
+TOKEN_INFO = {}
 
 # Job Settings
 JOB_TIMEOUT = 600
