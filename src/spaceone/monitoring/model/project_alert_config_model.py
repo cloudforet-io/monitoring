@@ -6,7 +6,7 @@ from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 
 class AlertOptions(EmbeddedDocument):
     notification_urgency = StringField(max_length=20, default='ALL', choices=('ALL', 'HIGH_ONLY'))
-    auto_recovery = BooleanField(default=False)
+    recovery_mode = StringField(max_length=20, default='MANUAL', choices=('MANUAL', 'AUTO'))
 
     def to_dict(self):
         return self.to_mongo()

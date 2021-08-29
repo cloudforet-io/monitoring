@@ -81,7 +81,8 @@ class ProjectAlertConfigService(BaseService):
         escalation_policy_id = params.get('escalation_policy_id')
         domain_id = params['domain_id']
 
-        project_alert_config_vo = self.project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+        project_alert_config_vo: ProjectAlertConfig = self.project_alert_config_mgr.get_project_alert_config(project_id,
+                                                                                                             domain_id)
 
         if escalation_policy_id:
             escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager('EscalationPolicyManager')
@@ -90,6 +91,13 @@ class ProjectAlertConfigService(BaseService):
                 raise ERROR_INVALID_ESCALATION_POLICY(escalation_policy_id=escalation_policy_id)
 
             params['escalation_policy'] = escalation_policy_vo
+
+        if 'options' in params:
+            if 'recovery_mode' not in params['options']:
+                params['options']['recovery_mode'] = project_alert_config_vo.options.recovery_mode
+
+            if 'notification_urgency' not in params['options']:
+                params['options']['notification_urgency'] = project_alert_config_vo.options.notification_urgency
 
         return self.project_alert_config_mgr.update_project_alert_config_by_vo(params, project_alert_config_vo)
 

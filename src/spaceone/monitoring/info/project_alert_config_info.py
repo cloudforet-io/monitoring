@@ -11,7 +11,7 @@ def AlertOptionsInfo(vo: AlertOptions):
     if vo:
         info = {
             'notification_urgency': vo.notification_urgency,
-            'auto_recovery': vo.auto_recovery,
+            'recovery_mode': vo.recovery_mode,
         }
 
         return project_alert_config_pb2.AlertOptions(**info)
