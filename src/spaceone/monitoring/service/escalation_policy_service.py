@@ -81,6 +81,9 @@ class EscalationPolicyService(BaseService):
         escalation_policy_id = params['escalation_policy_id']
         domain_id = params['domain_id']
 
+        if 'rules' in params:
+            params['repeat_count'] = params.get('repeat_count', 0)
+
         escalation_policy_vo = self.escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
         return self.escalation_policy_mgr.update_escalation_policy_by_vo(params, escalation_policy_vo)
 
