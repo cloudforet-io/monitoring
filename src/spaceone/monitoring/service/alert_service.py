@@ -82,6 +82,9 @@ class AlertService(BaseService):
                 'assignee': 'str',
                 'urgency': 'str',
                 'project_id': 'str',
+                'reset_status_message': 'bool',
+                'reset_description': 'bool',
+                'reset_assignee': 'bool',
                 'domain_id': 'str'
             }
 
@@ -93,6 +96,10 @@ class AlertService(BaseService):
         domain_id = params['domain_id']
         project_id = params.get('project_id')
         state = params.get('state')
+        status_message = params.get('status_message')
+        reset_status_message = params.get('reset_status_message', False)
+        reset_description = params.get('reset_description', False)
+        reset_assignee = params.get('reset_assignee', False)
 
         if project_id:
             project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
@@ -121,6 +128,18 @@ class AlertService(BaseService):
 
         if alert_vo.state == 'ERROR':
             raise ERROR_INVALID_PARAMETER(key='state', reason='The error state cannot be changed.')
+
+        if alert_vo.state != state and status_message is None:
+            params['status_message'] = ''
+
+        if reset_status_message:
+            params['status_message'] = ''
+
+        if reset_description:
+            params['description'] = ''
+
+        if reset_assignee:
+            params['assignee'] = None
 
         # TODO: Check Assignee
 
