@@ -223,7 +223,11 @@ class EventService(BaseService):
                                                                                 event_data['domain_id'])
 
         alert_data['escalation_policy_id'] = escalation_policy_id
-        alert_data['escalation_ttl'] = escalation_ttl + 1
+
+        if event_data.get('no_notification', False):
+            alert_data['escalation_ttl'] = 0
+        else:
+            alert_data['escalation_ttl'] = escalation_ttl + 1
 
         alert_data['triggered_by'] = alert_data['webhook_id']
 

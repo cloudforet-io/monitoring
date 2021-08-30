@@ -40,7 +40,9 @@ class EventRule(MongoModel):
         'minimal_fields': [
             'event_rule_id',
             'name',
-            'order'
+            'order',
+            'scope',
+            'project_id'
         ],
         'change_query_keys': {
             'user_projects': 'project_id'
