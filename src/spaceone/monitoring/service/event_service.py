@@ -236,7 +236,7 @@ class EventService(BaseService):
 
         alert_vo = alert_mgr.create_alert(alert_data)
 
-        self._create_notification(alert_vo)
+        self._create_notification(alert_vo, 'create_alert_notification')
 
         return alert_vo
 
@@ -259,7 +259,7 @@ class EventService(BaseService):
             alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
             alert_mgr.update_alert_by_vo({'state': 'RESOLVED'}, alert_vo)
 
-            self._create_notification(alert_vo, 'SUCCESS')
+            self._create_notification(alert_vo, 'create_resolved_notification')
 
     @cache.cacheable(key='auto-recovery:{domain_id}:{project_id}', expire=300)
     def _is_auto_recovery(self, project_id, domain_id):
@@ -270,20 +270,20 @@ class EventService(BaseService):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
         return project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
 
-    def _create_notification(self, alert_vo: Alert, notification_type=None):
-        if alert_vo.state != 'ERROR':
-            params = {
+    def _create_notification(self, alert_vo: Alert, method):
+        # if alert_vo.state != 'ERROR':
+        self._set_transaction_token()
+
+        job_mgr: JobManager = self.locator.get_manager('JobManager')
+        job_mgr.push_task(
+            'monitoring_alert_notification_from_webhook',
+            'JobService',
+            method,
+            {
                 'alert_id': alert_vo.alert_id,
                 'domain_id': alert_vo.domain_id
             }
-
-            if notification_type:
-                params['notification_type'] = notification_type
-
-            self._set_transaction_token()
-
-            job_mgr: JobManager = self.locator.get_manager('JobManager')
-            job_mgr.push_task('monitoring_alert_notification_from_webhook', 'JobService', 'create_notification', params)
+        )
 
     def _set_transaction_token(self):
         self.transaction.set_meta('token', config.get_global('TOKEN'))
