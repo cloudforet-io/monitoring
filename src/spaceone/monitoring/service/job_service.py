@@ -1,12 +1,12 @@
 import copy
 import logging
-from typing import List, Union
 import time
+from typing import List, Union
 from datetime import timedelta, datetime
 
 from spaceone.core.service import *
 from spaceone.core.error import *
-from spaceone.core import utils, cache, config
+from spaceone.core import cache, config, utils
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
@@ -78,7 +78,7 @@ class JobService(BaseService):
                     _LOGGER.debug(f'[create_job] Push task (JobService.create_notification): {alert_vo.alert_id}')
                     self.job_mgr.push_task('monitoring_alert_notification_from_scheduler',
                                            'JobService',
-                                           'create_notification',
+                                           'create_alert_notification',
                                            {
                                                'job_id': job_vo.job_id,
                                                'alert_id': alert_vo.alert_id,
@@ -92,15 +92,84 @@ class JobService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     @check_required(['alert_id', 'domain_id'])
-    def create_notification(self, params):
+    def create_assigned_notification(self, params):
+        """ Create assigned notification
+
+        Args:
+            params (dict): {
+                'alert_id': 'str',
+                'domain_id': 'str',
+                'user_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
+        alert_id = params['alert_id']
+        domain_id = params['domain_id']
+        user_id = params['user_id']
+
+        alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
+
+        alert_vo: Alert = alert_mgr.get_alert(alert_id, domain_id)
+
+        title = f'[Assigned to me] {alert_vo.title}'
+
+        notification_mgr: NotificationManager = self.locator.get_manager('NotificationManager')
+        message = self._create_message(alert_vo, title, 'INFO', user_id=user_id)
+
+        notification_mgr.create_notification(message)
+
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
+    @check_required(['alert_id', 'domain_id'])
+    def create_resolved_notification(self, params):
+        """ Create resolved notification
+
+        Args:
+            params (dict): {
+                'alert_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
+        alert_id = params['alert_id']
+        domain_id = params['domain_id']
+
+        alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
+
+        alert_vo: Alert = alert_mgr.get_alert(alert_id, domain_id)
+        project_id = alert_vo.project_id
+        escalation_policy_id = alert_vo.escalation_policy_id
+
+        rules, finish_condition = self._get_escalation_policy_rules_and_finish_condition(escalation_policy_id,
+                                                                                         domain_id)
+        maintenance_window_state = self._get_project_maintenance_window_state(project_id, domain_id)
+
+        if self._check_maintenance_window(project_id, alert_id, maintenance_window_state):
+            title = f'[Resolved] {alert_vo.title}'
+
+            for step in range(alert_vo.escalation_step):
+                notification_level = rules[step]['notification_level']
+
+                notification_mgr: NotificationManager = self.locator.get_manager('NotificationManager')
+                message = self._create_message(alert_vo, title, 'SUCCESS', notification_level=notification_level)
+
+                notification_mgr.create_notification(message)
+
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
+    @check_required(['alert_id', 'domain_id'])
+    def create_alert_notification(self, params):
         """ Create alert notification
 
         Args:
             params (dict): {
                 'job_id': 'str',
                 'alert_id': 'str',
-                'domain_id_id': 'str',
-                'notification_type': 'str'
+                'domain_id': 'str'
             }
 
         Returns:
@@ -110,7 +179,6 @@ class JobService(BaseService):
         job_id = params.get('job_id')
         alert_id = params['alert_id']
         domain_id = params['domain_id']
-        notification_type = params.get('notification_type', 'ERROR')
 
         job_mgr: JobManager = self.locator.get_manager('JobManager')
 
@@ -136,8 +204,13 @@ class JobService(BaseService):
                 # Escalate Alert
                 is_notify, alert_vo = self._check_escalation_time_and_escalate_alert(alert_mgr, alert_vo, rules)
                 if is_notify:
+                    title = f'[Alerting] {alert_vo.title}'
+                    current_rule = rules[alert_vo.escalation_step - 1]
+                    notification_level = current_rule['notification_level']
+
                     notification_mgr: NotificationManager = self.locator.get_manager('NotificationManager')
-                    message = self._create_notification_message(alert_vo, rules, notification_type)
+                    message = self._create_message(alert_vo, title, 'ERROR', notification_level=notification_level,
+                                                   has_callback=True)
                     notification_mgr.create_notification(message)
 
                     for project_id in alert_vo.project_dependencies:
@@ -358,13 +431,10 @@ class JobService(BaseService):
             else:
                 return False, alert_vo
 
-    def _create_notification_message(self, alert_vo: Alert, rules, notification_type):
+    def _create_message(self, alert_vo: Alert, title: str, notification_type: str, notification_level='ALL',
+                        has_callback=False, user_id=None):
+
         domain_id = alert_vo.domain_id
-        current_rule = rules[alert_vo.escalation_step - 1]
-
-        if notification_type not in ['ERROR', 'SUCCESS']:
-            notification_type = 'ERROR'
-
         project_name = self._get_project_name(alert_vo.project_id, domain_id)
 
         tags = [
@@ -429,26 +499,26 @@ class JobService(BaseService):
 
         callbacks = []
 
-        if notification_type == 'SUCCESS':
-            title = f'[OK] {alert_vo.title}'
+        if has_callback:
+            access_key = self._generate_access_key()
+            callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
+            callbacks.append(
+                {
+                    'label': 'Acknowledge Alerts',
+                    'url': callback_url
+                }
+            )
 
+        if user_id:
+            resource_type = 'identity.User'
+            resource_id = user_id
         else:
-            title = f'[Alerting] {alert_vo.title}'
-
-            # Callback for state change
-            if alert_vo.state == 'TRIGGERED':
-                access_key = self._generate_access_key()
-                callback_url = self._make_callback_url(alert_vo.alert_id, domain_id, access_key)
-                callbacks.append(
-                    {
-                        'label': 'Acknowledge Alerts',
-                        'url': callback_url
-                    }
-                )
+            resource_type = 'identity.Project'
+            resource_id = alert_vo.project_id
 
         return {
-            'resource_type': 'identity.Project',
-            'resource_id': alert_vo.project_id,
+            'resource_type': resource_type,
+            'resource_id': resource_id,
             "notification_type": notification_type,
             'topic': 'monitoring.Alert',
             'message': {
@@ -459,8 +529,8 @@ class JobService(BaseService):
                 'callbacks': callbacks,
                 'timestamp': self._change_datetime_to_timestamp(alert_vo.created_at)
             },
-            'notification_level': current_rule['notification_level'],
-            'domain_id': alert_vo.domain_id
+            'notification_level': notification_level,
+            'domain_id': domain_id
         }
 
     @cache.cacheable(key='project-name:{domain_id}:{project_id}', expire=300)

@@ -63,7 +63,7 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.create_alert(params)
 
-        self._create_notification(alert_vo)
+        self._create_notification(alert_vo, 'create_alert_notification')
 
         return alert_vo
 
@@ -96,10 +96,14 @@ class AlertService(BaseService):
         domain_id = params['domain_id']
         project_id = params.get('project_id')
         state = params.get('state')
+        assignee = params.get('assignee')
         status_message = params.get('status_message')
         reset_status_message = params.get('reset_status_message', False)
         reset_description = params.get('reset_description', False)
         reset_assignee = params.get('reset_assignee', False)
+
+        is_resolved_notify = False
+        is_assignee_notify = False
 
         if project_id:
             project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
@@ -113,12 +117,14 @@ class AlertService(BaseService):
             params['escalation_step'] = 1
             params['escalated_at'] = None
             params['assignee'] = None
+            assignee = None
 
         if state:
             if state == 'ACKNOWLEDGED':
                 params['acknowledged_at'] = datetime.utcnow()
                 params['resolved_at'] = None
             elif state == 'RESOLVED':
+                params['escalation_ttl'] = 0
                 params['resolved_at'] = datetime.utcnow()
             elif state == 'TRIGGERED':
                 params['acknowledged_at'] = None
@@ -140,10 +146,23 @@ class AlertService(BaseService):
 
         if reset_assignee:
             params['assignee'] = None
+            assignee = None
 
-        # TODO: Check Assignee
+        if assignee:
+            # TODO: Check Assignee
+            is_assignee_notify = True
 
-        return self.alert_mgr.update_alert_by_vo(params, alert_vo)
+        if alert_vo.state in ['TRIGGERED', 'ACKNOWLEDGED'] and state == 'RESOLVED':
+            is_resolved_notify = True
+
+        updated_alert_vo: Alert = self.alert_mgr.update_alert_by_vo(params, alert_vo)
+
+        if is_resolved_notify:
+            self._create_notification(updated_alert_vo, 'create_resolved_notification')
+        elif is_assignee_notify and updated_alert_vo.state in ['TRIGGERED', 'ACKNOWLEDGED']:
+            self._create_notification(updated_alert_vo, 'create_assigned_notification', assignee)
+
+        return updated_alert_vo
 
     @transaction
     @check_required(['alert_id', 'access_key', 'state'])
@@ -163,6 +182,8 @@ class AlertService(BaseService):
         alert_id = params['alert_id']
         access_key = params['access_key']
         state = params['state']
+
+        is_resolved_notify = False
 
         # Check Access Key
         domain_id = self._check_access_key(alert_id, access_key)
@@ -188,7 +209,15 @@ class AlertService(BaseService):
         elif state == 'RESOLVED':
             update_params['resolved_at'] = datetime.utcnow()
 
-        return self.alert_mgr.update_alert_by_vo(update_params, alert_vo)
+        if alert_vo.state in ['TRIGGERED', 'ACKNOWLEDGED'] and state == 'RESOLVED':
+            is_resolved_notify = True
+
+        updated_alert_vo = self.alert_mgr.update_alert_by_vo(update_params, alert_vo)
+
+        if is_resolved_notify:
+            self._create_notification(updated_alert_vo, 'create_resolved_notification')
+
+        return updated_alert_vo
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alerts', 'merge_to', 'domain_id'])
@@ -413,15 +442,22 @@ class AlertService(BaseService):
         query = params.get('query', {})
         return self.alert_mgr.stat_alerts(query)
 
-    def _create_notification(self, alert_vo: Alert):
+    def _create_notification(self, alert_vo: Alert, method, user_id=None):
+        params = {
+            'alert_id': alert_vo.alert_id,
+            'domain_id': alert_vo.domain_id
+        }
+
+        if user_id:
+            params['user_id'] = user_id
+
         job_mgr: JobManager = self.locator.get_manager('JobManager')
-        job_mgr.push_task('monitoring_alert_notification_from_manual',
-                          'JobService',
-                          'create_notification',
-                          {
-                               'alert_id': alert_vo.alert_id,
-                               'domain_id': alert_vo.domain_id
-                           })
+        job_mgr.push_task(
+            'monitoring_alert_notification_from_manual',
+            'JobService',
+            method,
+            params
+        )
 
     @staticmethod
     def _check_access_key(alert_id, access_key):
