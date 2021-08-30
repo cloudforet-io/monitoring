@@ -77,6 +77,8 @@ def EventRuleInfo(event_rule_vo: EventRule, minimal=False):
         'event_rule_id': event_rule_vo.event_rule_id,
         'name': event_rule_vo.name,
         'order': event_rule_vo.order,
+        'scope': event_rule_vo.scope,
+        'project_id': event_rule_vo.project_id,
     }
 
     if not minimal:
@@ -86,8 +88,6 @@ def EventRuleInfo(event_rule_vo: EventRule, minimal=False):
             'actions': EventRuleActionsInfo(event_rule_vo.actions),
             'options': EventRuleOptionsInfo(event_rule_vo.options),
             'tags': change_struct_type(event_rule_vo.tags),
-            'scope': event_rule_vo.scope,
-            'project_id': event_rule_vo.project_id,
             'domain_id': event_rule_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(event_rule_vo.created_at)
         })
