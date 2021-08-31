@@ -216,6 +216,7 @@ class JobService(BaseService):
                     for project_id in alert_vo.project_dependencies:
                         dependent_project_message = copy.deepcopy(message)
                         dependent_project_message['resource_id'] = project_id
+                        del dependent_project_message['message']['callbacks']
                         notification_mgr.create_notification(dependent_project_message)
 
             if job_id:
