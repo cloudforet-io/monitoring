@@ -6,8 +6,8 @@ from spaceone.core.model.mongo_model import MongoModel
 class PluginInfo(EmbeddedDocument):
     plugin_id = StringField(max_length=40)
     version = StringField(max_length=255)
-    options = DictField()
-    metadata = DictField()
+    options = DictField(default={})
+    metadata = DictField(default={})
 
     def to_dict(self):
         return self.to_mongo()
