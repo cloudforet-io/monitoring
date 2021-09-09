@@ -19,6 +19,7 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
     }
     secret_id = None
     provider = 'aws'
+    upgrade_mode = 'AUTO'
 
 
 class DataSourceFactory(factory.mongoengine.MongoEngineFactory):

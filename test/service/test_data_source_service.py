@@ -46,7 +46,7 @@ class TestDataSourceService(unittest.TestCase):
         data_source_vos = DataSource.objects.filter()
         data_source_vos.delete()
 
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
     @patch.object(RepositoryManager, 'check_plugin_version', return_value=None)
@@ -109,7 +109,7 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
     @patch.object(RepositoryManager, 'check_plugin_version', return_value=None)
@@ -172,7 +172,7 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
 
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
     @patch.object(SecretManager, 'list_secrets')

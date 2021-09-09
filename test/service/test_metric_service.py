@@ -50,7 +50,7 @@ class TestMetricService(unittest.TestCase):
     def _new_iter(self):
         return
 
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
     @patch.object(InventoryManager, 'list_servers')
@@ -122,7 +122,7 @@ class TestMetricService(unittest.TestCase):
 
         self.assertEqual(params['domain_id'], metrics_info['domain_id'])
 
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
     @patch.object(InventoryManager, 'list_servers')
