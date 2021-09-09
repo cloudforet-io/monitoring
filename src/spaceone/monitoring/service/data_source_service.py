@@ -316,11 +316,12 @@ class DataSourceService(BaseService):
         if 'plugin_id' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.plugin_id')
 
-        if 'version' not in plugin_info_params:
-            raise ERROR_REQUIRED_PARAMETER(key='plugin_info.version')
-
         if 'options' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.options')
+
+        if 'upgrade_mode' in plugin_info_params and plugin_info_params['upgrade_mode'] == 'MANUAL':
+            if 'version' not in plugin_info_params:
+                raise ERROR_REQUIRED_PARAMETER(key='plugin_info.version')
 
         secret_id = plugin_info_params.get('secret_id')
         provider = plugin_info_params.get('provider')
