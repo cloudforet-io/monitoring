@@ -15,11 +15,23 @@ class DataSourcePluginManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.dsp_connector: DataSourcePluginConnector = self.locator.get_connector('DataSourcePluginConnector')
 
-    def initialize(self, plugin_id, version, domain_id):
+    def initialize(self, plugin_info, domain_id):
+        plugin_id = plugin_info['plugin_id']
+        upgrade_mode = plugin_info.get('upgrade_mode', 'AUTO')
+
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        endpoint = plugin_mgr.get_plugin_endpoint(plugin_id, version, domain_id)
+
+        if upgrade_mode == 'AUTO':
+            endpoint_response = plugin_mgr.get_plugin_endpoint(plugin_id, domain_id)
+        else:
+            endpoint_response = plugin_mgr.get_plugin_endpoint(plugin_id, domain_id, version=plugin_info.get('version'))
+
+        endpoint = endpoint_response['endpoint']
+        _LOGGER.debug(f'[init_plugin] endpoint: {endpoint}')
 
         self.dsp_connector.initialize(endpoint)
+
+        return endpoint_response
 
     def init_plugin(self, options, monitoring_type):
         plugin_info = self.dsp_connector.init(options)
