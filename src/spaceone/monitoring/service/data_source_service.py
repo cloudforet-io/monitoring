@@ -1,9 +1,10 @@
 import logging
 
 from spaceone.core.service import *
+from spaceone.core import cache
+from spaceone.core import config
 from spaceone.core import utils
 from spaceone.monitoring.error import *
-from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.data_source_plugin_manager import DataSourcePluginManager
@@ -244,7 +245,10 @@ class DataSourceService(BaseService):
         Returns:
             data_source_vo (object)
         """
-        return self.data_source_mgr.get_data_source(params['data_source_id'], params['domain_id'], params.get('only'))
+        domain_id = params['domain_id']
+        self._initialize_data_sources(domain_id)
+
+        return self.data_source_mgr.get_data_source(params['data_source_id'], domain_id, params.get('only'))
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
@@ -269,8 +273,10 @@ class DataSourceService(BaseService):
             data_source_vos (object)
             total_count
         """
-
+        domain_id = params['domain_id']
         query = params.get('query', {})
+        self._initialize_data_sources(domain_id)
+
         return self.data_source_mgr.list_data_sources(query)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -354,3 +360,26 @@ class DataSourceService(BaseService):
         ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
         ds_plugin_mgr.initialize(plugin_id, version, domain_id)
         ds_plugin_mgr.verify_plugin(options, secret_data, schema)
+
+    @cache.cacheable(key='init-data-source:{domain_id}', expire=300)
+    def _initialize_data_sources(self, domain_id):
+        _LOGGER.debug(f'[_initialize_data_source] domain_id: {domain_id}')
+
+        query = {'filter': [{'k': 'domain_id', 'v': domain_id, 'o': 'eq'}]}
+        data_source_vos, total_count = self.data_source_mgr.list_data_sources(query)
+
+        installed_data_sources_ids = [data_source_vo.plugin_info.plugin_id for data_source_vo in data_source_vos]
+        _LOGGER.debug(f'[_initialize_data_source] Installed Plugins : {installed_data_sources_ids}')
+
+        global_conf = config.get_global()
+        for _data_source in global_conf.get('INSTALLED_DATA_SOURCE_PLUGINS', []):
+            if _data_source['plugin_info']['plugin_id'] not in installed_data_sources_ids:
+                try:
+                    _LOGGER.debug(
+                        f'[_initialize_data_source] Create init data source: {_data_source["plugin_info"]["plugin_id"]}')
+                    _data_source['domain_id'] = domain_id
+                    self.register(_data_source)
+                except Exception as e:
+                    _LOGGER.error(f'[_initialize_data_source] {e}')
+
+        return True
