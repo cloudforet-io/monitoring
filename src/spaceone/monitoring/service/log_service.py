@@ -59,13 +59,13 @@ class LogService(BaseService):
 
         plugin_metadata = data_source_vo.plugin_info.metadata
         plugin_options = data_source_vo.plugin_info.options
-        required_keys = plugin_metadata.get('required_keys', [])
-        plugin_id = data_source_vo.plugin_info.plugin_id
-        version = data_source_vo.plugin_info.version
 
         self._check_resource_type(plugin_metadata, resource_type)
 
-        self.ds_plugin_mgr.initialize(plugin_id, version, domain_id)
+        data_source_dict = data_source_vo.to_dict()
+        plugin_info = data_source_dict['plugin_info']
+
+        self.ds_plugin_mgr.initialize(plugin_info, domain_id)
 
         plugin_filter = {}
 

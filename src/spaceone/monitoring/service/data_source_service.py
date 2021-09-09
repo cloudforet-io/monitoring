@@ -54,8 +54,11 @@ class DataSourceService(BaseService):
         params['monitoring_type'] = params['capability']['monitoring_type']
 
         # Update metadata
-        plugin_metadata = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
+        plugin_metadata, endpoint_info = self._init_plugin(params['plugin_info'], params['monitoring_type'], domain_id)
         params['plugin_info']['metadata'] = plugin_metadata
+
+        if version := endpoint_info.get('updated_version', plugin_info.get('version')):
+            params['plugin_info']['version'] = version
 
         return self.data_source_mgr.register_data_source(params)
 
@@ -81,19 +84,6 @@ class DataSourceService(BaseService):
 
         if 'tags' in params:
             params['tags'] = utils.dict_to_tags(params['tags'])
-
-        if 'plugin_info' in params:
-            self._check_plugin_info(params['plugin_info'])
-
-            if params['plugin_info']['plugin_id'] != data_source_vo.plugin_info.plugin_id:
-                raise ERROR_NOT_ALLOWED_PLUGIN_ID(old_plugin_id=data_source_vo.plugin_info.plugin_id,
-                                                  new_plugin_id=params['plugin_info']['plugin_id'])
-
-            plugin_metadata = self._init_plugin(params['plugin_info'], data_source_vo.monitoring_type, domain_id)
-
-            # params['plugin_info']['options'].update(plugin_metadata)
-            # TODO: Change plugin_info.options to metadata
-            params['plugin_info']['metadata'] = plugin_metadata
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
@@ -200,21 +190,28 @@ class DataSourceService(BaseService):
         data_source_id = params['data_source_id']
         domain_id = params['domain_id']
         options = params.get('options')
-        version = params.get('version')
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
         data_source_dict = data_source_vo.to_dict()
         plugin_info = data_source_dict['plugin_info']
 
-        if version:
-            # Update plugin_version
-            plugin_id = plugin_info['plugin_id']
-            repo_mgr = self.locator.get_manager('RepositoryManager')
-            repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+        if plugin_info['upgrade_mode'] == 'AUTO':
+            plugin_metadata, endpoint_info = self._init_plugin(plugin_info, data_source_dict['monitoring_type'], domain_id)
 
-            plugin_info['version'] = version
-            metadata = self._init_plugin(data_source_dict['plugin_info'], data_source_vo.monitoring_type, domain_id)
-            plugin_info['metadata'] = metadata
+            plugin_info['metadata'] = plugin_metadata
+
+            if version := endpoint_info.get('updated_version'):
+                plugin_info['version'] = version
+        else:
+            if version := params.get('version'):
+                # Update plugin_version
+                plugin_id = plugin_info['plugin_id']
+                repo_mgr = self.locator.get_manager('RepositoryManager')
+                repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+
+                plugin_info['version'] = version
+                metadata = self._init_plugin(data_source_dict['plugin_info'], data_source_vo.monitoring_type, domain_id)
+                plugin_info['metadata'] = metadata
 
         if options or options == {}:
             # Overwriting
@@ -331,26 +328,26 @@ class DataSourceService(BaseService):
 
     def _get_plugin(self, plugin_info, domain_id):
         plugin_id = plugin_info['plugin_id']
-        version = plugin_info['version']
 
         repo_mgr: RepositoryManager = self.locator.get_manager('RepositoryManager')
         plugin_info = repo_mgr.get_plugin(plugin_id, domain_id)
-        repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+
+        if version := plugin_info.get('version'):
+            repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
         return plugin_info
 
     def _init_plugin(self, plugin_info, monitoring_type, domain_id):
-        plugin_id = plugin_info['plugin_id']
-        version = plugin_info['version']
         options = plugin_info['options']
 
         ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
-        ds_plugin_mgr.initialize(plugin_id, version, domain_id)
-        return ds_plugin_mgr.init_plugin(options, monitoring_type)
+        endpoint_info = ds_plugin_mgr.initialize(plugin_info, domain_id)
+        metadata = ds_plugin_mgr.init_plugin(options, monitoring_type)
+
+        return metadata, endpoint_info
 
     def _verify_plugin(self, plugin_info, capability, domain_id):
         plugin_id = plugin_info['plugin_id']
-        version = plugin_info['version']
         options = plugin_info['options']
         secret_id = plugin_info.get('secret_id')
         provider = plugin_info.get('provider')
@@ -359,7 +356,7 @@ class DataSourceService(BaseService):
         secret_data, schema = secret_mgr.get_plugin_secret(plugin_id, secret_id, provider, capability, domain_id)
 
         ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
-        ds_plugin_mgr.initialize(plugin_id, version, domain_id)
+        ds_plugin_mgr.initialize(plugin_info, domain_id)
         ds_plugin_mgr.verify_plugin(options, secret_data, schema)
 
     @cache.cacheable(key='init-data-source:{domain_id}', expire=300)
