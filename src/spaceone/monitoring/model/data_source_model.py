@@ -10,6 +10,7 @@ class PluginInfo(EmbeddedDocument):
     metadata = DictField()
     secret_id = StringField(max_length=40, default=None, null=True)
     provider = StringField(max_length=40, default=None, null=True)
+    upgrade_mode = StringField(max_length=255, choices=('AUTO', 'MANUAL'), default='AUTO')
 
     def to_dict(self):
         return self.to_mongo()
