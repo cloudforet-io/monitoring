@@ -85,19 +85,6 @@ class DataSourceService(BaseService):
         if 'tags' in params:
             params['tags'] = utils.dict_to_tags(params['tags'])
 
-        if 'plugin_info' in params:
-            self._check_plugin_info(params['plugin_info'])
-
-            if params['plugin_info']['plugin_id'] != data_source_vo.plugin_info.plugin_id:
-                raise ERROR_NOT_ALLOWED_PLUGIN_ID(old_plugin_id=data_source_vo.plugin_info.plugin_id,
-                                                  new_plugin_id=params['plugin_info']['plugin_id'])
-
-            plugin_metadata = self._init_plugin(params['plugin_info'], data_source_vo.monitoring_type, domain_id)
-
-            # params['plugin_info']['options'].update(plugin_metadata)
-            # TODO: Change plugin_info.options to metadata
-            params['plugin_info']['metadata'] = plugin_metadata
-
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})

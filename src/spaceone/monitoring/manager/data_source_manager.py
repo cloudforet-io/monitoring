@@ -35,7 +35,6 @@ class DataSourceManager(BaseManager):
             data_source_vo.update(old_data)
 
         self.transaction.add_rollback(_rollback, data_source_vo.to_dict())
-
         return data_source_vo.update(params)
 
     def deregister_data_source(self, data_source_id, domain_id):

@@ -67,11 +67,11 @@ class MetricService(BaseService):
         plugin_metadata = data_source_vo.plugin_info.metadata
         required_keys = plugin_metadata.get('required_keys', [])
 
-        plugin_id = data_source_vo.plugin_info.plugin_id
-        version = data_source_vo.plugin_info.version
+        data_source_dict = data_source_vo.to_dict()
+        plugin_info = data_source_dict['plugin_info']
 
         self._check_resource_type(plugin_metadata, resource_type)
-        self.ds_plugin_mgr.initialize(plugin_id, version, domain_id)
+        self.ds_plugin_mgr.initialize(plugin_info, domain_id)
 
         response = {
             'metrics': None,
@@ -159,11 +159,11 @@ class MetricService(BaseService):
         plugin_metadata = data_source_vo.plugin_info.metadata
         required_keys = plugin_metadata.get('required_keys', [])
 
-        plugin_id = data_source_vo.plugin_info.plugin_id
-        version = data_source_vo.plugin_info.version
+        data_source_dict = data_source_vo.to_dict()
+        plugin_info = data_source_dict['plugin_info']
 
         self._check_resource_type(plugin_metadata, resource_type)
-        self.ds_plugin_mgr.initialize(plugin_id, version, domain_id)
+        self.ds_plugin_mgr.initialize(plugin_info, domain_id)
 
         response = {
             'labels': [],
