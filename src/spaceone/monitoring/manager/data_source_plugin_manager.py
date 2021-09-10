@@ -4,6 +4,7 @@ from spaceone.core.manager import BaseManager
 from spaceone.monitoring.error import *
 from spaceone.monitoring.manager.plugin_manager import PluginManager
 from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
+from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.model.plugin_metadata_model import MetricPluginMetadataModel, LogPluginMetadataModel
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,23 +16,9 @@ class DataSourcePluginManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.dsp_connector: DataSourcePluginConnector = self.locator.get_connector('DataSourcePluginConnector')
 
-    def initialize(self, plugin_info, domain_id):
-        plugin_id = plugin_info['plugin_id']
-        upgrade_mode = plugin_info.get('upgrade_mode', 'AUTO')
-
-        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-
-        if upgrade_mode == 'AUTO':
-            endpoint_response = plugin_mgr.get_plugin_endpoint(plugin_id, domain_id)
-        else:
-            endpoint_response = plugin_mgr.get_plugin_endpoint(plugin_id, domain_id, version=plugin_info.get('version'))
-
-        endpoint = endpoint_response['endpoint']
+    def initialize(self, endpoint):
         _LOGGER.debug(f'[init_plugin] endpoint: {endpoint}')
-
         self.dsp_connector.initialize(endpoint)
-
-        return endpoint_response
 
     def init_plugin(self, options, monitoring_type):
         plugin_info = self.dsp_connector.init(options)
@@ -91,3 +78,21 @@ class DataSourcePluginManager(BaseManager):
         if return_resource_type is not None and is_resource_type_match is False:
             raise ERROR_INTERNAL_API(
                 message=f'Plugin response error: no return resource_type ({return_resource_type})')
+
+    def get_data_source_plugin_endpoint_by_vo(self, data_source_vo: DataSource):
+        plugin_info = data_source_vo.plugin_info.to_dict()
+        endpoint, updated_version = self.get_data_source_plugin_endpoint(plugin_info, data_source_vo.domain_id)
+
+        if updated_version:
+            _LOGGER.debug(f'[get_data_source_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}')
+            self.initialize(endpoint)
+            plugin_metadata = self.init_plugin(plugin_info.get('options', {}), data_source_vo.monitoring_type)
+            plugin_info['version'] = updated_version
+            plugin_info['metadata'] = plugin_metadata
+            data_source_vo.update({'plugin_info': plugin_info})
+
+        return endpoint
+
+    def get_data_source_plugin_endpoint(self, plugin_info, domain_id):
+        plugin_mgr: PluginManager = self.locator.get_model('PluginManager')
+        return plugin_mgr.get_plugin_endpoint(plugin_info, domain_id)

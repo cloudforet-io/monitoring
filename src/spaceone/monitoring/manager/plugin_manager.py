@@ -12,15 +12,16 @@ class PluginManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
 
-    def get_plugin_endpoint(self, plugin_id, domain_id, **kwargs):
-        request = {
-            'plugin_id': plugin_id,
-            'domain_id': domain_id
-        }
+    def get_plugin_endpoint(self, plugin_info, domain_id):
+        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
+        response = plugin_connector.dispatch(
+            'Plugin.get_plugin_endpoint',
+            {
+                'plugin_id': plugin_info['plugin_id'],
+                'version': plugin_info.get('version'),
+                'upgrade_mode': plugin_info.get('upgrade_mode', 'AUTO'),
+                'domain_id': domain_id
+            }
+        )
 
-        if 'version' in kwargs:
-            request.update({'version': kwargs.get('version')})
-        else:
-            request.update({'upgrade_mode': 'AUTO'})
-
-        return self.plugin_connector.dispatch('Plugin.get_plugin_endpoint', request)
+        return response['endpoint'], response.get('updated_version')

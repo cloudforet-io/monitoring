@@ -71,7 +71,8 @@ class MetricService(BaseService):
         plugin_info = data_source_dict['plugin_info']
 
         self._check_resource_type(plugin_metadata, resource_type)
-        self.ds_plugin_mgr.initialize(plugin_info, domain_id)
+        endpoint = self.ds_plugin_mgr.get_data_source_plugin_endpoint_by_vo(data_source_vo)
+        self.ds_plugin_mgr.initialize(endpoint)
 
         response = {
             'metrics': None,
@@ -163,7 +164,8 @@ class MetricService(BaseService):
         plugin_info = data_source_dict['plugin_info']
 
         self._check_resource_type(plugin_metadata, resource_type)
-        self.ds_plugin_mgr.initialize(plugin_info, domain_id)
+        endpoint = self.ds_plugin_mgr.get_data_source_plugin_endpoint_by_vo(data_source_vo)
+        self.ds_plugin_mgr.initialize(endpoint)
 
         response = {
             'labels': [],
