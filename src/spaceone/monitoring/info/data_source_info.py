@@ -48,7 +48,3 @@ def DataSourceInfo(data_source_vo: DataSource, minimal=False):
 def DataSourcesInfo(data_source_vos, total_count, **kwargs):
     return data_source_pb2.DataSourcesInfo(results=list(
         map(functools.partial(DataSourceInfo, **kwargs), data_source_vos)), total_count=total_count)
-
-
-def VerifyInfo(is_verify):
-    return data_source_pb2.VerifyInfo(status=is_verify)
