@@ -4,7 +4,7 @@ from spaceone.core.pygrpc.message_type import *
 from spaceone.core import utils
 from spaceone.monitoring.model.data_source_model import DataSource
 
-__all__ = ['DataSourceInfo', 'DataSourcesInfo', 'VerifyInfo']
+__all__ = ['DataSourceInfo', 'DataSourcesInfo']
 
 
 def PluginInfo(vo):

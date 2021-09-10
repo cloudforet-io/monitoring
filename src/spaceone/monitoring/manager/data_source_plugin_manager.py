@@ -94,5 +94,5 @@ class DataSourcePluginManager(BaseManager):
         return endpoint
 
     def get_data_source_plugin_endpoint(self, plugin_info, domain_id):
-        plugin_mgr: PluginManager = self.locator.get_model('PluginManager')
+        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         return plugin_mgr.get_plugin_endpoint(plugin_info, domain_id)

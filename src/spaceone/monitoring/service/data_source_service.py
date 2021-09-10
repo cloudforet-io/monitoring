@@ -55,11 +55,11 @@ class DataSourceService(BaseService):
         params['monitoring_type'] = params['capability']['monitoring_type']
 
         # Update metadata
-        endpoint, updated_version = self.ds_plugin_mgr.get_data_source_plugin_endpoint(plugin_info, domain_id)
+        endpoint, updated_version = self.ds_plugin_mgr.get_data_source_plugin_endpoint(params['plugin_info'], domain_id)
         if updated_version:
             params['plugin_info']['version'] = updated_version
 
-        options = params['plugin_ifo'].get('options', {})
+        options = params['plugin_info'].get('options', {})
         plugin_metadata = self._init_plugin(endpoint, options, params['monitoring_type'])
         params['plugin_info']['metadata'] = plugin_metadata
 
@@ -172,7 +172,7 @@ class DataSourceService(BaseService):
 
         endpoint = self.ds_plugin_mgr.get_data_source_plugin_endpoint_by_vo(data_source_vo)
 
-        self._verify_plugin(endpoint, data_source_vo.plugin_info, data_source_vo.capability, domain_id)
+        self._verify_plugin(endpoint, data_source_vo.plugin_info.to_dict(), data_source_vo.capability, domain_id)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'domain_id'])
@@ -210,12 +210,12 @@ class DataSourceService(BaseService):
         if upgrade_mode:
             plugin_info['upgrade_mode'] = upgrade_mode
 
-        endpoint, updated_version = self.get_auth_plugin_endpoint(domain_id, plugin_info)
+        endpoint, updated_version = self.ds_plugin_mgr.get_data_source_plugin_endpoint(plugin_info, domain_id)
         if updated_version:
             plugin_info['version'] = updated_version
 
-        plugin_metadata = self._init_plugin(endpoint, plugin_info.get('options', {}), params['monitoring_type'])
-        params['plugin_info']['metadata'] = plugin_metadata
+        plugin_metadata = self._init_plugin(endpoint, plugin_info.get('options', {}), data_source_vo.monitoring_type)
+        plugin_info['metadata'] = plugin_metadata
 
         params = {
             'data_source_id': data_source_id,
