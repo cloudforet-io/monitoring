@@ -54,7 +54,7 @@ class EventService(BaseService):
 
         try:
             webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
-            endpoint, updated_version = self.webhook_plugin_mgr.get_webhook_plugin_endpoint({
+            endpoint, updated_version = webhook_plugin_mgr.get_webhook_plugin_endpoint({
                 'plugin_id': webhook_data['plugin_id'],
                 'version': webhook_data['plugin_version'],
                 'upgrade_mode': webhook_data['plugin_upgrade_mode']
@@ -72,7 +72,7 @@ class EventService(BaseService):
             if not isinstance(e, ERROR_BASE):
                 e = ERROR_UNKNOWN(message=str(e))
 
-            _LOGGER.error(f'[create] Event parsing failed: {e.message}')
+            _LOGGER.error(f'[create] Event parsing failed: {e.message}', exc_info=True)
             response = self._create_error_event(webhook_data['name'], e.message)
 
         for event_data in response.get('results', []):
