@@ -14,7 +14,8 @@ def PluginInfo(vo):
             'plugin_id': vo.plugin_id,
             'version': vo.version,
             'options': change_struct_type(vo.options),
-            'metadata': change_struct_type(vo.metadata)
+            'metadata': change_struct_type(vo.metadata),
+            'upgrade_mode': vo.upgrade_mode
         }
 
         return webhook_pb2.WebhookPluginInfo(**info)

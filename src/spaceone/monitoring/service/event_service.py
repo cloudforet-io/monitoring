@@ -29,6 +29,7 @@ class EventService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.event_mgr: EventManager = self.locator.get_manager('EventManager')
+        self.webhook_mgr: WebhookManager = self.locator.get_manager('WebhookManager')
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['webhook_id', 'access_key', 'data'])
@@ -53,8 +54,18 @@ class EventService(BaseService):
 
         try:
             webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager('WebhookPluginManager')
-            webhook_plugin_mgr.initialize(webhook_data['plugin_id'], webhook_data['plugin_version'],
-                                          webhook_data['domain_id'])
+            endpoint, updated_version = self.webhook_plugin_mgr.get_webhook_plugin_endpoint({
+                'plugin_id': webhook_data['plugin_id'],
+                'version': webhook_data['plugin_version'],
+                'upgrade_mode': webhook_data['plugin_upgrade_mode']
+            }, webhook_data['domain_id'])
+
+            if updated_version:
+                _LOGGER.debug(f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}')
+                webhook_vo: Webhook = self.webhook_mgr.get_webhook(webhook_data['webhook_id'], webhook_data['domain_id'])
+                webhook_plugin_mgr.upgrade_webhook_plugin_version(webhook_vo, endpoint, updated_version)
+
+            webhook_plugin_mgr.initialize(endpoint)
             response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], params['data'])
 
         except Exception as e:
@@ -148,8 +159,7 @@ class EventService(BaseService):
 
     @cache.cacheable(key='webhook-data:{webhook_id}', expire=300)
     def _get_webhook_data(self, webhook_id):
-        webhook_mgr: WebhookManager = self.locator.get_manager('WebhookManager')
-        webhook_vo: Webhook = webhook_mgr.get_webhook_by_id(webhook_id)
+        webhook_vo: Webhook = self.webhook_mgr.get_webhook_by_id(webhook_id)
         return {
             'webhook_id': webhook_vo.webhook_id,
             'name': webhook_vo.name,
@@ -159,6 +169,7 @@ class EventService(BaseService):
             'access_key': webhook_vo.access_key,
             'plugin_id': webhook_vo.plugin_info.plugin_id,
             'plugin_version': webhook_vo.plugin_info.version,
+            'plugin_upgrade_mode': webhook_vo.plugin_info.upgrade_mode,
             'plugin_options': webhook_vo.plugin_info.options
         }
 
