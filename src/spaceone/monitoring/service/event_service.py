@@ -64,6 +64,7 @@ class EventService(BaseService):
                 _LOGGER.debug(f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}')
                 webhook_vo: Webhook = self.webhook_mgr.get_webhook(webhook_data['webhook_id'], webhook_data['domain_id'])
                 webhook_plugin_mgr.upgrade_webhook_plugin_version(webhook_vo, endpoint, updated_version)
+                cache.delete(f'webhook-data:{webhook_data["webhook_id"]}')
 
             webhook_plugin_mgr.initialize(endpoint)
             response = webhook_plugin_mgr.parse_event(webhook_data['plugin_options'], params['data'])
