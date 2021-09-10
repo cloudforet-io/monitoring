@@ -218,8 +218,6 @@ class DataSourceService(BaseService):
         plugin_info['metadata'] = plugin_metadata
 
         params = {
-            'data_source_id': data_source_id,
-            'domain_id': domain_id,
             'plugin_info': plugin_info
         }
 

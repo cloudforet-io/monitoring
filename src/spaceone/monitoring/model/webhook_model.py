@@ -8,9 +8,10 @@ class PluginInfo(EmbeddedDocument):
     version = StringField(max_length=255)
     options = DictField(default={})
     metadata = DictField(default={})
+    upgrade_mode = StringField(max_length=255, choices=('AUTO', 'MANUAL'), default='AUTO')
 
     def to_dict(self):
-        return self.to_mongo()
+        return dict(self.to_mongo())
 
 
 class Webhook(MongoModel):

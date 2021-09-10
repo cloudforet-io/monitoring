@@ -17,7 +17,7 @@ class DataSourcePluginManager(BaseManager):
         self.dsp_connector: DataSourcePluginConnector = self.locator.get_connector('DataSourcePluginConnector')
 
     def initialize(self, endpoint):
-        _LOGGER.debug(f'[init_plugin] endpoint: {endpoint}')
+        _LOGGER.debug(f'[initialize] data source plugin endpoint: {endpoint}')
         self.dsp_connector.initialize(endpoint)
 
     def init_plugin(self, options, monitoring_type):
@@ -85,14 +85,18 @@ class DataSourcePluginManager(BaseManager):
 
         if updated_version:
             _LOGGER.debug(f'[get_data_source_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}')
-            self.initialize(endpoint)
-            plugin_metadata = self.init_plugin(plugin_info.get('options', {}), data_source_vo.monitoring_type)
-            plugin_info['version'] = updated_version
-            plugin_info['metadata'] = plugin_metadata
-            data_source_vo.update({'plugin_info': plugin_info})
+            self.upgrade_data_source_plugin_version(data_source_vo, endpoint, updated_version)
 
         return endpoint
 
     def get_data_source_plugin_endpoint(self, plugin_info, domain_id):
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         return plugin_mgr.get_plugin_endpoint(plugin_info, domain_id)
+
+    def upgrade_data_source_plugin_version(self, data_source_vo: DataSource, endpoint, updated_version):
+        plugin_info = data_source_vo.plugin_info.to_dict()
+        self.initialize(endpoint)
+        plugin_metadata = self.init_plugin(plugin_info.get('options', {}), data_source_vo.monitoring_type)
+        plugin_info['version'] = updated_version
+        plugin_info['metadata'] = plugin_metadata
+        data_source_vo.update({'plugin_info': plugin_info})
