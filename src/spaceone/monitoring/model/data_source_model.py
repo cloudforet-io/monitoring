@@ -6,14 +6,14 @@ from spaceone.core.model.mongo_model import MongoModel
 class PluginInfo(EmbeddedDocument):
     plugin_id = StringField(max_length=40)
     version = StringField(max_length=255)
-    options = DictField()
-    metadata = DictField()
+    options = DictField(default={})
+    metadata = DictField(default={})
     secret_id = StringField(max_length=40, default=None, null=True)
     provider = StringField(max_length=40, default=None, null=True)
     upgrade_mode = StringField(max_length=255, choices=('AUTO', 'MANUAL'), default='AUTO')
 
     def to_dict(self):
-        return self.to_mongo()
+        return dict(self.to_mongo())
 
 
 class DataSourceTag(EmbeddedDocument):
