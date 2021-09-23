@@ -57,6 +57,7 @@ def AlertInfo(alert_vo: Alert, minimal=False):
             'description': alert_vo.description,
             'severity': alert_vo.severity,
             'rule': alert_vo.rule,
+            'image_url': alert_vo.image_url,
             'resource': AlertResourceInfo(alert_vo.resource),
             'additional_info': change_struct_type(alert_vo.additional_info),
             'is_snoozed': alert_vo.is_snoozed,
