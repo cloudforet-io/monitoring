@@ -519,8 +519,16 @@ class JobService(BaseService):
             'description': description,
             'tags': tags,
             'callbacks': callbacks,
-            'timestamp': self._change_datetime_to_timestamp(alert_vo.created_at)
+            'occurred_at': alert_vo.created_at
         }
+
+        alert_link = self._make_alert_link(alert_vo.alert_id)
+
+        if alert_link:
+            message['link'] = alert_link
+
+        if alert_vo.image_url:
+            message['image_url'] = alert_vo.image_url
 
         if has_short_message:
             # TODO: Need to change multiple language
@@ -595,8 +603,8 @@ class JobService(BaseService):
         return f'{webhook_domain}/monitoring/v1/alert/{alert_id}/{access_key}/ACKNOWLEDGED'
 
     @staticmethod
-    def _change_datetime_to_timestamp(dt):
-        try:
-            return int(time.mktime(dt.timetuple()))
-        except Exception as e:
-            return None
+    def _make_alert_link(alert_id):
+        console_domain = config.get_global('CONSOLE_DOMAIN')
+
+        if console_domain.strip() != '':
+            return f'{console_domain}/monitoring/alert-manager/alert/{alert_id}'

@@ -18,6 +18,7 @@ class Event(MongoModel):
     severity = StringField(max_length=20, default='NONE', choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                                                    'NOT_AVAILABLE', 'NONE'))
     rule = StringField(default=None, null=True)
+    image_url = StringField(default=None, null=True)
     resource = EmbeddedDocumentField(EventResource, default=None, null=True)
     raw_data = DictField()
     additional_info = DictField()
