@@ -519,7 +519,7 @@ class JobService(BaseService):
             'description': description,
             'tags': tags,
             'callbacks': callbacks,
-            'occurred_at': alert_vo.created_at
+            'occurred_at': utils.datetime_to_iso8601(alert_vo.created_at)
         }
 
         alert_link = self._make_alert_link(alert_vo.alert_id)
