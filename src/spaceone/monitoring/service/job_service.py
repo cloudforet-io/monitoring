@@ -487,13 +487,11 @@ class JobService(BaseService):
                 'value': self._get_user_name(alert_vo.assignee, domain_id)
             })
 
-        if alert_vo.status_message != '':
+        if alert_vo.status_message and alert_vo.status_message != '':
             tags.append({
                 'key': 'Status Message',
                 'value': alert_vo.status_message
             })
-
-        description = alert_vo.description
 
         callbacks = []
 
@@ -516,11 +514,13 @@ class JobService(BaseService):
 
         message = {
             'title': title,
-            'description': description,
             'tags': tags,
             'callbacks': callbacks,
             'occurred_at': utils.datetime_to_iso8601(alert_vo.created_at)
         }
+
+        if alert_vo.description and alert_vo.description != '':
+            message['description'] = alert_vo.description
 
         alert_link = self._make_alert_link(alert_vo.alert_id)
 
