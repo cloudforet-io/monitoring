@@ -3,3 +3,4 @@ spaceone-api
 mongoengine
 redis
 schematics
+boto3
