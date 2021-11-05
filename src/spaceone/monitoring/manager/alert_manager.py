@@ -121,4 +121,3 @@ class AlertManager(BaseManager):
 
     def stat_alerts(self, query):
         return self.alert_model.stat(**query)
-
