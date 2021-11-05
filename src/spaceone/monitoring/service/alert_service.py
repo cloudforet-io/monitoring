@@ -10,6 +10,7 @@ from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 from spaceone.monitoring.manager.alert_manager import AlertManager
+from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.manager.job_manager import JobManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class AlertService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
+        self.event_mgr: EventManager = self.locator.get_manager('EventManager')
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['title', 'project_id', 'domain_id'])
@@ -223,19 +225,62 @@ class AlertService(BaseService):
     @check_required(['alerts', 'merge_to', 'domain_id'])
     def merge(self, params):
         """Merge alerts
-
-        Args:
+1
+        Args: # Question?
             params (dict): {
                 'alerts': 'list',
                 'merge_to': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str',
+                'events' :'list'
             }
 
         Returns:
             alert_vo (object)
         """
+        '''
+           Plan 
+           1. merge_to가 params로 들어온 alerts 에 들어있는지 확인 > 아니면 raise => alert_service 
+           2. params의 나머지 alerts 들 돌면서 딸린 event 자식들 검색 => alert_service
+           3. event들의 alert_id를 merge_to ID로 바꿔줌 => alert_manager.merge 에서 하고싶은데.. / event_mgr 호출 못함 -> alert_service에서 하고..
+           4. merge_to를 제외한 alerts 삭제 => alert_manager.merge(params)
+           -------
+           rollback 에 관한 의문점 
+           1-1. transaction 은 어디서부터 시작해 어디서 끝나는가? transaction 에 관한 설명 need
+           1-2. (event_mgr) child event 검색에 실패했을 때 / (event_mgr) alert_id를 merge_to ID로 바꿔줬을 때 / merge_to를 제외한 alerts 를 삭제하는 도중에
+           모두 롤백해야하는데 add_rollback에 3개를 등록하는 것인가?
+           2. 왜 merge API 의 return은 {alert_info}인가? 왜? Flag 값은 없는..?
+           -------
+           왜 개별 parameter로 명시해서 넘기지 않고 params 에 담아서 넘기지? -> No reason
+        '''
+        merge_to = params['merge_to']
+        alerts = params['alerts']
+        alert_ids = []
+        for alert in alerts:
+            alert_ids.append(alert['alert_id'])
 
-        return self.alert_mgr.merge_alerts(params)
+        if self._check_merge_condition(merge_to=merge_to, alert_ids=alert_ids):
+            for alert in alerts:
+                if alert['alert_id'] != merge_to:
+                    alert_ids.append(alert['alert_id'])
+
+            events = []
+            for alert_id in alert_ids:
+                event_vos = self._list_events_by_alert_id(alert_id=alert_id)  # List child events
+                events.append(event_vos)
+
+            print(f'events: {events}')
+            event_params = {
+                'alert_id': merge_to
+            }
+
+            for event_vo in events:
+                self.event_mgr.update_event_by_vo(params=event_params, event_vo=event_vo)
+
+            params['events'] = events
+            params['deleted_alerts'] = alert_ids
+            return self.alert_mgr.merge_alerts(params, merge_to)
+        else:
+            raise ERROR_MERGE_ALERT_NOT_EXIST(alert_id=merge_to)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alert_id', 'end_time', 'domain_id'])
@@ -472,3 +517,27 @@ class AlertService(BaseService):
     def _check_state(state):
         if state not in ['ACKNOWLEDGED', 'RESOLVED']:
             raise ERROR_INVALID_PARAMETER(key='state', reason='Unsupported state. (ACKNOWLEDGED | RESOLVED)')
+
+    def _list_events_by_alert_id(self, alert_id):
+        query = {
+            'filter': [
+                {
+                    'k': 'alert_id',
+                    'v': alert_id,
+                    'o': 'eq'
+                }
+            ],
+            'sort': {
+                'key': 'created_at',
+                'desc': True
+            }
+        }
+        event_vos, total_count = self.event_mgr.list_events(query)
+        return event_vos
+
+    @staticmethod
+    def _check_merge_condition(merge_to, alert_ids):
+        if merge_to in alert_ids:
+            return True
+        else:
+            return False

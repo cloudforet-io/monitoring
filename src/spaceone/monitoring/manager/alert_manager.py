@@ -1,7 +1,9 @@
 import logging
 
 from spaceone.core.manager import BaseManager
+from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.model.alert_model import Alert
+from spaceone.monitoring.model.event_model import Event
 from spaceone.monitoring.error.alert import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,15 +38,26 @@ class AlertManager(BaseManager):
             alert_vo.update(old_data)
 
         self.transaction.add_rollback(_rollback, alert_vo.to_dict())
-
         return alert_vo.update(params)
 
-    def merge_alerts(self, params):
-        alert_vo: Alert = self.get_alert(params['merge_to'], params['domain_id'])
+    def merge_alerts(self, params, alert_vo):
+        def _rollback(old_data):
+            _LOGGER.info(f'[merge_alert._rollback] Revert Data : '
+                         f'{old_data["alert_id"]}')
+            alert_vo.update(old_data)
 
-        # TODO: merge alert's events
-
-        return alert_vo
+        self.transaction.add_rollback(_rollback, alert_vo.to_dict())
+        """
+        Args:
+            params (dict): {
+                'merge_to': 'str'
+                'deleted_alerts': 'list(str)',
+                'domain_id': 'str',
+            }
+        :return: alert_vo
+        """
+        merged_alert_vo: Alert = self.get_alert(params['merge_to'], params['domain_id'])
+        return merged_alert_vo
 
     def add_responder(self, params):
         resource_type = params['resource_type']
@@ -108,3 +121,4 @@ class AlertManager(BaseManager):
 
     def stat_alerts(self, query):
         return self.alert_model.stat(**query)
+

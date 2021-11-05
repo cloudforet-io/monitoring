@@ -46,6 +46,9 @@ class Alert(MongoModel):
     resolved_at = DateTimeField(default=None, null=True)
     escalated_at = DateTimeField(default=None, null=True)
 
+    def to_dict(self):
+        return self.to_dict()
+
     meta = {
         'updatable_fields': [
             'title',
