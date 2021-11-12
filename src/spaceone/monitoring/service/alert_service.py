@@ -225,7 +225,7 @@ class AlertService(BaseService):
     @check_required(['alerts', 'merge_to', 'domain_id'])
     def merge(self, params):
         """Merge alerts
-1
+
         Args:
             params (dict): {
                 'alerts': 'list',
