@@ -15,7 +15,6 @@ class Event(MongoModel):
     event_type = StringField(max_length=20, default='ALERT', choices=('ALERT', 'RECOVERY', 'ERROR'))
     title = StringField()
     description = StringField(default=None, null=True)
-    urgency = StringField()
     severity = StringField(max_length=20, default='NONE', choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                                                    'NOT_AVAILABLE', 'NONE'))
     rule = StringField(default=None, null=True)
@@ -29,7 +28,6 @@ class Event(MongoModel):
     project_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
-    updated_at = DateTimeField(auto_now_add=True)
     occurred_at = DateTimeField(default=None, null=True)
 
     meta = {
