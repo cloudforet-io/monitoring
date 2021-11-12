@@ -49,7 +49,6 @@ class TestEventManager(unittest.TestCase):
         event_mgr = EventManager(transaction=self.transaction)
         updated_event_info = event_mgr.update_event_by_vo(event_params.copy(), event_vo=test_event)
 
-        print(f'event_data_returned_info: {updated_event_info}')
         self.assertEqual(merge_to, updated_event_info.alert_id)
 
 

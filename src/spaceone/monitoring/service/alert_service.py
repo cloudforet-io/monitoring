@@ -226,12 +226,11 @@ class AlertService(BaseService):
     def merge(self, params):
         """Merge alerts
 1
-        Args: # Question?
+        Args:
             params (dict): {
                 'alerts': 'list',
                 'merge_to': 'str',
                 'domain_id': 'str',
-                'events' :'list'   # here ?
             }
 
         Returns:
@@ -257,6 +256,7 @@ class AlertService(BaseService):
             for alert_id in alerts:
                 self.alert_mgr.delete_alert(alert_id=alert_id, domain_id=params['domain_id'])
 
+            # return self.alert_mgr.get_alert(alert_id=merge_to)
             return self.alert_mgr.merge_alerts(params, merge_to)
         else:
             raise ERROR_MERGE_ALERT_NOT_EXIST(alert_id=merge_to)

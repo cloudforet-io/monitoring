@@ -50,9 +50,8 @@ class AlertManager(BaseManager):
         """
         Args:
             params (dict): {
-                'merge_to': 'str'
-                'deleted_alerts': 'list(str)',
-                'domain_id': 'str',
+                'merge_to': 'str',
+                'domain_id': 'str'
             }
         :return: alert_vo
         """
