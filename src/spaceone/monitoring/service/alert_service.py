@@ -10,6 +10,7 @@ from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
 from spaceone.monitoring.manager.escalation_policy_manager import EscalationPolicyManager
 from spaceone.monitoring.manager.alert_manager import AlertManager
+from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.manager.job_manager import JobManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class AlertService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
+        self.event_mgr: EventManager = self.locator.get_manager('EventManager')
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['title', 'project_id', 'domain_id'])
@@ -228,14 +230,36 @@ class AlertService(BaseService):
             params (dict): {
                 'alerts': 'list',
                 'merge_to': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str',
             }
 
         Returns:
             alert_vo (object)
         """
+        merge_to = params['merge_to']
+        alerts = params['alerts']
 
-        return self.alert_mgr.merge_alerts(params)
+        if self._check_merge_condition(merge_to=merge_to, alert_ids=alerts):
+
+            events = []
+            for alert_id in alerts:
+                event_vos = self._list_events_by_alert_id(alert_id=alert_id)  # List child events
+                events.append(event_vos)
+
+            # update events' alert_id
+            update_event_params = {'alert_id': merge_to}
+            for event_vo in events:
+                self.event_mgr.update_event_by_vo(params=update_event_params, event_vo=event_vo)
+
+            # Delete alerts except merge_to
+            alerts.remove(merge_to)
+            for alert_id in alerts:
+                self.alert_mgr.delete_alert(alert_id=alert_id, domain_id=params['domain_id'])
+
+            # return self.alert_mgr.get_alert(alert_id=merge_to)
+            return self.alert_mgr.merge_alerts(params, merge_to)
+        else:
+            raise ERROR_MERGE_ALERT_NOT_EXIST(alert_id=merge_to)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alert_id', 'end_time', 'domain_id'])
@@ -472,3 +496,27 @@ class AlertService(BaseService):
     def _check_state(state):
         if state not in ['ACKNOWLEDGED', 'RESOLVED']:
             raise ERROR_INVALID_PARAMETER(key='state', reason='Unsupported state. (ACKNOWLEDGED | RESOLVED)')
+
+    def _list_events_by_alert_id(self, alert_id):
+        query = {
+            'filter': [
+                {
+                    'k': 'alert_id',
+                    'v': alert_id,
+                    'o': 'eq'
+                }
+            ],
+            'sort': {
+                'key': 'created_at',
+                'desc': True
+            }
+        }
+        event_vos, total_count = self.event_mgr.list_events(query)
+        return event_vos
+
+    @staticmethod
+    def _check_merge_condition(merge_to, alert_ids):
+        if merge_to in alert_ids:
+            return True
+        else:
+            return False

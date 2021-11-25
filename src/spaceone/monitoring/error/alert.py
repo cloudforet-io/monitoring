@@ -19,3 +19,7 @@ class ERROR_PROJECT_DEPENDENCY_NOT_EXIST(ERROR_INVALID_ARGUMENT):
 
 class ERROR_ALERT_ALREADY_PROCESSED(ERROR_INVALID_ARGUMENT):
     _message = 'Alert has already been processed. (alert_id = {alert_id})'
+
+
+class ERROR_MERGE_ALERT_NOT_EXIST(ERROR_INVALID_ARGUMENT):
+    _message = 'Alert does not exist in merge list. (alert_id = {alert_id})'
