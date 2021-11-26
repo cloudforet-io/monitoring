@@ -2,7 +2,6 @@ WEBHOOK_DOMAIN = ''
 CONSOLE_DOMAIN = ''
 
 DATABASE_AUTO_CREATE_INDEX = True
-DATABASE_CASE_INSENSITIVE_INDEX = False
 DATABASES = {
     'default': {
         'db': 'monitoring',
