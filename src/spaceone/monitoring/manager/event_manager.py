@@ -46,6 +46,9 @@ class EventManager(BaseManager):
     def get_event(self, event_id, domain_id, only=None):
         return self.event_model.get(event_id=event_id, domain_id=domain_id, only=only)
 
+    def filter_events(self, **conditions):
+        return self.event_model.filter(**conditions)
+
     def list_events(self, query={}):
         return self.event_model.query(**query)
 

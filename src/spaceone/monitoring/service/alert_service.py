@@ -238,28 +238,27 @@ class AlertService(BaseService):
         """
         merge_to = params['merge_to']
         alerts = params['alerts']
+        domain_id = params['domain_id']
 
-        if self._check_merge_condition(merge_to=merge_to, alert_ids=alerts):
+        self._check_merge_condition(merge_to=merge_to, alert_ids=alerts)
+        alerts.remove(merge_to)
 
-            events = []
-            for alert_id in alerts:
-                event_vos = self._list_events_by_alert_id(alert_id=alert_id)  # List child events
-                events.append(event_vos)
+        events = []
 
-            # update events' alert_id
-            update_event_params = {'alert_id': merge_to}
-            for event_vo in events:
-                self.event_mgr.update_event_by_vo(params=update_event_params, event_vo=event_vo)
+        for alert_id in alerts:
+            event_vos = self.event_mgr.filter_events(alert_id=alert_id, domain_id=domain_id)
+            events += event_vos
 
-            # Delete alerts except merge_to
-            alerts.remove(merge_to)
-            for alert_id in alerts:
-                self.alert_mgr.delete_alert(alert_id=alert_id, domain_id=params['domain_id'])
+        alert_vo = self.alert_mgr.get_alert(merge_to, domain_id)
+        update_event_params = {'alert_id': merge_to, 'alert': alert_vo}
 
-            # return self.alert_mgr.get_alert(alert_id=merge_to)
-            return self.alert_mgr.merge_alerts(params, merge_to)
-        else:
-            raise ERROR_MERGE_ALERT_NOT_EXIST(alert_id=merge_to)
+        for event_vo in events:
+            self.event_mgr.update_event_by_vo(params=update_event_params, event_vo=event_vo)
+
+        for alert_id in alerts:
+            self.alert_mgr.delete_alert(alert_id=alert_id, domain_id=params['domain_id'])
+
+        return alert_vo
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['alert_id', 'end_time', 'domain_id'])
@@ -497,26 +496,7 @@ class AlertService(BaseService):
         if state not in ['ACKNOWLEDGED', 'RESOLVED']:
             raise ERROR_INVALID_PARAMETER(key='state', reason='Unsupported state. (ACKNOWLEDGED | RESOLVED)')
 
-    def _list_events_by_alert_id(self, alert_id):
-        query = {
-            'filter': [
-                {
-                    'k': 'alert_id',
-                    'v': alert_id,
-                    'o': 'eq'
-                }
-            ],
-            'sort': {
-                'key': 'created_at',
-                'desc': True
-            }
-        }
-        event_vos, total_count = self.event_mgr.list_events(query)
-        return event_vos
-
     @staticmethod
     def _check_merge_condition(merge_to, alert_ids):
-        if merge_to in alert_ids:
-            return True
-        else:
-            return False
+        if merge_to not in alert_ids:
+            raise ERROR_MERGE_ALERT_NOT_EXIST(alert_id=merge_to)
