@@ -102,7 +102,7 @@ service:
               targetPort: 50051
               protocol: TCP
     rest:
-        type: ClusterIP
+        type: NodePort
         annotations:
             nil: nil
         ports:
@@ -112,19 +112,21 @@ service:
               protocol: TCP
 
 # Ingress (for monitoring-webhook)
-#ingress:
-#    annotations:
-#        kubernetes.io/ingress.class: alb
-#        alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
-#        alb.ingress.kubernetes.io/inbound-cidrs: 0.0.0.0/0 # replace or leave out
-#        alb.ingress.kubernetes.io/scheme: internet-facing
-#        alb.ingress.kubernetes.io/target-type: ip 
-#        alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-northeast-2:111111111111:certificate/11111111-6c4c-414a-beab-fa87f44dd105"
-#        alb.ingress.kubernetes.io/healthcheck-path: "/check"
-#        alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
-#        external-dns.alpha.kubernetes.io/hostname: monitoring-webhook.example.com
-#    servicePort: 80
-#    path: /*
+ingress:
+  rest:
+    enabled: false
+    annotations:
+        kubernetes.io/ingress.class: alb
+        alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+        alb.ingress.kubernetes.io/inbound-cidrs: 0.0.0.0/0 # replace or leave out
+        alb.ingress.kubernetes.io/scheme: internet-facing
+        alb.ingress.kubernetes.io/target-type: ip 
+        alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-northeast-2:111111111111:certificate/11111111-6c4c-414a-beab-fa87f44dd105"
+        alb.ingress.kubernetes.io/healthcheck-path: "/check"
+        alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
+        external-dns.alpha.kubernetes.io/hostname: monitoring-webhook.example.com
+    servicePort: 80
+    path: /*
 
 
 ################################

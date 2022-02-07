@@ -1,12 +1,13 @@
 {{- if .Values.enabled }}
 {{- if .Values.rest }}
+{{- if .Values.ingress.rest.enabled }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ .Values.name }}-rest
   namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   annotations:
-    {{- range $key, $value := .Values.ingress.annotations }}
+    {{- range $key, $value := .Values.ingress.rest.annotations }}
       {{- if not (eq $key "nil") }}
     {{ $key }}: {{ $value | quote }}
       {{- end }}
@@ -15,10 +16,11 @@ spec:
   rules:
   - http:
       paths:
-      - path: {{ .Values.ingress.path }}
+      - path: {{ .Values.ingress.rest.path }}
         backend:
           serviceName: {{ .Values.name }}-rest
-          servicePort: {{ .Values.ingress.servicePort }}
+          servicePort: {{ .Values.ingress.rest.servicePort }}
+{{- end }}
 {{- end }}
 {{- end }}
 
