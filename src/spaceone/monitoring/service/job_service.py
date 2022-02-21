@@ -522,7 +522,7 @@ class JobService(BaseService):
         if alert_vo.description and alert_vo.description != '':
             message['description'] = alert_vo.description
 
-        alert_link = self._make_alert_link(alert_vo.alert_id)
+        alert_link = self._make_alert_link(alert_vo.alert_id, alert_vo.domain_id)
 
         if alert_link:
             message['link'] = alert_link
@@ -602,9 +602,21 @@ class JobService(BaseService):
         webhook_domain = config.get_global('WEBHOOK_DOMAIN')
         return f'{webhook_domain}/monitoring/v1/alert/{alert_id}/{access_key}/ACKNOWLEDGED'
 
-    @staticmethod
-    def _make_alert_link(alert_id):
-        console_domain = config.get_global('CONSOLE_DOMAIN')
+    def _make_alert_link(self, alert_id, domain_id):
+        console_domain: str = config.get_global('CONSOLE_DOMAIN')
+        domain_name = self._get_domain_name(domain_id)
 
+        console_domain.format(domain_name=domain_name)
         if console_domain.strip() != '':
             return f'{console_domain}/monitoring/alert-manager/alert/{alert_id}'
+
+    @cache.cacheable(key='domain-name:{domain_id}', expire=3600)
+    def _get_domain_name(self, domain_id):
+        try:
+            identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+            domain_info = identity_mgr.get_domain(domain_id)
+            return domain_info['name']
+        except Exception as e:
+            _LOGGER.error(f'[_get_domain_name] Failed to get domain: {e}', exc_info=True)
+
+        return domain_id
