@@ -604,10 +604,11 @@ class JobService(BaseService):
 
     def _make_alert_link(self, alert_id, domain_id):
         console_domain: str = config.get_global('CONSOLE_DOMAIN')
-        domain_name = self._get_domain_name(domain_id)
 
-        console_domain.format(domain_name=domain_name)
         if console_domain.strip() != '':
+            domain_name = self._get_domain_name(domain_id)
+            console_domain = console_domain.format(domain_name=domain_name)
+
             return f'{console_domain}/monitoring/alert-manager/alert/{alert_id}'
 
     @cache.cacheable(key='domain-name:{domain_id}', expire=3600)
