@@ -61,7 +61,6 @@ class MetricService(BaseService):
         domain_id = params['domain_id']
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-
         self._check_data_source_state(data_source_vo)
 
         plugin_metadata = data_source_vo.plugin_info.metadata
@@ -154,7 +153,7 @@ class MetricService(BaseService):
                             'stat': params.get('stat')}
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-
+        _LOGGER.debug(data_source_vo)
         self._check_data_source_state(data_source_vo)
 
         plugin_metadata = data_source_vo.plugin_info.metadata

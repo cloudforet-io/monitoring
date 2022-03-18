@@ -40,24 +40,6 @@ class AlertManager(BaseManager):
         self.transaction.add_rollback(_rollback, alert_vo.to_dict())
         return alert_vo.update(params)
 
-    def merge_alerts(self, params, alert_vo):
-        def _rollback(old_data):
-            _LOGGER.info(f'[merge_alert._rollback] Revert Data : '
-                         f'{old_data["alert_id"]}')
-            alert_vo.update(old_data)
-
-        self.transaction.add_rollback(_rollback, alert_vo.to_dict())
-        """
-        Args:
-            params (dict): {
-                'merge_to': 'str',
-                'domain_id': 'str'
-            }
-        :return: alert_vo
-        """
-        merged_alert_vo: Alert = self.get_alert(params['merge_to'], params['domain_id'])
-        return merged_alert_vo
-
     def add_responder(self, params):
         resource_type = params['resource_type']
         resource_id = params['resource_id']
