@@ -28,6 +28,8 @@ class Alert(MongoModel):
     rule = StringField(default=None, null=True)
     image_url = StringField(default=None, null=True)
     resource = EmbeddedDocumentField(AlertResource, default=None, null=True)
+    provider = StringField(default=None, null=True)
+    account = StringField(default=None, null=True)
     additional_info = DictField()
     is_snoozed = BooleanField(default=False)
     snoozed_end_time = DateTimeField(default=None, null=True)
@@ -97,6 +99,8 @@ class Alert(MongoModel):
             'resource.resource_id',
             'resource.resource_type',
             'resource.name',
+            'provider',
+            'account',
             'escalation_step',
             'responders.resource_type',
             'responders.resource_id',

@@ -34,6 +34,8 @@ def EventInfo(event_vo: Event, minimal=False):
         info.update({
             'description': event_vo.description,
             'rule': event_vo.rule,
+            'provider': event_vo.provider,
+            'account': event_vo.account,
             'image_url': event_vo.image_url,
             'resource': EventResourceInfo(event_vo.resource),
             'raw_data': change_struct_type(event_vo.raw_data),

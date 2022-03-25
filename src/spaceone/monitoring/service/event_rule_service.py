@@ -10,7 +10,7 @@ from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
 _LOGGER = logging.getLogger(__name__)
 
 _SUPPORTED_CONDITION_KEYS = ['title', 'description', 'rule', 'resource_id', 'resource_name', 'resource_type',
-                             'webhook_id', 'project_id', 'account', 'additional_info.<key>']
+                             'webhook_id', 'project_id', 'provider', 'account', 'additional_info.<key>']
 _SUPPORTED_CONDITION_OPERATORS = ['eq', 'contain', 'not', 'not_contain']
 
 
