@@ -1,9 +1,7 @@
 import logging
 
 from spaceone.core.manager import BaseManager
-from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.model.alert_model import Alert
-from spaceone.monitoring.model.event_model import Event
 from spaceone.monitoring.error.alert import *
 
 _LOGGER = logging.getLogger(__name__)

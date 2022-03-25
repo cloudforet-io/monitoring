@@ -59,6 +59,8 @@ def AlertInfo(alert_vo: Alert, minimal=False):
             'rule': alert_vo.rule,
             'image_url': alert_vo.image_url,
             'resource': AlertResourceInfo(alert_vo.resource),
+            'provider': alert_vo.provider,
+            'account': alert_vo.account,
             'additional_info': change_struct_type(alert_vo.additional_info),
             'is_snoozed': alert_vo.is_snoozed,
             'snoozed_end_time': utils.datetime_to_iso8601(alert_vo.snoozed_end_time),
