@@ -64,6 +64,6 @@ def _make_redirect_response(alert_id):
     console_domain = config.get_global('CONSOLE_DOMAIN')
 
     if console_domain.strip() != '':
-        return RedirectResponse(f'{console_domain}/monitoring/alert-manager/alert/{alert_id}')
+        return RedirectResponse(f'{console_domain}/alert-manager/alert/{alert_id}')
     else:
         return None
