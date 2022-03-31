@@ -20,6 +20,8 @@ class Event(MongoModel):
     rule = StringField(default=None, null=True)
     image_url = StringField(default=None, null=True)
     resource = EmbeddedDocumentField(EventResource, default=None, null=True)
+    provider = StringField(default=None, null=True)
+    account = StringField(default=None, null=True)
     raw_data = DictField()
     additional_info = DictField()
     alert = ReferenceField('Alert', reverse_delete_rule=CASCADE)
@@ -60,6 +62,8 @@ class Event(MongoModel):
             'resource.resource_id',
             'resource.resource_type',
             'resource.name',
+            'provider',
+            'account',
             'alert',
             'alert_id',
             'webhook_id',

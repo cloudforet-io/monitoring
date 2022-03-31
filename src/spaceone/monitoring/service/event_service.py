@@ -191,6 +191,8 @@ class EventService(BaseService):
         event_data['project_id'] = webhook_data['project_id']
         event_data['domain_id'] = webhook_data['domain_id']
         event_data['severity'] = event_data.get('severity', 'NONE')
+        event_data['account'] = event_data.get('account', '')
+        event_data['provider'] = event_data.get('provider', '')
 
         event_rule_mgr: EventRuleManager = self.locator.get_manager('EventRuleManager')
 

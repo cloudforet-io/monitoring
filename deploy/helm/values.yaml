@@ -116,7 +116,6 @@ ingress:
   rest:
     enabled: false
     annotations:
-        kubernetes.io/ingress.class: alb
         alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
         alb.ingress.kubernetes.io/inbound-cidrs: 0.0.0.0/0 # replace or leave out
         alb.ingress.kubernetes.io/scheme: internet-facing
