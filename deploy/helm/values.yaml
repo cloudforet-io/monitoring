@@ -125,7 +125,7 @@ ingress:
         alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
         external-dns.alpha.kubernetes.io/hostname: monitoring-webhook.example.com
     servicePort: 80
-    path: /*
+    path: /
 
 
 ################################
