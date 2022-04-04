@@ -18,6 +18,7 @@ spec:
   - http:
       paths:
       - path: {{ .Values.ingress.rest.path }}
+        pathType: Prefix
         backend:
           service:
             name: {{ .Values.name }}-rest
