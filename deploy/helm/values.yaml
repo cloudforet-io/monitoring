@@ -102,7 +102,7 @@ service:
               targetPort: 50051
               protocol: TCP
     rest:
-        type: NodePort
+        type: ClusterIP
         annotations:
             nil: nil
         ports:
