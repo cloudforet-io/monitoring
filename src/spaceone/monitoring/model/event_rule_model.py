@@ -18,7 +18,7 @@ class EventRule(MongoModel):
     name = StringField(max_length=255, default='')
     order = IntField(required=True)
     conditions = ListField(EmbeddedDocumentField(EventRuleCondition))
-    conditions_policy = StringField(max_length=20, choices=('ALL', 'ANY'))
+    conditions_policy = StringField(max_length=20, choices=('ALL', 'ANY', 'ALWAYS'))
     actions = DictField()
     options = EmbeddedDocumentField(EventRuleOptions, default=EventRuleOptions)
     tags = DictField()

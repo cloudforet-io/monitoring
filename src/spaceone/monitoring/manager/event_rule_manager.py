@@ -4,7 +4,7 @@ from typing import List
 
 from spaceone.core import utils
 from spaceone.core.manager import BaseManager
-from spaceone.monitoring.error.event_rule import *
+from spaceone.monitoring.manager import IdentityManager
 from spaceone.monitoring.model.event_rule_model import EventRule, EventRuleCondition
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,6 +15,8 @@ class EventRuleManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.event_rule_model: EventRule = self.locator.get_model('EventRule')
+        self.identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+        self._service_account_info = {}
 
     def create_event_rule(self, params):
         def _rollback(event_rule_vo: EventRule):
@@ -65,7 +67,7 @@ class EventRuleManager(BaseManager):
             is_match = self._change_event_data_by_event_rule(event_data, event_rule_vo)
 
             if is_match:
-                event_data = self._change_event_data_with_actions(event_data, event_rule_vo.actions)
+                event_data = self._change_event_data_with_actions(event_data, event_rule_vo.actions, domain_id)
 
             if is_match and event_rule_vo.options.stop_processing:
                 break
@@ -74,8 +76,7 @@ class EventRuleManager(BaseManager):
 
         return event_data
 
-    @staticmethod
-    def _change_event_data_with_actions(event_data, actions):
+    def _change_event_data_with_actions(self, event_data, actions, domain_id):
         for action, value in actions.items():
             if action == 'change_project':
                 event_data['project_id'] = value
@@ -99,17 +100,30 @@ class EventRuleManager(BaseManager):
             if action == 'no_notification':
                 event_data['no_notification'] = value
 
+            if action == 'match_service_account':
+                source = value['source']
+                target_key = value['target']
+                target_value = utils.get_dict_value(event_data, source)
+                if target_value:
+                    service_account_info = self._get_service_account(target_key, target_value, domain_id)
+                    if service_account_info:
+                        event_data['project_id'] = service_account_info.get('project_info', {}).get('project_id')
+
         return event_data
 
     def _change_event_data_by_event_rule(self, event_data, event_rule_vo: EventRule):
         conditions_policy = event_rule_vo.conditions_policy
 
-        results = list(map(functools.partial(self._check_condition, event_data), event_rule_vo.conditions))
-
-        if conditions_policy == 'ALL':
-            return all(results)
+        if conditions_policy == 'ALWAYS':
+            return True
         else:
-            return any(results)
+            results = list(map(functools.partial(self._check_condition, event_data),
+                               event_rule_vo.conditions))
+
+            if conditions_policy == 'ALL':
+                return all(results)
+            else:
+                return any(results)
 
     @staticmethod
     def _check_condition(event_data, condition: EventRuleCondition):
@@ -164,3 +178,25 @@ class EventRuleManager(BaseManager):
 
         event_rule_vos, total_count = self.list_event_rules(query)
         return event_rule_vos
+
+    def _get_service_account(self, target_key, target_value, domain_id):
+        if f'{domain_id}:{target_key}:{target_value}' in self._service_account_info:
+            return self._service_account_info[f'{domain_id}:{target_key}:{target_value}']
+
+        query = {
+            'filter': [
+                {'k': target_key, 'v': target_value, 'o': 'eq'}
+            ],
+            'only': ['service_account_id', 'project_info']
+        }
+
+        response = self.identity_mgr.list_service_accounts(query, domain_id)
+        results = response.get('results', [])
+        total_count = response.get('total_count', 0)
+
+        service_account_info = None
+        if total_count > 0:
+            service_account_info = results[0]
+
+        self._service_account_info[f'{domain_id}:{target_key}:{target_value}'] = service_account_info
+        return service_account_info
