@@ -4,7 +4,6 @@ from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 
-
 _LOGGER = logging.getLogger(__name__)
 
 _GET_RESOURCE_METHODS = {
@@ -37,3 +36,6 @@ class IdentityManager(BaseManager):
             return self.get_project(resource_id, domain_id)
         elif resource_type == 'identity.ServiceAccount':
             return self.get_service_account(resource_id, domain_id)
+
+    def list_service_accounts(self, query, domain_id):
+        return self.identity_connector.dispatch('ServiceAccount.list', {'query': query, 'domain_id': domain_id})
