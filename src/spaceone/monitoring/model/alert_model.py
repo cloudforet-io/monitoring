@@ -89,7 +89,7 @@ class Alert(MongoModel):
         ],
         'indexes': [
             'alert_number',
-            'alert_id',
+            # 'alert_id',
             'state',
             'assignee',
             'urgency',

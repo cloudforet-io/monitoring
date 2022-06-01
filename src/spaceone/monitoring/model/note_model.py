@@ -31,7 +31,7 @@ class Note(MongoModel):
             '-created_at'
         ],
         'indexes': [
-            'note_id',
+            # 'note_id',
             'alert_id',
             'created_by',
             'domain_id'

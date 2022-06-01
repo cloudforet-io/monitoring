@@ -37,7 +37,7 @@ class ProjectAlertConfig(MongoModel):
             'escalation_policy': EscalationPolicy
         },
         'indexes': [
-            'project_id',
+            # 'project_id',
             'escalation_policy',
             'escalation_policy_id',
             'domain_id'

@@ -42,7 +42,7 @@ class MaintenanceWindow(MongoModel):
             '-start_time'
         ],
         'indexes': [
-            'maintenance_window_id',
+            # 'maintenance_window_id',
             'state',
             'projects',
             'start_time',
