@@ -55,7 +55,7 @@ class Event(MongoModel):
             '-created_at'
         ],
         'indexes': [
-            'event_id',
+            # 'event_id',
             'event_key',
             'event_type',
             'severity',

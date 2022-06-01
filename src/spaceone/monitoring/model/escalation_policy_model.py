@@ -43,7 +43,7 @@ class EscalationPolicy(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'escalation_policy_id',
+            # 'escalation_policy_id',
             'is_default',
             'finish_condition',
             'scope',

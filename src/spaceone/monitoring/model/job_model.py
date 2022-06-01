@@ -31,7 +31,7 @@ class Job(MongoModel):
             '-created_at'
         ],
         'indexes': [
-            'job_id',
+            # 'job_id',
             'domain_id',
             'status',
             'total_tasks',

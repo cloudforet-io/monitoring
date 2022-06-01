@@ -50,7 +50,7 @@ class Webhook(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'webhook_id',
+            # 'webhook_id',
             'state',
             'access_key',
             'project_id',

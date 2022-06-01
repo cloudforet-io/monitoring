@@ -49,7 +49,7 @@ class EventRule(MongoModel):
         },
         'ordering': ['order'],
         'indexes': [
-            'event_rule_id',
+            # 'event_rule_id',
             'order',
             'conditions_policy',
             'scope',
