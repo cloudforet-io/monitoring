@@ -36,6 +36,7 @@ class MaintenanceWindow(MongoModel):
             'end_time'
         ],
         'change_query_keys': {
+            'project_id': 'projects',
             'user_projects': 'projects'
         },
         'ordering': [
