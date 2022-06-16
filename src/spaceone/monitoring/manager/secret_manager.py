@@ -20,34 +20,25 @@ class SecretManager(BaseManager):
         response = self.secret_connector.dispatch('Secret.get_data', {'secret_id': secret_id, 'domain_id': domain_id})
         return response['data']
 
-    def get_plugin_secret_data(self, secret_id, supported_schema, domain_id):
-        secret_query = self._make_query(supported_schema=supported_schema, secret_id=secret_id)
-        response = self.list_secrets(secret_query, domain_id)
-
-        if response.get('total_count', 0) == 0:
-            raise ERROR_NOT_FOUND(key='plugin_info.secret_id', value=secret_id)
-
-        return self.get_secret_data(secret_id, domain_id)
-
-    def get_resource_secret_data(self, resource_id, secret_filter, domain_id):
+    def list_secrets_from_query(self, secret_filter, domain_id, **kwargs):
         secret_query = self._make_query(**secret_filter)
-
         response = self.list_secrets(secret_query, domain_id)
 
         if response.get('total_count', 0) == 0:
+            resource_id = kwargs.get('resource_id')
             raise ERROR_RESOURCE_SECRETS_NOT_EXISTS(resource_id=resource_id)
 
-        result = response['results'][0]
-        secret_id = result['secret_id']
-        schema = result.get('schema')
+        return response.get('results', [])
 
-        return self.get_secret_data(secret_id, domain_id), schema
+    def get_secret_data_from_plugin(self, plugin_info, capability, domain_id):
+        plugin_id = plugin_info['plugin_id']
+        secret_id = plugin_info.get('secret_id')
+        provider = plugin_info.get('provider')
 
-    def get_plugin_secret(self, plugin_id, secret_id, provider, capability, domain_id):
         use_resource_secret = capability.get('use_resource_secret', False)
         supported_schema = capability.get('supported_schema', [])
 
-        self._check_plugin_secret(use_resource_secret, secret_id, provider)
+        self._check_plugin_secret(use_resource_secret, plugin_info)
 
         if use_resource_secret:
             secret_query = self._make_query(supported_schema=supported_schema, provider=provider)
@@ -69,7 +60,10 @@ class SecretManager(BaseManager):
         return self.get_secret_data(secret_id, domain_id), schema
 
     @staticmethod
-    def _check_plugin_secret(use_resource_secret, secret_id, provider):
+    def _check_plugin_secret(use_resource_secret, plugin_info):
+        secret_id = plugin_info.get('secret_id')
+        provider = plugin_info.get('provider')
+
         if use_resource_secret:
             if provider is None:
                 raise ERROR_REQUIRED_PARAMETER(key='plugin_info.provider')

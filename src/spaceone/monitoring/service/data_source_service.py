@@ -331,13 +331,9 @@ class DataSourceService(BaseService):
         return self.ds_plugin_mgr.init_plugin(options, monitoring_type)
 
     def _verify_plugin(self, endpoint, plugin_info, capability, domain_id):
-        plugin_id = plugin_info['plugin_id']
         options = plugin_info.get('options', {})
-        secret_id = plugin_info.get('secret_id')
-        provider = plugin_info.get('provider')
-
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
-        secret_data, schema = secret_mgr.get_plugin_secret(plugin_id, secret_id, provider, capability, domain_id)
+        secret_data, schema = secret_mgr.get_secret_data_from_plugin(plugin_info, capability, domain_id)
 
         ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
         ds_plugin_mgr.initialize(endpoint)
