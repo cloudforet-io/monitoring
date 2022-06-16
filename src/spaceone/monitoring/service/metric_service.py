@@ -158,7 +158,8 @@ class MetricService(BaseService):
                 'resource': {
                     'region_name': chunk_resources.get('region_name'),
                     'resources': chunk_resources.get('resources')
-                }
+                },
+                'options': {}
             })
 
             metric_data_response = self.get_metric_data(metric_data_params)
@@ -236,9 +237,9 @@ class MetricService(BaseService):
 
         try:
             metric_data_info = self.ds_plugin_mgr.get_metric_data(param.get('schema'),
-                                                                  param.get('plugin_metadata'),
+                                                                  param.get('options'),
                                                                   param.get('secret_data'),
-                                                                  param.get('resources'),
+                                                                  param.get('resource'),
                                                                   param.get('metric'),
                                                                   param.get('start'),
                                                                   param.get('end'),
