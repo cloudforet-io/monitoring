@@ -152,9 +152,13 @@ class MetricService(BaseService):
         metric_data_params = self.set_metric_data_params(params)
 
         for chunk_resources in resources_chunks.values():
+
             metric_data_params.update({
                 'secret_data': chunk_resources.get('secret_data'),
-                'resources': chunk_resources.get('resources')
+                'resource': {
+                    'region_name': chunk_resources.get('region_name'),
+                    'resources': chunk_resources.get('resources')
+                }
             })
 
             metric_data_response = self.get_metric_data(metric_data_params)
