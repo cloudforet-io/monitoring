@@ -15,6 +15,7 @@ from spaceone.monitoring.service.metric_service import MetricService
 from spaceone.monitoring.manager.plugin_manager import PluginManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
 from spaceone.monitoring.manager.inventory_manager import InventoryManager
+from spaceone.monitoring.manager.data_source_plugin_manager import DataSourcePluginManager
 from spaceone.monitoring.connector.datasource_plugin_connector import DataSourcePluginConnector
 from spaceone.monitoring.info.metric_info import *
 from test.factory.data_source_factory import DataSourceFactory
@@ -51,15 +52,16 @@ class TestMetricService(unittest.TestCase):
         return
 
     @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
+    @patch.object(DataSourcePluginManager, 'get_data_source_plugin_endpoint_by_vo', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
-    @patch.object(InventoryManager, 'list_servers')
-    @patch.object(SecretManager, 'list_secrets')
     @patch.object(DataSourcePluginConnector, 'list_metrics')
-    def test_list_metrics(self, mock_list_metrics, mock_list_secrets, mock_list_servers, *args):
-        server_id_1 = utils.generate_id('server')
-        server_id_2 = utils.generate_id('server')
-        server_id_3 = utils.generate_id('server')
+    @patch.object(SecretManager, 'list_secrets')
+    @patch.object(InventoryManager, 'list_resources')
+    def test_list_metrics(self, mock_list_cloud_services, mock_list_secrets, mock_list_metrics, *args):
+        cs_id_1 = utils.generate_id('cloud_service')
+        cs_id_2 = utils.generate_id('cloud_service')
+        cs_id_3 = utils.generate_id('cloud_service')
 
         mock_list_metrics.return_value = {
             'resource_type': 'monitoring.Metric',
@@ -92,24 +94,25 @@ class TestMetricService(unittest.TestCase):
             'total_count': 1
         }
 
-        mock_list_servers.return_value = {
-            'results': [{
-                'server_id': server_id_1,
+        mock_list_cloud_services.return_value = [
+            {
+                'cloud_service_id': cs_id_1,
+                'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-1234'},
                 'collection_info': {'secrets': [utils.generate_id('secret')]}
             }, {
-                'server_id': server_id_2,
+                'cloud_service_id': cs_id_2,
+                'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
                 'collection_info': {'secrets': [utils.generate_id('secret')]}
-            }],
-            'total_count': 2
-        }
+            }
+        ]
 
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
         params = {
             'data_source_id': new_data_source_vo.data_source_id,
-            'resource_type': 'inventory.Server',
-            'resources': [server_id_1, server_id_2, server_id_3],
+            'resource_type': 'inventory.CloudService',
+            'resources': [cs_id_1, cs_id_2, cs_id_3],
             'domain_id': self.domain_id
         }
 
@@ -123,14 +126,21 @@ class TestMetricService(unittest.TestCase):
         self.assertEqual(params['domain_id'], metrics_info['domain_id'])
 
     @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
+    @patch.object(DataSourcePluginManager, 'get_data_source_plugin_endpoint_by_vo', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
-    @patch.object(InventoryManager, 'list_servers')
-    @patch.object(SecretManager, 'list_secrets')
     @patch.object(DataSourcePluginConnector, 'get_metric_data')
-    def test_get_metric_data(self, mock_get_metric_data, mock_list_secrets, mock_list_servers, *args):
-        server_id_1 = utils.generate_id('server')
-        server_id_2 = utils.generate_id('server')
+    @patch.object(SecretManager, 'list_secrets')
+    @patch.object(InventoryManager, 'list_resources')
+    def test_get_metric_data(self, mock_list_cloud_services, mock_list_secrets, mock_get_metric_data, *args):
+        cs_id_1 = utils.generate_id('cloud_service')
+        cs_id_2 = utils.generate_id('cloud_service')
+        cs_id_3 = utils.generate_id('cloud_service')
+        cs_id_4 = utils.generate_id('cloud_service')
+        cs_id_5 = utils.generate_id('cloud_service')
+        cs_id_6 = utils.generate_id('cloud_service')
+        cs_id_7 = utils.generate_id('cloud_service')
+
         end = datetime.utcnow()
         start = end - timedelta(days=1)
         start_ts = int(time.mktime(start.timetuple()))
@@ -148,24 +158,57 @@ class TestMetricService(unittest.TestCase):
             'total_count': 1
         }
 
-        mock_list_servers.return_value = {
-            'results': [{
-                'server_id': server_id_1,
+        mock_list_cloud_services.return_value = [
+            {
+                'cloud_service_id': cs_id_1,
+                'data': {'cloudwatch': {}},
+                'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-1234'},
                 'collection_info': {'secrets': [utils.generate_id('secret')]}
             }, {
-                'server_id': server_id_2,
+                'cloud_service_id': cs_id_2,
+                'data': {'cloudwatch': {}},
+                'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
                 'collection_info': {'secrets': [utils.generate_id('secret')]}
-            }],
-            'total_count': 2
-        }
+            }, {
+                'cloud_service_id': cs_id_3,
+                'data': {'cloudwatch': {}},
+                'region_code': 'ap-northeast-2',
+                'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
+                'collection_info': {'secrets': [utils.generate_id('secret')]}
+            }, {
+                'cloud_service_id': cs_id_4,
+                'data': {'cloudwatch': {}},
+                'region_code': 'ap-northeast-2',
+                'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
+                'collection_info': {'secrets': [utils.generate_id('secret')]}
+            }, {
+                'cloud_service_id': cs_id_5,
+                'data': {'cloudwatch': {}},
+                'region_code': 'ap-northeast-2',
+                'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
+                'collection_info': {'secrets': [utils.generate_id('secret')]}
+            }, {
+                'cloud_service_id': cs_id_6,
+                'data': {'cloudwatch': {}},
+                'region_code': 'ap-northeast-2',
+                'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
+                'collection_info': {'secrets': [utils.generate_id('secret')]}
+            }, {
+                'cloud_service_id': cs_id_7,
+                'data': {'cloudwatch': {}},
+                'region_code': 'ap-northeast-2',
+                'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
+                'collection_info': {'secrets': [utils.generate_id('secret')]}
+            }
+        ]
 
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
         params = {
             'data_source_id': new_data_source_vo.data_source_id,
-            'resource_type': 'inventory.Server',
-            'resources': [server_id_1, server_id_2],
+            'resource_type': 'inventory.CloudService',
+            'resources': [cs_id_1, cs_id_2],
             'metric': 'cpu',
             'start': start.isoformat(),
             'end': end.isoformat(),

@@ -13,9 +13,9 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
     version = '1.0'
     options = {}
     metadata = {
-        'supported_resource_type': ['inventory.Server', 'inventory.CloudService', 'identity.ServiceAccount'],
+        'supported_resource_type': ['inventory.CloudService'],
         'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-        'required_keys': ['reference.resource_id']
+        'required_keys': ['data.cloudwatch']
     }
     secret_id = None
     provider = 'aws'
