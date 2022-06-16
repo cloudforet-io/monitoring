@@ -55,9 +55,7 @@ class DataSourcePluginConnector(BaseConnector):
         }
 
         if schema:
-            params.update({
-                'schema': schema
-            })
+            params.update({'schema': schema})
 
         response = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)

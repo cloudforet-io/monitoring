@@ -47,34 +47,33 @@ class LogService(BaseService):
         Returns:
             logs (list)
         """
-
         data_source_id = params['data_source_id']
         resource_type = params['resource_type']
         resource_id = params['resource_id']
         domain_id = params['domain_id']
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-
         self._check_data_source_state(data_source_vo)
 
         plugin_metadata = data_source_vo.plugin_info.metadata
-        plugin_options = data_source_vo.plugin_info.options
+        self._check_plugin_metadata(plugin_metadata, params, data_source_id)
+        self.plugin_initialize(data_source_vo)
 
-        self._check_resource_type(plugin_metadata, resource_type)
-
-        data_source_dict = data_source_vo.to_dict()
-        plugin_info = data_source_dict['plugin_info']
-
-        self.ds_plugin_mgr.initialize(plugin_info, domain_id)
-
+        # plugin_options = data_source_vo.plugin_info.options
         plugin_filter = {}
+
+        """
+        """
+        resources = params['resources']
+        """
+        """
 
         resource_mgr = self._get_resource_manager(resource_type)
         resource_info = resource_mgr.get_resource(resource_type, resource_id, domain_id)
 
         secret_data, schema = self._get_secret_data(resource_id, resource_type, resource_info, data_source_vo, domain_id)
 
-        logs_info = self.ds_plugin_mgr.list_logs(schema, plugin_options, secret_data, resource_info, plugin_filter,
+        logs_info = self.ds_plugin_mgr.list_logs(schema, secret_data, resource_info, plugin_filter,
                                                  params.get('start'), params.get('end'), params.get('sort', {}),
                                                  params.get('limit', 100))
 
@@ -82,6 +81,10 @@ class LogService(BaseService):
             'logs': logs_info['logs'],
             'domain_id': domain_id
         }
+
+    def plugin_initialize(self, data_source_vo):
+        endpoint = self.ds_plugin_mgr.get_data_source_plugin_endpoint_by_vo(data_source_vo)
+        self.ds_plugin_mgr.initialize(endpoint)
 
     @staticmethod
     def _check_data_source_state(data_source_vo):
@@ -112,7 +115,7 @@ class LogService(BaseService):
                 'supported_schema': supported_schema
             }
             secret_filter.update(self._get_secret_extra_filter(resource_type, resource_id, resource_info))
-            return self.secret_mgr.get_resource_secret_data(resource_id, secret_filter, domain_id)
+            return self.secret_mgr.get_resource_secret_data(secret_filter, domain_id, resource_id=resource_id)
 
         else:
             secret_filter = {

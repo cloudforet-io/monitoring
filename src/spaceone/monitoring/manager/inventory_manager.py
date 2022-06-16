@@ -5,10 +5,6 @@ from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.monitoring.error import *
 
 _LOGGER = logging.getLogger(__name__)
-_RESOURCE_KEYS = {
-    'inventory.Server': 'server_id',
-    'inventory.CloudService': 'cloud_service_id'
-}
 
 
 class InventoryManager(BaseManager):
@@ -31,48 +27,21 @@ class InventoryManager(BaseManager):
         return self.inventory_connector.dispatch('CloudService.list', {'query': query, 'domain_id': domain_id})
 
     def get_resource(self, resource_type, resource_id, domain_id):
-        if resource_type == 'inventory.Server':
-            return self.get_server(resource_id, domain_id)
-        elif resource_type == 'inventory.CloudService':
-            return self.get_cloud_service(resource_id, domain_id)
+        return self.get_cloud_service(resource_id, domain_id)
 
-    def list_resources(self, resource_type, resources, required_keys, domain_id):
-        query = self._make_query(resource_type, resources, required_keys)
-
-        if resource_type == 'inventory.Server':
-            response = self.list_servers(query, domain_id)
-        elif resource_type == 'inventory.CloudService':
-            response = self.list_cloud_services(query, domain_id)
-        else:
-            response = {
-                'total_count': 0,
-                'results': []
-            }
-
-        if response.get('total_count', 0) == 0:
-            raise ERROR_NOT_FOUND(key='resources', value=resources)
-
-        return self._change_resources_info(resource_type, response)
+    def list_resources(self, resources, required_keys, domain_id):
+        query = self._make_query(resources, required_keys)
+        response = self.list_cloud_services(query, domain_id)
+        return response.get('results', [])
 
     @staticmethod
-    def _change_resources_info(resource_type, response):
-        resource_key = _RESOURCE_KEYS[resource_type]
-        resources_info = {}
-        for resource_info in response.get('results', []):
-            resource_id = resource_info[resource_key]
-            resources_info[resource_id] = resource_info
-
-        return resources_info
-
-    @staticmethod
-    def _make_query(resource_type, resources, required_keys):
-        resource_key = _RESOURCE_KEYS[resource_type]
-        only_keys = list(set([resource_key, 'collection_info.secrets'] + required_keys))
+    def _make_query(resources, required_keys):
+        only_keys = list(set(['cloud_service_id', 'collection_info.secrets', 'region_code'] + required_keys))
         only_keys.sort()
 
         return {
             'filter': [{
-                'k': resource_key,
+                'k': 'cloud_service_id',
                 'v': resources,
                 'o': 'in'
             }],
