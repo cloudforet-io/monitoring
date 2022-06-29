@@ -23,3 +23,7 @@ class ERROR_INVALID_PLUGIN_OPTIONS(ERROR_INTERNAL_API):
 
 class ERROR_DATA_SOURCE_STATE_DISABLED(ERROR_INVALID_ARGUMENT):
     _message = 'Data source state is disabled. (data_source_id = {data_source_id})'
+
+
+class ERROR_REQUIRED_KEYS_NOT_EXISTS(ERROR_INVALID_ARGUMENT):
+    _message = 'There are no required keys in plugins metadata. (plugin_id = {plugin_id}'
