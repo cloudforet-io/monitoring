@@ -1,10 +1,7 @@
 import logging
-
 from spaceone.core.service import *
 from spaceone.core.utils import get_dict_value
-
 from spaceone.monitoring.error import *
-from spaceone.monitoring.conf.log_conf import *
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
@@ -29,7 +26,7 @@ class LogService(BaseService):
         self.ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['data_source_id', 'resource_id', 'domain_id'])
+    @check_required(['data_source_id', 'resource_id', 'start', 'end', 'domain_id'])
     def list(self, params):
         """ Get resource's logs
 
@@ -50,6 +47,8 @@ class LogService(BaseService):
         """
         data_source_id = params['data_source_id']
         resource_id = params['resource_id']
+        start = params['start']
+        end = params['end']
         domain_id = params['domain_id']
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
@@ -58,13 +57,12 @@ class LogService(BaseService):
 
         plugin_options = data_source_vo.plugin_info.options
         cloud_service_info = self.inventory_mgr.get_cloud_service(resource_id, domain_id)
-        query = self.get_query_from_cloud_service(cloud_service_info)
+        query = self.get_query_from_cloud_service(cloud_service_info, data_source_vo.plugin_info)
         secret = self.secret_mgr.get_secret_from_resource(cloud_service_info, data_source_vo, domain_id)
         secret_data = self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)
 
-        logs_info = self.ds_plugin_mgr.list_logs(secret.get('schema'), plugin_options, secret_data, query,
-                                                 params.get('start'), params.get('end'),
-                                                 params.get('sort', {}), params.get('limit', LOG_LIMIT))
+        logs_info = self.ds_plugin_mgr.list_logs(secret.get('schema'), plugin_options, secret_data, query, start, end,
+                                                 params.get('sort'), params.get('limit'))
 
         return {
             'logs': logs_info['logs'],
@@ -76,58 +74,17 @@ class LogService(BaseService):
         self.ds_plugin_mgr.initialize(endpoint)
 
     @staticmethod
-    def get_query_from_cloud_service(cloud_service_info):
-        query_key = QUERY_KEY_MAP.get(cloud_service_info['provider'], '')
-        return get_dict_value(cloud_service_info, query_key, default_value={})
+    def get_query_from_cloud_service(cloud_service_info, plugin_info):
+        metadata = plugin_info.metadata
+        required_keys = metadata.get('required_keys', [])
+
+        if required_keys:
+            query_key = required_keys[0]
+            return get_dict_value(cloud_service_info, query_key, default_value={})
+        else:
+            raise ERROR_REQUIRED_KEYS_NOT_EXISTS(plugin_id=plugin_info.plugin_id)
 
     @staticmethod
     def _check_data_source_state(data_source_vo):
         if data_source_vo.state == 'DISABLED':
             raise ERROR_DATA_SOURCE_STATE_DISABLED(data_source_id=data_source_vo.data_source_id)
-
-    @staticmethod
-    def _check_resource_type(plugin_metadata, resource_type):
-        supported_resource_type = plugin_metadata['supported_resource_type']
-
-        if resource_type not in supported_resource_type:
-            raise ERROR_NOT_SUPPORT_RESOURCE_TYPE(supported_resource_type=supported_resource_type)
-
-    def _get_resource_manager(self, resource_type):
-        service, resource = resource_type.split('.')
-        if service == 'identity':
-            return self.identity_mgr
-        else:
-            return self.inventory_mgr
-
-    def _get_secret_data(self, resource_id, resource_type, resource_info, data_source_vo, domain_id):
-        use_resource_secret = data_source_vo.capability.get('use_resource_secret', False)
-        supported_schema = data_source_vo.capability.get('supported_schema', [])
-
-        if use_resource_secret:
-            secret_filter = {
-                'provider': data_source_vo.plugin_info['provider'],
-                'supported_schema': supported_schema
-            }
-            secret_filter.update(self._get_secret_extra_filter(resource_type, resource_id, resource_info))
-            return self.secret_mgr.get_resource_secret_data(secret_filter, domain_id, resource_id=resource_id)
-
-        else:
-            secret_filter = {
-                'secret_id': data_source_vo.plugin_info['secret_id'],
-                'supported_schema': supported_schema
-            }
-            return self.secret_mgr.get_plugin_secret_data(secret_filter, domain_id)
-
-    @staticmethod
-    def _get_secret_extra_filter(resource_type, resource_id, resource_info):
-        service, resource = resource_type.split('.')
-
-        if service == 'identity':
-            if resource == 'Project':
-                return {'project_id': resource_id}
-            elif resource == 'ServiceAccount':
-                return {'service_account_id': resource_id}
-            else:
-                return {}
-        else:
-            return {'secrets': resource_info['collection_info']['secrets']}
