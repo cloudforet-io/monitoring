@@ -86,13 +86,17 @@ class DataSourcePluginConnector(BaseConnector):
             'secret_data': secret_data,
             'query': query,
             'start': start,
-            'end': end,
-            'sort': sort,
-            'limit': limit
+            'end': end
         }
 
         if schema:
             params.update({'schema': schema})
+
+        if sort:
+            params.update({'sort': sort})
+
+        if limit:
+            params.update({'limit': limit})
 
         responses = self.client.Log.list(params, metadata=self.transaction.get_connection_meta())
 
