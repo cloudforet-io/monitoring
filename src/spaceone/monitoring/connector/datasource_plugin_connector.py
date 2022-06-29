@@ -80,12 +80,11 @@ class DataSourcePluginConnector(BaseConnector):
         response = self.client.Metric.get_data(params, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)
 
-    def list_logs(self, schema, options, secret_data, resource, plugin_filter, start, end, sort, limit):
+    def list_logs(self, schema, options, secret_data, query, start, end, sort, limit):
         params = {
             'options': options,
             'secret_data': secret_data,
-            'resource': resource,
-            'filter': plugin_filter,
+            'query': query,
             'start': start,
             'end': end,
             'sort': sort,
@@ -93,9 +92,7 @@ class DataSourcePluginConnector(BaseConnector):
         }
 
         if schema:
-            params.update({
-                'schema': schema
-            })
+            params.update({'schema': schema})
 
         responses = self.client.Log.list(params, metadata=self.transaction.get_connection_meta())
 
