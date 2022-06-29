@@ -39,13 +39,12 @@ class DataSourcePluginManager(BaseManager):
     def get_metric_data(self, schema, options, secret_data, resource, *args):
         return self.dsp_connector.get_metric_data(schema, options, secret_data, resource, *args)
 
-    def list_logs(self, schema, secret_data, resource, *args):
+    def list_logs(self, schema, secret_data, query, *args):
         options = {}
-        response_stream = self.dsp_connector.list_logs(schema, options, secret_data, resource, *args)
-
         logs = []
-        for result in self._process_stream(response_stream, return_resource_type='monitoring.Log'):
-            logs += result.get('logs', [])
+
+        for result in self.dsp_connector.list_logs(schema, options, secret_data, query, *args):
+            logs.extend(result.get('logs', []))
 
         return {
             'logs': logs
@@ -63,22 +62,9 @@ class DataSourcePluginManager(BaseManager):
             raise ERROR_INVALID_PLUGIN_OPTIONS(reason=str(e))
 
     @staticmethod
-    def _process_stream(response_stream, return_resource_type=None):
-        is_resource_type_match = False
+    def _process_stream(response_stream):
         for response in response_stream:
-            if 'actions' in response:
-                pass
-
-            if return_resource_type and response.get('resource_type') == return_resource_type:
-                if 'result' not in response:
-                    raise ERROR_INTERNAL_API(message=f'Plugin response error: no return result')
-
-                is_resource_type_match = True
-                yield response['result']
-
-        if return_resource_type is not None and is_resource_type_match is False:
-            raise ERROR_INTERNAL_API(
-                message=f'Plugin response error: no return resource_type ({return_resource_type})')
+            yield response
 
     def get_data_source_plugin_endpoint_by_vo(self, data_source_vo: DataSource):
         plugin_info = data_source_vo.plugin_info.to_dict()

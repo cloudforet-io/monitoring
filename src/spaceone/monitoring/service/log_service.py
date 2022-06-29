@@ -1,8 +1,10 @@
 import logging
-import traceback
+
 from spaceone.core.service import *
+from spaceone.core.utils import get_dict_value
 
 from spaceone.monitoring.error import *
+from spaceone.monitoring.conf.log_conf import *
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.inventory_manager import InventoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
@@ -27,16 +29,15 @@ class LogService(BaseService):
         self.ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['data_source_id', 'resource_type', 'resource_id', 'domain_id'])
+    @check_required(['data_source_id', 'resource_id', 'domain_id'])
     def list(self, params):
         """ Get resource's logs
 
         Args:
             params (dict): {
                 'data_source_id': 'str',
-                'resource_type': 'str',
                 'resource_id': 'str',
-                'filter': 'dict',
+                'keyword': 'str',
                 'start': 'datetime',
                 'end': 'datetime',
                 'sort': 'dict',
@@ -48,34 +49,22 @@ class LogService(BaseService):
             logs (list)
         """
         data_source_id = params['data_source_id']
-        resource_type = params['resource_type']
         resource_id = params['resource_id']
         domain_id = params['domain_id']
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
         self._check_data_source_state(data_source_vo)
-
-        plugin_metadata = data_source_vo.plugin_info.metadata
-        self._check_plugin_metadata(plugin_metadata, params, data_source_id)
         self.plugin_initialize(data_source_vo)
 
-        # plugin_options = data_source_vo.plugin_info.options
-        plugin_filter = {}
+        plugin_options = data_source_vo.plugin_info.options
+        cloud_service_info = self.inventory_mgr.get_cloud_service(resource_id, domain_id)
+        query = self.get_query_from_cloud_service(cloud_service_info)
+        secret = self.secret_mgr.get_secret_from_resource(cloud_service_info, data_source_vo, domain_id)
+        secret_data = self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)
 
-        """
-        """
-        resources = params['resources']
-        """
-        """
-
-        resource_mgr = self._get_resource_manager(resource_type)
-        resource_info = resource_mgr.get_resource(resource_type, resource_id, domain_id)
-
-        secret_data, schema = self._get_secret_data(resource_id, resource_type, resource_info, data_source_vo, domain_id)
-
-        logs_info = self.ds_plugin_mgr.list_logs(schema, secret_data, resource_info, plugin_filter,
-                                                 params.get('start'), params.get('end'), params.get('sort', {}),
-                                                 params.get('limit', 100))
+        logs_info = self.ds_plugin_mgr.list_logs(secret.get('schema'), plugin_options, secret_data, query,
+                                                 params.get('start'), params.get('end'),
+                                                 params.get('sort', {}), params.get('limit', LOG_LIMIT))
 
         return {
             'logs': logs_info['logs'],
@@ -85,6 +74,11 @@ class LogService(BaseService):
     def plugin_initialize(self, data_source_vo):
         endpoint = self.ds_plugin_mgr.get_data_source_plugin_endpoint_by_vo(data_source_vo)
         self.ds_plugin_mgr.initialize(endpoint)
+
+    @staticmethod
+    def get_query_from_cloud_service(cloud_service_info):
+        query_key = QUERY_KEY_MAP.get(cloud_service_info['provider'], '')
+        return get_dict_value(cloud_service_info, query_key, default_value={})
 
     @staticmethod
     def _check_data_source_state(data_source_vo):

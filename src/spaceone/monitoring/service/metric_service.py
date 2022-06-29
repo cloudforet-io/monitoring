@@ -1,6 +1,6 @@
 import logging
-import traceback
 import concurrent.futures
+
 from spaceone.core.service import *
 from spaceone.core.utils import get_dict_value, random_string
 
@@ -71,9 +71,8 @@ class MetricService(BaseService):
 
         list_metric_params = []
         for resource in resources_info:
-            secret = self.get_secret(resource.get('collection_info', {}).get('secrets', []),
-                                     data_source_vo, domain_id)
-            secret_data = self.get_secret_data(secret['secret_id'], domain_id)
+            secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
+            secret_data = self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)
 
             list_metric_params.append({
                 'schema': secret.get('schema'),
@@ -189,8 +188,7 @@ class MetricService(BaseService):
 
         for resource in resources:
             region_code = self.get_region_from_resource(resource)
-            secret = self.get_secret(resource.get('collection_info', {}).get('secrets', []),
-                                     data_source_vo, domain_id)
+            secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
             chunk_key = self._generate_chunk_key(provider, region_code, secret['secret_id'])
             chunk_resource = {
                 'resource_id': resource['cloud_service_id'],
@@ -204,7 +202,7 @@ class MetricService(BaseService):
                     chunk_info.update({'region_name': region_code})
 
                 if 'secret_data' not in chunk_info:
-                    chunk_info.update({'secret_data': self.get_secret_data(secret['secret_id'], domain_id)})
+                    chunk_info.update({'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)})
 
                 _resources = chunk_info.get('resources', [])
 
@@ -213,7 +211,7 @@ class MetricService(BaseService):
                     chunk_resources[new_chunk_key] = chunk_info
                     chunk_resources[chunk_key] = {
                         'region_name': region_code,
-                        'secret_data': self.get_secret_data(secret['secret_id'], domain_id),
+                        'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id),
                         'resources': [chunk_resource],
                     }
                 else:
@@ -222,7 +220,7 @@ class MetricService(BaseService):
                 # generate a new chunk
                 chunk_resources[chunk_key] = {
                     'region_name': region_code,
-                    'secret_data': self.get_secret_data(secret['secret_id'], domain_id),
+                    'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id),
                     'resources': [chunk_resource],
                 }
 
@@ -250,22 +248,6 @@ class MetricService(BaseService):
             print(e)
 
         return metric_data_info
-
-    def get_secret(self, resource_secrets, data_source_vo, domain_id):
-        secret = None
-
-        if data_source_vo.capability.get('use_resource_secret', False):
-            secret_filter = {
-                'provider': data_source_vo.plugin_info.provider,
-                'supported_schema': data_source_vo.capability.get('supported_schema', []),
-                'secrets': resource_secrets
-            }
-            secret = self.secret_mgr.list_secrets_from_query(secret_filter, domain_id)[0]
-
-        return secret
-
-    def get_secret_data(self, secret_id, domain_id):
-        return self.secret_mgr.get_secret_data(secret_id, domain_id)
 
     def list_metrics_info(self, params):
         schema = params.get('schema')
