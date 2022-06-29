@@ -1,6 +1,7 @@
 PROTO = {
     'spaceone.monitoring.interface.grpc.v1.data_source': ['DataSource'],
     'spaceone.monitoring.interface.grpc.v1.metric': ['Metric'],
+    'spaceone.monitoring.interface.grpc.v1.log': ['Log'],
     'spaceone.monitoring.interface.grpc.v1.project_alert_config': ['ProjectAlertConfig'],
     'spaceone.monitoring.interface.grpc.v1.escalation_policy': ['EscalationPolicy'],
     'spaceone.monitoring.interface.grpc.v1.event_rule': ['EventRule'],
