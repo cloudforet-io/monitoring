@@ -1,4 +1,5 @@
 import logging
+import datetime
 from spaceone.core.service import *
 from spaceone.core.utils import get_dict_value
 from spaceone.monitoring.error import *
@@ -26,7 +27,7 @@ class LogService(BaseService):
         self.ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['data_source_id', 'resource_id', 'start', 'end', 'domain_id'])
+    @check_required(['data_source_id', 'resource_id', 'start', 'domain_id'])
     def list(self, params):
         """ Get resource's logs
 
@@ -48,7 +49,7 @@ class LogService(BaseService):
         data_source_id = params['data_source_id']
         resource_id = params['resource_id']
         start = params['start']
-        end = params['end']
+        end = params.get('end', datetime.datetime.now())
         domain_id = params['domain_id']
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
