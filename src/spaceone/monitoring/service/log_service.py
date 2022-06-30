@@ -49,7 +49,7 @@ class LogService(BaseService):
         data_source_id = params['data_source_id']
         resource_id = params['resource_id']
         start = params['start']
-        end = params.get('end', datetime.datetime.now())
+        end = params.get('end', str(datetime.datetime.now()))
         domain_id = params['domain_id']
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
