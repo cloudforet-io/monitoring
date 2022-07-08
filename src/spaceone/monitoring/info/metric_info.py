@@ -20,10 +20,16 @@ def MetricInfo(metric):
     info = {
         'key': metric['key'],
         'name': metric['name'],
-        'unit': change_struct_type(metric['unit']),
-        'chart_type': metric['chart_type'],
-        'chart_options': change_struct_type(metric.get('chart_option', {}))
     }
+
+    if 'group' in metric:
+        info.update({'group': metric['group']})
+
+    if 'unit' in metric:
+        info.update({change_struct_type(metric['unit'])})
+
+    if 'metric_query' in metric:
+        info.update({change_struct_type(metric['metric_query'])})
 
     return metric_pb2.MetricInfo(**info)
 
