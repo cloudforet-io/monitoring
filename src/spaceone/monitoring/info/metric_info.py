@@ -26,10 +26,10 @@ def MetricInfo(metric):
         info.update({'group': metric['group']})
 
     if 'unit' in metric:
-        info.update({change_struct_type(metric['unit'])})
+        info.update({'unit': change_struct_type(metric['unit'])})
 
     if 'metric_query' in metric:
-        info.update({change_struct_type(metric['metric_query'])})
+        info.update({'metric_query': change_struct_type(metric['metric_query'])})
 
     return metric_pb2.MetricInfo(**info)
 
