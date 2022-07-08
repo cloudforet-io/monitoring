@@ -28,14 +28,13 @@ class MetricService(BaseService):
         self.ds_plugin_mgr: DataSourcePluginManager = self.locator.get_manager('DataSourcePluginManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['data_source_id', 'resource_type', 'resources', 'domain_id'])
+    @check_required(['data_source_id', 'resources', 'domain_id'])
     def list(self, params):
         """ Get resource's metrics
 
         Args:
             params (dict): {
                 'data_source_id': 'str',
-                'resource_type': 'str',
                 'resources': 'list',
                 'domain_id': 'str'
             }
@@ -50,7 +49,8 @@ class MetricService(BaseService):
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
         self._check_data_source_state(data_source_vo)
 
-        plugin_metadata = data_source_vo.plugin_info.metadata
+        plugin_info = data_source_vo.plugin_info
+        plugin_metadata = plugin_info.metadata
         self._check_plugin_metadata(plugin_metadata, params, data_source_id)
         self.plugin_initialize(data_source_vo)
 
@@ -67,17 +67,20 @@ class MetricService(BaseService):
             response['available_resources'][resource_id] = False
 
         required_keys = plugin_metadata.get('required_keys')
-        resources_info = self.inventory_mgr.list_resources(resources, required_keys, domain_id)
+        cloud_services_info = self.inventory_mgr.list_resources(resources, required_keys, domain_id)
 
         list_metric_params = []
-        for resource in resources_info:
-            secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
+        for cloud_service_info in cloud_services_info:
+            secret = self.secret_mgr.get_secret_from_resource(cloud_service_info, data_source_vo, domain_id)
             secret_data = self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)
+            query = self.get_query_from_cloud_service(cloud_service_info, plugin_info)
 
             list_metric_params.append({
                 'schema': secret.get('schema'),
+                'options': plugin_info.options,
                 'secret_data': secret_data,
-                'resource_info': resource,
+                'query': query,
+                'cloud_service_id': cloud_service_info['cloud_service_id'],
                 'data_source_vo': data_source_vo,
                 'domain_id': domain_id,
                 'metrics_dict': metrics_dict,
@@ -251,16 +254,17 @@ class MetricService(BaseService):
 
     def list_metrics_info(self, params):
         schema = params.get('schema')
-        resource_info = params.get('resource_info')
-        secret_data = params.get('secret_data')
+        secret_data = params['secret_data']
+        cloud_service_id = params['cloud_service_id']
+        query = params.get('query', {})
         metrics_dict = params.get('metrics_dict')
         and_metric_keys = params.get('and_metric_keys')
-        options = {}
+        options = params.get('options', {})
 
         try:
-            metrics_info = self.ds_plugin_mgr.list_metrics(schema, options, secret_data, resource_info)
+            metrics_info = self.ds_plugin_mgr.list_metrics(schema, options, secret_data, query)
             response = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
-            response.update({'resource_id': resource_info.get('cloud_service_id')})
+            response.update({'resource_id': cloud_service_id})
             return response
         except Exception as e:
             _LOGGER.error(f'[list_metrics]: {e}')
@@ -308,10 +312,6 @@ class MetricService(BaseService):
 
     @staticmethod
     def _check_plugin_metadata(metadata, params, data_source_id):
-        if 'supported_resource_type' in metadata:
-            if params['resource_type'] not in metadata['supported_resource_type']:
-                raise ERROR_NOT_SUPPORT_RESOURCE_TYPE(resource_type=params['resource_type'])
-
         if 'supported_stat' in metadata and 'stat' in params:
             if params['stat'] not in metadata['supported_stat']:
                 raise ERROR_NOT_SUPPORT_METRIC_STAT(stat=params['stat'])
@@ -351,3 +351,14 @@ class MetricService(BaseService):
             raise
 
         return required_keys[0]
+
+    @staticmethod
+    def get_query_from_cloud_service(cloud_service_info, plugin_info):
+        metadata = plugin_info.metadata
+        required_keys = metadata.get('required_keys', [])
+
+        if required_keys:
+            query_key = required_keys[0]
+            return get_dict_value(cloud_service_info, query_key, default_value={})
+        else:
+            raise ERROR_REQUIRED_KEYS_NOT_EXISTS(plugin_id=plugin_info.plugin_id)

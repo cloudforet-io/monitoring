@@ -1,11 +1,8 @@
 import logging
-
 from google.protobuf.json_format import MessageToDict
-
 from spaceone.core.connector import BaseConnector
 from spaceone.core import pygrpc
 from spaceone.core.utils import parse_endpoint
-from spaceone.core.error import *
 
 __all__ = ['DataSourcePluginConnector']
 
@@ -41,17 +38,15 @@ class DataSourcePluginConnector(BaseConnector):
         }
 
         if schema:
-            params.update({
-                'schema': schema
-            })
+            params.update({'schema': schema})
 
         self.client.DataSource.verify(params, metadata=self.transaction.get_connection_meta())
 
-    def list_metrics(self, schema, options, secret_data, resource):
+    def list_metrics(self, schema, options, secret_data, query):
         params = {
             'options': options,
             'secret_data': secret_data,
-            'resource': resource
+            'query': query
         }
 
         if schema:
