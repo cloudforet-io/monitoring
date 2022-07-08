@@ -33,8 +33,8 @@ class DataSourcePluginManager(BaseManager):
     def verify_plugin(self, options, secret_data, schema):
         self.dsp_connector.verify(options, secret_data, schema)
 
-    def list_metrics(self, schema, options, secret_data, resource):
-        return self.dsp_connector.list_metrics(schema, options, secret_data, resource)
+    def list_metrics(self, schema, options, secret_data, query):
+        return self.dsp_connector.list_metrics(schema, options, secret_data, query)
 
     def get_metric_data(self, schema, options, secret_data, resource, *args):
         return self.dsp_connector.get_metric_data(schema, options, secret_data, resource, *args)
