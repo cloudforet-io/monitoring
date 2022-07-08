@@ -263,6 +263,7 @@ class MetricService(BaseService):
 
         try:
             metrics_info = self.ds_plugin_mgr.list_metrics(schema, options, secret_data, query)
+            _LOGGER.debug(f'[list_metrics_info] metrics_info: {metrics_info}')
             response = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
             response.update({'resource_id': cloud_service_id})
             return response
