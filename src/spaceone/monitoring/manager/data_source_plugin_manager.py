@@ -40,13 +40,13 @@ class DataSourcePluginManager(BaseManager):
         return self.dsp_connector.get_metric_data(params)
 
     def list_logs(self, schema, options, secret_data, query, start, end, sort, limit):
-        logs = []
+        results = []
 
         for result in self.dsp_connector.list_logs(schema, options, secret_data, query, start, end, sort, limit):
-            logs.extend(result.get('logs', []))
+            results.extend(result.get('results', []))
 
         return {
-            'logs': logs
+            'results': results
         }
 
     @staticmethod
