@@ -66,7 +66,7 @@ class LogService(BaseService):
                                                  params.get('sort'), params.get('limit'))
 
         return {
-            'logs': logs_info['logs'],
+            'results': logs_info['results'],
             'domain_id': domain_id
         }
 
