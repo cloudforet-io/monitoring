@@ -62,8 +62,9 @@ class LogService(BaseService):
         secret = self.secret_mgr.get_secret_from_resource(cloud_service_info, data_source_vo, domain_id)
         secret_data = self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)
 
-        logs_info = self.ds_plugin_mgr.list_logs(secret.get('schema'), plugin_options, secret_data, query, start, end,
-                                                 params.get('sort'), params.get('limit'))
+        logs_info = self.ds_plugin_mgr.list_logs(secret.get('schema'), plugin_options, secret_data,
+                                                 query, params.get('keyword'),
+                                                 start, end, params.get('sort'), params.get('limit'))
 
         return {
             'results': logs_info['results'],
