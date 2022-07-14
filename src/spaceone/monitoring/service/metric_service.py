@@ -240,11 +240,13 @@ class MetricService(BaseService):
         self.ds_plugin_mgr.initialize(endpoint)
 
     def get_metric_data(self, params):
+        _LOGGER.debug(f'[get_metric_data] params: {params}')
         metric_data_info = {'labels': [], 'values': {}}
 
         try:
             metric_data_info = self.ds_plugin_mgr.get_metric_data(params)
 
+            _LOGGER.debug(f'[get_metric_data] metric_data_info: {metric_data_info}')
         except Exception as e:
             print(e)
 
