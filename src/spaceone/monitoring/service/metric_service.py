@@ -105,7 +105,7 @@ class MetricService(BaseService):
         return response
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['data_source_id', 'resource_type', 'resources', 'metric', 'start', 'end', 'domain_id'])
+    @check_required(['data_source_id', 'metric_query', 'metric', 'start', 'end', 'domain_id'])
     def get_data(self, params):
         """ Get resource's metric data
 
@@ -137,14 +137,14 @@ class MetricService(BaseService):
 
         response = {
             'labels': [],
-            'resource_values': {},
+            'values': {},
             'domain_id': domain_id
         }
 
         required_keys = plugin_metadata.get('required_keys')
         resource_ids = self.get_resource_ids_from_metric_query(metric_query)
         resources_info = self.inventory_mgr.list_resources(resource_ids, required_keys, domain_id)
-        resources_chunks = self.list_chunk_resources(resources_info, data_source_vo, required_keys[0], domain_id)
+        resources_chunks = self.list_chunk_resources(resources_info, data_source_vo, domain_id)
 
         _LOGGER.debug(f"[get_data] chunk_resources: {resources_chunks}")
 
@@ -160,18 +160,20 @@ class MetricService(BaseService):
             if 'schema' in chunk_resources:
                 metric_data_params.update({'schema': chunk_resources.get('schema')})
 
+            _LOGGER.debug(f"[get_data] metric_data_params: {metric_data_params}")
+
             metric_data_response = self.get_metric_data(metric_data_params)
 
             if not response['labels'] and metric_data_response.get('labels', []):
                 response['labels'] = metric_data_response['labels']
 
-            if resource_values := metric_data_response.get('resource_values'):
-                response['resource_values'].update(resource_values)
+            if values := metric_data_response.get('values'):
+                response['values'].update(values)
 
         _LOGGER.debug(f"[get_data] response: {response}")
         return response
 
-    def list_chunk_resources(self, resources, data_source_vo, required_keys, domain_id):
+    def list_chunk_resources(self, resources, data_source_vo, domain_id):
         """
         chunk_resources(dict): {
             'provider.region_code.account.random_key': {
@@ -233,7 +235,7 @@ class MetricService(BaseService):
         self.ds_plugin_mgr.initialize(endpoint)
 
     def get_metric_data(self, params):
-        metric_data_info = {'labels': [], 'resource_values': {}}
+        metric_data_info = {'labels': [], 'values': {}}
 
         try:
             metric_data_info = self.ds_plugin_mgr.get_metric_data(params)

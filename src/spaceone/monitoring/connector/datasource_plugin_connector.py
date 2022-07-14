@@ -55,24 +55,7 @@ class DataSourcePluginConnector(BaseConnector):
         response = self.client.Metric.list(params, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)
 
-    # def get_metric_data(self, schema, options, secret_data, resource, metric, start, end, period, stat):
     def get_metric_data(self, params):
-        # params = {
-        #     'options': options,
-        #     'secret_data': secret_data,
-        #     'resource': resource,
-        #     'metric': metric,
-        #     'start': start,
-        #     'end': end,
-        #     'period': period,
-        #     'stat': stat
-        # }
-        #
-        # if schema:
-        #     params.update({
-        #         'schema': schema
-        #     })
-
         response = self.client.Metric.get_data(**params, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)
 
