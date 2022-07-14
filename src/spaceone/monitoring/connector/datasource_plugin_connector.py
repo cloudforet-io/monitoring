@@ -56,7 +56,7 @@ class DataSourcePluginConnector(BaseConnector):
         return self._change_message(response)
 
     def get_metric_data(self, params):
-        response = self.client.Metric.get_data(**params, metadata=self.transaction.get_connection_meta())
+        response = self.client.Metric.get_data(params, metadata=self.transaction.get_connection_meta())
         _LOGGER.debug(f'[get_metric_data] response: {response}')
         return self._change_message(response)
 
