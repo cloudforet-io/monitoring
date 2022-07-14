@@ -76,7 +76,7 @@ class DataSourcePluginConnector(BaseConnector):
         response = self.client.Metric.get_data(**params, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)
 
-    def list_logs(self, schema, options, secret_data, query, start, end, sort, limit):
+    def list_logs(self, schema, options, secret_data, query, keyword, start, end, sort, limit):
         params = {
             'options': options,
             'secret_data': secret_data,
@@ -84,6 +84,9 @@ class DataSourcePluginConnector(BaseConnector):
             'start': start,
             'end': end
         }
+
+        if keyword:
+            params.update({'keyword': keyword})
 
         if schema:
             params.update({'schema': schema})
