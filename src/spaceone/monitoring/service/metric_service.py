@@ -196,6 +196,7 @@ class MetricService(BaseService):
                 secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
                 chunk_key = self._generate_chunk_key(provider, region_code, secret['secret_id'])
 
+                metric_query[cloud_service_id]['region_name'] = region_code
                 chunk_resource = {cloud_service_id: metric_query[cloud_service_id]}
 
                 if chunk_key in chunk_resources:
