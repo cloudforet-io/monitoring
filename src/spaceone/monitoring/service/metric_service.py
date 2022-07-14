@@ -170,7 +170,6 @@ class MetricService(BaseService):
             if values := metric_data_response.get('values'):
                 response['values'].update(values)
 
-        _LOGGER.debug(f"[get_data] response: {response}")
         return response
 
     def list_chunk_resources(self, resources, metric_query, data_source_vo, domain_id):
