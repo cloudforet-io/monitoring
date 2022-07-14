@@ -160,8 +160,6 @@ class MetricService(BaseService):
             if 'schema' in chunk_resources:
                 metric_data_params.update({'schema': chunk_resources.get('schema')})
 
-            _LOGGER.debug(f"[get_data] metric_data_params: {metric_data_params}")
-
             metric_data_response = self.get_metric_data(metric_data_params)
 
             if not response['labels'] and metric_data_response.get('labels', []):
