@@ -196,6 +196,7 @@ class MetricService(BaseService):
                 secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
                 chunk_key = self._generate_chunk_key(provider, region_code, secret['secret_id'])
 
+                metric_query[cloud_service_id]['region_name'] = region_code
                 chunk_resource = {cloud_service_id: metric_query[cloud_service_id]}
 
                 if chunk_key in chunk_resources:
@@ -239,11 +240,13 @@ class MetricService(BaseService):
         self.ds_plugin_mgr.initialize(endpoint)
 
     def get_metric_data(self, params):
+        _LOGGER.debug(f'[get_metric_data] params: {params}')
         metric_data_info = {'labels': [], 'values': {}}
 
         try:
             metric_data_info = self.ds_plugin_mgr.get_metric_data(params)
 
+            _LOGGER.debug(f'[get_metric_data] metric_data_info: {metric_data_info}')
         except Exception as e:
             print(e)
 
