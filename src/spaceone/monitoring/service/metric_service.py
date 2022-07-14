@@ -144,7 +144,7 @@ class MetricService(BaseService):
         required_keys = plugin_metadata.get('required_keys')
         resource_ids = self.get_resource_ids_from_metric_query(metric_query)
         resources_info = self.inventory_mgr.list_resources(resource_ids, required_keys, domain_id)
-        resources_chunks = self.list_chunk_resources(resources_info, data_source_vo, domain_id)
+        resources_chunks = self.list_chunk_resources(resources_info, metric_query, data_source_vo, domain_id)
 
         _LOGGER.debug(f"[get_data] chunk_resources: {resources_chunks}")
 
@@ -173,15 +173,15 @@ class MetricService(BaseService):
         _LOGGER.debug(f"[get_data] response: {response}")
         return response
 
-    def list_chunk_resources(self, resources, data_source_vo, domain_id):
+    def list_chunk_resources(self, resources, metric_query, data_source_vo, domain_id):
         """
         chunk_resources(dict): {
-            'provider.region_code.account.random_key': {
+            'provider.region_code.secret_id.random_key': {
                 'schema': 'str',
                 'secret_data': 'dict',
                 'region_name': 'str',
                 'options': 'dict',
-                'metric_queries': 'list'     # MAX_REQUEST_LIMIT
+                'metric_query': 'dict'     # MAX_REQUEST_LIMIT
             },
             ...
         }
@@ -190,43 +190,47 @@ class MetricService(BaseService):
         provider = data_source_vo.plugin_info['provider']
 
         for resource in resources:
-            region_code = self.get_region_from_resource(resource)
-            secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
-            chunk_key = self._generate_chunk_key(provider, region_code, secret['secret_id'])
+            cloud_service_id = resource['cloud_service_id']
+            if cloud_service_id in metric_query:
+                region_code = self.get_region_from_resource(resource)
+                secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
+                chunk_key = self._generate_chunk_key(provider, region_code, secret['secret_id'])
 
-            chunk_resource = {'resource_id': resource['cloud_service_id']}
+                chunk_resource = {cloud_service_id: metric_query[cloud_service_id]}
 
-            if chunk_key in chunk_resources:
-                chunk_info = chunk_resources[chunk_key]
+                if chunk_key in chunk_resources:
+                    chunk_info = chunk_resources[chunk_key]
 
-                if 'region_name' not in chunk_info:
-                    chunk_info.update({'region_name': region_code})
+                    if 'region_name' not in chunk_info:
+                        chunk_info.update({'region_name': region_code})
 
-                if 'secret_data' not in chunk_info:
-                    chunk_info.update({'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)})
+                    if 'secret_data' not in chunk_info:
+                        chunk_info.update({'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)})
 
-                if 'schema' not in chunk_info:
-                    chunk_info.update({'schema': secret.get('schema')})
+                    if 'schema' not in chunk_info:
+                        chunk_info.update({'schema': secret.get('schema')})
 
-                _resources = chunk_info.get('resources', [])
+                    _metric_query = chunk_info['metric_query']
 
-                if len(_resources) >= MAX_REQUEST_LIMIT:
-                    new_chunk_key = f'{chunk_key}.{random_string(1)}'
-                    chunk_resources[new_chunk_key] = chunk_info
+                    if len(_metric_query) >= MAX_REQUEST_LIMIT:
+                        new_chunk_key = f'{chunk_key}.{random_string(1)}'
+                        # move chunk to new key
+                        chunk_resources[new_chunk_key] = chunk_info
+                        # generate a new chunk
+                        chunk_resources[chunk_key] = {
+                            'region_name': region_code,
+                            'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id),
+                            'metric_query': chunk_resource,
+                        }
+                    else:
+                        _metric_query[cloud_service_id] = metric_query[cloud_service_id]
+                else:
+                    # generate a new chunk
                     chunk_resources[chunk_key] = {
                         'region_name': region_code,
                         'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id),
-                        'resources': [chunk_resource],
+                        'metric_query': chunk_resource,
                     }
-                else:
-                    _resources.append(chunk_resource)
-            else:
-                # generate a new chunk
-                chunk_resources[chunk_key] = {
-                    'region_name': region_code,
-                    'secret_data': self.secret_mgr.get_secret_data(secret['secret_id'], domain_id),
-                    'resources': [chunk_resource],
-                }
 
         return chunk_resources
 
