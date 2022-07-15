@@ -57,7 +57,6 @@ class DataSourcePluginConnector(BaseConnector):
 
     def get_metric_data(self, params):
         response = self.client.Metric.get_data(params, metadata=self.transaction.get_connection_meta())
-        _LOGGER.debug(f'[get_metric_data] response: {response}')
         return self._change_message(response)
 
     def list_logs(self, schema, options, secret_data, query, keyword, start, end, sort, limit):
