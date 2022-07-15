@@ -55,7 +55,8 @@ class MetricService(BaseService):
         self.plugin_initialize(data_source_vo)
 
         response = {
-            'metrics': None,
+            # 'metrics': None,
+            'metrics': [],
             'available_resources': {},
             'domain_id': domain_id
         }
@@ -99,8 +100,10 @@ class MetricService(BaseService):
                 if resource_id := metric_response.get('resource_id'):
                     response['available_resources'][resource_id] = True
 
-        response['metrics'] = self._intersect_metric_keys(metric_response["metrics_dict"],
-                                                          metric_response["and_metric_keys"])
+        # response['metrics'] = self._intersect_metric_keys(metric_response["metrics_dict"],
+        #                                                   metric_response["and_metric_keys"])
+
+                    response['metrics'].extend(metric_response['metrics'])
 
         return response
 
@@ -257,10 +260,13 @@ class MetricService(BaseService):
 
         try:
             metrics_info = self.ds_plugin_mgr.list_metrics(schema, options, secret_data, query)
-            _LOGGER.debug(f'[list_metrics_info] metrics_info: {metrics_info}')
-            response = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
-            response.update({'resource_id': cloud_service_id})
-            return response
+            _LOGGER.debug(f'[list_metric_info] metrics_info: {metrics_info}')
+            # response = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
+            return {
+                'metrics': metrics_info.get('metrics', []),
+                'resource_id': cloud_service_id
+            }
+            # return response
         except Exception as e:
             _LOGGER.error(f'[list_metrics]: {e}')
             return {}
