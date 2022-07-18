@@ -57,6 +57,12 @@ class MetricService(BaseService):
         metrics_dict = {}
         and_metric_keys = []
 
+        response = {
+            'metrics': [],
+            'available_resources': {},
+            'domain_id': domain_id
+        }
+
         for resource_id in resources:
             response['available_resources'][resource_id] = False
 
@@ -81,10 +87,6 @@ class MetricService(BaseService):
                 'and_metric_keys': and_metric_keys
             })
 
-        merge_metrics = []
-        merge_metric_keys_info = {
-            # 'metric_key1': ['cloud-svc-1', 'cloud-svc-2', ...]
-        }
         metric_responses = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER) as executor:
             future_executors = []
@@ -95,7 +97,8 @@ class MetricService(BaseService):
             for future in concurrent.futures.as_completed(future_executors):
                 metric_responses.append(future.result())
 
-        return self._merge_metric(metric_responses, domain_id)
+        response = self._merge_metric(metric_responses, domain_id)
+        return response
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['data_source_id', 'metric_query', 'metric', 'start', 'end', 'domain_id'])
