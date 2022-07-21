@@ -137,7 +137,7 @@ class AlertService(BaseService):
         if alert_vo.state == 'ERROR':
             raise ERROR_INVALID_PARAMETER(key='state', reason='The error state cannot be changed.')
 
-        if alert_vo.state != state and status_message is None:
+        if alert_vo.state != state and state == 'RESOLVED' and status_message is None:
             params['status_message'] = ''
 
         if reset_status_message:
