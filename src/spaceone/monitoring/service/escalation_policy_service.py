@@ -154,7 +154,7 @@ class EscalationPolicyService(BaseService):
 
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+        'mutation.append_parameter': {'user_projects': {'meta': 'authorization.projects', 'data': [None]}}
     })
     @check_required(['domain_id'])
     @append_query_filter(['escalation_policy_id', 'name', 'is_default', 'finish_condition', 'scope',
@@ -187,7 +187,7 @@ class EscalationPolicyService(BaseService):
 
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+        'mutation.append_parameter': {'user_projects': {'meta': 'authorization.projects', 'data': [None]}}
     })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
