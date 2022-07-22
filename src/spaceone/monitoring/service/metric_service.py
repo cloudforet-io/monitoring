@@ -54,15 +54,14 @@ class MetricService(BaseService):
         self._check_plugin_metadata(plugin_metadata, params, data_source_id)
         self.plugin_initialize(data_source_vo)
 
+        metrics_dict = {}
+        and_metric_keys = []
+
         response = {
-            # 'metrics': None,
             'metrics': [],
             'available_resources': {},
             'domain_id': domain_id
         }
-
-        metrics_dict = {}
-        and_metric_keys = []
 
         for resource_id in resources:
             response['available_resources'][resource_id] = False
@@ -88,6 +87,7 @@ class MetricService(BaseService):
                 'and_metric_keys': and_metric_keys
             })
 
+        metric_responses = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_WORKER) as executor:
             future_executors = []
 
@@ -95,16 +95,9 @@ class MetricService(BaseService):
                 future_executors.append(executor.submit(self.list_metrics_info, _params))
 
             for future in concurrent.futures.as_completed(future_executors):
-                metric_response = future.result()
+                metric_responses.append(future.result())
 
-                if resource_id := metric_response.get('resource_id'):
-                    response['available_resources'][resource_id] = True
-
-        # response['metrics'] = self._intersect_metric_keys(metric_response["metrics_dict"],
-        #                                                   metric_response["and_metric_keys"])
-
-                    response['metrics'].extend(metric_response['metrics'])
-
+        response = self._merge_metric(metric_responses, domain_id)
         return response
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -254,14 +247,11 @@ class MetricService(BaseService):
         secret_data = params['secret_data']
         cloud_service_id = params['cloud_service_id']
         query = params.get('query', {})
-        metrics_dict = params.get('metrics_dict')
-        and_metric_keys = params.get('and_metric_keys')
         options = params.get('options', {})
 
         try:
             metrics_info = self.ds_plugin_mgr.list_metrics(schema, options, secret_data, query)
             _LOGGER.debug(f'[list_metric_info] metrics_info: {metrics_info}')
-            # response = self._merge_metric_keys(metrics_info, metrics_dict, and_metric_keys)
             return {
                 'metrics': metrics_info.get('metrics', []),
                 'resource_id': cloud_service_id
@@ -270,6 +260,78 @@ class MetricService(BaseService):
         except Exception as e:
             _LOGGER.error(f'[list_metrics]: {e}')
             return {}
+
+    def _merge_metric(self, metric_responses, domain_id):
+        response = {
+            'metrics': [],
+            'available_resources': {},
+            'domain_id': domain_id
+        }
+
+        available_resources, metric_responses, cloud_service_metric_set_info = self.set_preload_metric(metric_responses)
+
+        _LOGGER.debug(f'available_resources: {available_resources}')
+        _LOGGER.debug(f'metric_responses: {metric_responses}')
+        _LOGGER.debug(f'cloud_service_metric_set_info: {cloud_service_metric_set_info}')
+
+        if len(metric_responses) == 1:
+            response['metrics'] = metric_responses[0]['metrics']
+        elif len(metric_responses) > 1:
+            _intersected_metric_keys = self._intersection_metric_keys(cloud_service_metric_set_info)
+
+            response_metrics = []
+            for metric_response in metric_responses:
+                for _metric in metric_response['metrics']:
+                    if _metric['key'] in _intersected_metric_keys:
+                        match_key = False
+                        for response_metric in response_metrics:
+                            if response_metric['key'] == _metric['key']:
+                                response_metric['metric_query'].update(_metric['metric_query'])
+                                match_key = True
+                                break
+
+                        if match_key is False:
+                            response_metrics.append(_metric)
+
+            response['metrics'] = response_metrics
+
+        response['available_resources'] = available_resources
+
+        _LOGGER.debug(response)
+        return response
+
+    @staticmethod
+    def set_preload_metric(metric_responses):
+        available_resources = {}
+        cloud_service_metric_set_info = {}
+
+        for metric_response in metric_responses:
+            if cloud_service_id := metric_response.get('resource_id'):
+                available_resources[cloud_service_id] = True
+
+                _metric_keys = []
+                for _metric in metric_response['metrics']:
+                    _metric_keys.append(_metric['key'])
+
+                    _metric_query = _metric['metric_query']
+                    _metric['metric_query'] = {cloud_service_id: _metric_query}
+
+                cloud_service_metric_set_info[cloud_service_id] = _metric_keys
+
+        return available_resources, metric_responses, cloud_service_metric_set_info
+
+    @staticmethod
+    def _intersection_metric_keys(cloud_service_metric_set_info):
+        target_metrics = []
+
+        for metrics in cloud_service_metric_set_info.values():
+            if metrics and target_metrics:
+                target_metrics = list(set(metrics) & set(target_metrics))
+
+            if metrics and not target_metrics:
+                target_metrics = metrics
+
+        return target_metrics
 
     @staticmethod
     def get_resource_ids_from_metric_query(metric_query):
@@ -326,15 +388,6 @@ class MetricService(BaseService):
                 raise ERROR_NOT_FOUND_REQUIRED_KEY(data_source_id=data_source_id)
         else:
             raise ERROR_NOT_FOUND_REQUIRED_KEY(data_source_id=data_source_id)
-
-    @staticmethod
-    def _intersect_metric_keys(metrics_dict, and_metric_keys):
-        metrics = []
-        for metric_key, metric_info in metrics_dict.items():
-            if metric_key in and_metric_keys:
-                metrics.append(metric_info)
-
-        return metrics
 
     @staticmethod
     def _merge_metric_keys(metrics_info, metrics_dict, and_metric_keys):
