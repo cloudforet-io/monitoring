@@ -210,7 +210,7 @@ class JobService(BaseService):
 
                     notification_mgr: NotificationManager = self.locator.get_manager('NotificationManager')
                     message = self._create_message(alert_vo, title, 'ERROR', notification_level=notification_level,
-                                                   has_callback=True, has_short_message=True)
+                                                   has_callback=True, has_short_description=True)
                     notification_mgr.create_notification(message)
 
                     for project_id in alert_vo.project_dependencies:
@@ -433,7 +433,7 @@ class JobService(BaseService):
                 return False, alert_vo
 
     def _create_message(self, alert_vo: Alert, title: str, notification_type: str, notification_level='ALL',
-                        has_callback=False, has_short_message=False, user_id=None):
+                        has_callback=False, has_short_description=False, user_id=None):
 
         domain_id = alert_vo.domain_id
         project_name = self._get_project_name(alert_vo.project_id, domain_id)
@@ -530,9 +530,9 @@ class JobService(BaseService):
         if alert_vo.image_url:
             message['image_url'] = alert_vo.image_url
 
-        if has_short_message:
+        if has_short_description:
             # TODO: Need to change multiple language
-            message['short_message'] = f'경고! 장애 발생! {project_name.replace(" >", "의")} 프로젝트에 장애가 발생했습니다.'
+            message['short_description'] = f'경고! 장애 발생! {project_name.replace(" >", "의")} 프로젝트에 장애가 발생했습니다.'
 
         return {
             'resource_type': resource_type,
