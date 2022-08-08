@@ -21,15 +21,11 @@ class _MockDataSourceService(BaseService):
 
     def register(self, params):
         params = copy.deepcopy(params)
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return DataSourceFactory(**params)
 
     def update(self, params):
         params = copy.deepcopy(params)
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return DataSourceFactory(**params)
 

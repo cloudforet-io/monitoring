@@ -37,7 +37,7 @@ def DataSourceInfo(data_source_vo: DataSource, minimal=False):
         info.update({
             'capability': change_struct_type(data_source_vo.capability),
             'plugin_info': PluginInfo(data_source_vo.plugin_info),
-            'tags': change_struct_type(utils.tags_to_dict(data_source_vo.tags)),
+            'tags': change_struct_type(data_source_vo.tags),
             'domain_id': data_source_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(data_source_vo.created_at)
         })

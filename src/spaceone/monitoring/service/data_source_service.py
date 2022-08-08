@@ -43,9 +43,6 @@ class DataSourceService(BaseService):
 
         domain_id = params['domain_id']
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         self._check_plugin_info(params['plugin_info'])
         plugin_info = self._get_plugin(params['plugin_info'], domain_id)
         params['capability'] = plugin_info.get('capability', {})
@@ -84,9 +81,6 @@ class DataSourceService(BaseService):
         data_source_id = params['data_source_id']
         domain_id = params['domain_id']
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.data_source_mgr.update_data_source_by_vo(params, data_source_vo)
 
@@ -248,7 +242,6 @@ class DataSourceService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['data_source_id', 'name', 'state', 'monitoring_type', 'provider', 'domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['data_source_id', 'name', 'provider'])
     def list(self, params):
         """ List data sources
@@ -277,7 +270,6 @@ class DataSourceService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['data_source_id', 'name', 'provider'])
     def stat(self, params):
         """

@@ -5,7 +5,6 @@ from spaceone.monitoring.model.data_source_model import DataSource, PluginInfo
 
 
 class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
-
     class Meta:
         model = PluginInfo
 
@@ -23,7 +22,6 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
 
 
 class DataSourceFactory(factory.mongoengine.MongoEngineFactory):
-
     class Meta:
         model = DataSource
 
@@ -38,11 +36,8 @@ class DataSourceFactory(factory.mongoengine.MongoEngineFactory):
         'monitoring_type': 'METRIC'
     }
     plugin_info = factory.SubFactory(PluginInfoFactory)
-    tags = [
-        {
-            'key': 'tag_key',
-            'value': 'tag_value'
-        }
-    ]
+    tags = {
+        'tag_key': 'tag_value'
+    }
     domain_id = utils.generate_id('domain')
     created_at = factory.Faker('date_time')

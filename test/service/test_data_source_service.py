@@ -46,133 +46,8 @@ class TestDataSourceService(unittest.TestCase):
         data_source_vos = DataSource.objects.filter()
         data_source_vos.delete()
 
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
-    @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryManager, 'check_plugin_version', return_value=None)
-    @patch.object(RepositoryManager, 'get_plugin')
-    @patch.object(SecretManager, 'list_secrets')
-    @patch.object(DataSourcePluginConnector, 'init')
-    def test_register_metric_data_source_with_secret_id(self, mock_plugin_verify, mock_list_secrets,
-                                                        mock_get_plugin, *args):
-        secret_id = utils.generate_id('secret')
-        plugin_id = utils.generate_id('plugin')
-        plugin_version = '1.0'
-
-        mock_plugin_verify.return_value = {
-            'metadata': {
-                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'required_keys': ['reference.resource_id']
-            }
-        }
-
-        mock_list_secrets.return_value = {
-            'results': [{
-                'secret_id': secret_id,
-                'schema': 'aws_access_key'
-            }],
-            'total_count': 1
-        }
-
-        mock_get_plugin.return_value = {
-            'capability': {
-                'supported_schema': ['aws_access_key', 'aws_assume_role'],
-                'monitoring_type': 'METRIC'
-            },
-            'provider': 'aws'
-        }
-
-        params = {
-            'name': 'AWS CloudWatch',
-            'plugin_info': {
-                'plugin_id': plugin_id,
-                'version': plugin_version,
-                'options': {},
-                'secret_id': secret_id
-            },
-            'tags': {
-                utils.random_string(): utils.random_string()
-            },
-            'domain_id': self.domain_id
-        }
-
-        self.transaction.method = 'register'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.register(params.copy())
-
-        print_data(data_source_vo.to_dict(), 'test_register_metric_data_source_with_secret_id')
-        DataSourceInfo(data_source_vo)
-
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
-        self.assertEqual(params['domain_id'], data_source_vo.domain_id)
-
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
-    @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryManager, 'check_plugin_version', return_value=None)
-    @patch.object(RepositoryManager, 'get_plugin')
-    @patch.object(SecretManager, 'list_secrets')
-    @patch.object(DataSourcePluginConnector, 'init')
-    def test_register_metric_data_source_with_provider(self, mock_plugin_init, mock_list_secrets,
-                                                       mock_get_plugin, *args):
-        plugin_id = utils.generate_id('plugin')
-        plugin_version = '1.0'
-
-        mock_plugin_init.return_value = {
-            'metadata': {
-                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'required_keys': ['reference.resource_id']
-            }
-        }
-
-        mock_list_secrets.return_value = {
-            'results': [{
-                'secret_id': utils.generate_id('secret'),
-                'schema': 'aws_access_key'
-            }],
-            'total_count': 1
-        }
-
-        mock_get_plugin.return_value = {
-            'capability': {
-                'use_resource_secret': True,
-                'supported_schema': ['aws_access_key', 'aws_assume_role'],
-                'monitoring_type': 'METRIC'
-            },
-            'provider': 'aws'
-        }
-
-        params = {
-            'name': 'AWS CloudWatch',
-            'plugin_info': {
-                'plugin_id': plugin_id,
-                'version': plugin_version,
-                'options': {},
-                'provider': 'aws'
-            },
-            'tags': {
-                'tag_key': 'tag_value'
-            },
-            'domain_id': self.domain_id
-        }
-
-        self.transaction.method = 'register'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.register(params.copy())
-
-        print_data(data_source_vo.to_dict(), 'test_register_metric_data_source_with_provider')
-        DataSourceInfo(data_source_vo)
-
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
-        self.assertEqual(params['domain_id'], data_source_vo.domain_id)
-
-    @patch.object(PluginManager, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
+    @patch.object(PluginManager, 'get_plugin_endpoint',
+                  return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(DataSourcePluginConnector, 'initialize', return_value=None)
     @patch.object(SecretManager, 'get_secret_data', return_value={'data': {}})
     @patch.object(SecretManager, 'list_secrets')
@@ -219,7 +94,7 @@ class TestDataSourceService(unittest.TestCase):
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
         self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
+        self.assertEqual(params['tags'], data_source_vo.tags)
 
     def test_enable_data_source(self, *args):
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id, state='DISABLED')
@@ -341,7 +216,7 @@ class TestDataSourceService(unittest.TestCase):
         self.assertEqual(total_count, 10)
 
     def test_list_data_sources_by_tag(self, *args):
-        DataSourceFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
+        DataSourceFactory(tags={'tag_key_1': 'tag_value_1'}, domain_id=self.domain_id)
         data_source_vos = DataSourceFactory.build_batch(9, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), data_source_vos))
 
