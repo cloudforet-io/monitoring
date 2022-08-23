@@ -196,10 +196,7 @@ class EventRuleService(BaseService):
 
         return self.event_rule_mgr.get_event_rule(params['event_rule_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
     @append_query_filter(['event_rule_id', 'name', 'scope', 'project_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['event_rule_id', 'name'])
@@ -225,10 +222,7 @@ class EventRuleService(BaseService):
         query = params.get('query', {})
         return self.event_rule_mgr.list_event_rules(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['event_rule_id', 'name'])

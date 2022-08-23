@@ -246,10 +246,7 @@ class WebhookService(BaseService):
 
         return self.webhook_mgr.get_webhook(params['webhook_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
     @append_query_filter(['webhook_id', 'name', 'state', 'access_key', 'project_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['webhook_id', 'name'])
@@ -275,10 +272,7 @@ class WebhookService(BaseService):
         query = params.get('query', {})
         return self.webhook_mgr.list_webhooks(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['webhook_id', 'name'])
