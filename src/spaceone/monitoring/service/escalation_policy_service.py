@@ -23,7 +23,7 @@ class EscalationPolicyService(BaseService):
         self.escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager('EscalationPolicyManager')
 
     @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
+        'authorization.scope': 'DOMAIN_OR_PROJECT',
         'authorization.require_project_id': True
     })
     @check_required(['name', 'rules', 'domain_id'])
@@ -58,7 +58,7 @@ class EscalationPolicyService(BaseService):
 
         return self.escalation_policy_mgr.create_escalation_policy(params)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['escalation_policy_id', 'domain_id'])
     def update(self, params):
         """Update escalation policy
@@ -87,7 +87,7 @@ class EscalationPolicyService(BaseService):
         escalation_policy_vo = self.escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
         return self.escalation_policy_mgr.update_escalation_policy_by_vo(params, escalation_policy_vo)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['escalation_policy_id', 'domain_id'])
     def set_default(self, params):
         """ Get escalation policy
@@ -116,7 +116,7 @@ class EscalationPolicyService(BaseService):
         else:
             return self.escalation_policy_mgr.set_default_escalation_policy(params, escalation_policy_vo)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['escalation_policy_id', 'domain_id'])
     def delete(self, params):
         """Delete escalation policy
@@ -133,7 +133,7 @@ class EscalationPolicyService(BaseService):
 
         self.escalation_policy_mgr.delete_escalation_policy(params['escalation_policy_id'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['escalation_policy_id', 'domain_id'])
     def get(self, params):
         """ Get escalation policy
@@ -152,10 +152,7 @@ class EscalationPolicyService(BaseService):
         return self.escalation_policy_mgr.get_escalation_policy(params['escalation_policy_id'],
                                                                 params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': {'meta': 'authorization.projects', 'data': [None]}}
-    })
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['domain_id'])
     @append_query_filter(['escalation_policy_id', 'name', 'is_default', 'finish_condition', 'scope',
                           'project_id', 'domain_id', 'user_projects'])
@@ -185,10 +182,7 @@ class EscalationPolicyService(BaseService):
         query = params.get('query', {})
         return self.escalation_policy_mgr.list_escalation_policies(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': {'meta': 'authorization.projects', 'data': [None]}}
-    })
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['escalation_policy_id', 'name'])

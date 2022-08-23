@@ -137,10 +137,7 @@ class ProjectAlertConfigService(BaseService):
 
         return self.project_alert_config_mgr.get_project_alert_config(params['project_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
     @change_only_key({'escalation_policy_info': 'escalation_policy'}, key_path='query.only')
     @append_query_filter(['project_id', 'escalation_policy_id', 'domain_id', 'user_projects'])
@@ -165,10 +162,7 @@ class ProjectAlertConfigService(BaseService):
         query = params.get('query', {})
         return self.project_alert_config_mgr.list_project_alert_configs(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['project_id'])
