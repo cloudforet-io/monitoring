@@ -402,10 +402,7 @@ class AlertService(BaseService):
 
         return self.alert_mgr.get_alert(params['alert_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
     @append_query_filter(['alert_number', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
                           'resource_id', 'triggered_by', 'webhook_id', 'escalation_policy_id', 'project_id',
@@ -441,10 +438,7 @@ class AlertService(BaseService):
         query = params.get('query', {})
         return self.alert_mgr.list_alerts(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['alert_id', 'title'])

@@ -126,10 +126,7 @@ class MaintenanceWindowService(BaseService):
         return self.maintenance_window_mgr.get_maintenance_window(params['maintenance_window_id'],
                                                                   params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
     @append_query_filter(['maintenance_window_id', 'title', 'state', 'project_id', 'created_by', 'domain_id',
                           'user_projects'])
@@ -157,10 +154,7 @@ class MaintenanceWindowService(BaseService):
         query = params.get('query', {})
         return self.maintenance_window_mgr.list_maintenance_windows(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['maintenance_window_id', 'title'])
