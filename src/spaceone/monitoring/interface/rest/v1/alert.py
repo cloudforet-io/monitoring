@@ -1,9 +1,10 @@
 import logging
-from fastapi import APIRouter, Request, HTTPException
-
+from fastapi import Request, Body
+from fastapi_utils.inferring_router import InferringRouter
+from fastapi_utils.cbv import cbv
+from spaceone.core.fastapi.api import BaseAPI, exception_handler
 from spaceone.core.error import *
 from spaceone.core import config, cache
-from spaceone.core.locator import Locator
 from spaceone.monitoring.model import Alert
 from spaceone.monitoring.service import AlertService
 from spaceone.monitoring.manager import IdentityManager
@@ -11,41 +12,37 @@ from fastapi.responses import RedirectResponse
 
 _LOGGER = logging.getLogger(__name__)
 
-router = APIRouter()
+router = InferringRouter()
 
 
-@router.get('/alert/{alert_id}/{access_key}/{state}')
-async def update_alert_state_get(alert_id: str, access_key: str, state: str):
-    locator = Locator()
+@cbv(router)
+class Alert(BaseAPI):
 
-    alert_info = _update_alert_state(locator, alert_id, access_key, state)
-    domain_name = _get_domain_name(locator, alert_info['domain_id'])
+    service = 'Alert'
 
-    return _make_redirect_response(alert_id, domain_name)
-
-
-@router.post('/alert/{alert_id}/{access_key}/{state}')
-async def update_alert_state_post(alert_id: str, access_key: str, state: str, request: Request):
-    locator = Locator()
-
-    try:
-        data = await request.json()
-    except Exception as e:
-        _LOGGER.debug(f'JSON Parsing Error: {e}')
-        data = {}
-
-    if data.get('code') != 'TIME_OUT':
-        alert_info = _update_alert_state(locator, alert_id, access_key, state)
-        domain_name = _get_domain_name(locator, alert_info['domain_id'])
+    @router.get('/alert/{alert_id}/{access_key}/{state}')
+    @exception_handler
+    async def update_alert_state_get(self, alert_id: str, access_key: str, state: str):
+        alert_info = self._update_alert_state(alert_id, access_key, state)
+        domain_name = self._get_domain_name(alert_info['domain_id'])
 
         return _make_redirect_response(alert_id, domain_name)
-    else:
-        raise HTTPException(status_code=403, detail='Timeout!')
 
+    @router.post('/alert/{alert_id}/{access_key}/{state}')
+    async def update_alert_state_post(self, alert_id: str, access_key: str, state: str, request: Request):
+        params, metadata = await self.parse_request(request)
 
-def _update_alert_state(locator, alert_id, access_key, state):
-    try:
-        alert_service: AlertService = locator.get_service('AlertService')
+        if params.get('code') != 'TIME_OUT':
+            alert_info = self._update_alert_state(alert_id, access_key, state)
+            domain_name = self._get_domain_name(alert_info['domain_id'])
+
+            return _make_redirect_response(alert_id, domain_name)
+        else:
+            raise ERROR_REQUEST_TIMEOUT()
+
+    def _update_alert_state(self, alert_id, access_key, state):
+        alert_service: AlertService = self.locator.get_service('AlertService')
+        print(state)
         alert_vo: Alert = alert_service.update_state({
             'alert_id': alert_id,
             'access_key': access_key,
@@ -62,21 +59,11 @@ def _update_alert_state(locator, alert_id, access_key, state):
             'domain_id': alert_vo.domain_id
         }
 
-    except ERROR_BASE as e:
-        raise HTTPException(status_code=500, detail=e.message)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Unknown Error: {str(e)}')
-
-
-@cache.cacheable(key='domain-name:{domain_id}', expire=3600)
-def _get_domain_name(locator, domain_id):
-    try:
-        identity_mgr: IdentityManager = locator.get_manager('IdentityManager')
+    @cache.cacheable(key='domain-name:{domain_id}', expire=3600)
+    def _get_domain_name(self, domain_id):
+        identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
         domain_info = identity_mgr.get_domain(domain_id)
         return domain_info['name']
-    except Exception as e:
-        _LOGGER.error(f'[_get_domain_name] Failed to get domain: {e}', exc_info=True)
-        raise HTTPException(status_code=500, detail=f'Unknown Error: {str(e)}')
 
 
 def _make_redirect_response(alert_id, domain_name):
