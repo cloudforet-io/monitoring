@@ -42,7 +42,7 @@ class Alert(BaseAPI):
 
     def _update_alert_state(self, alert_id, access_key, state):
         alert_service: AlertService = self.locator.get_service('AlertService')
-        print(state)
+
         alert_vo: Alert = alert_service.update_state({
             'alert_id': alert_id,
             'access_key': access_key,
