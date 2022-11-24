@@ -4,6 +4,7 @@ ROUTER = [
         'prefix': '/monitoring/v1',
     },
     {
-        'path': 'spaceone.monitoring.interface.rest.v1.event:router'
+        'path': 'spaceone.monitoring.interface.rest.v1.event:router',
+        'prefix': '/monitoring/v1',
     },
 ]
