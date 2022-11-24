@@ -1,6 +1,10 @@
 WEBHOOK_DOMAIN = ''
 CONSOLE_DOMAIN = ''
 
+# Service Description
+TITLE = 'Documentation for Monitoring Webhook'
+DESCRIPTION = ''
+
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {
     'default': {
@@ -34,7 +38,6 @@ CONNECTORS = {
             'repository': 'grpc://repository:50051',
             'secret': 'grpc://secret:50051',
             'notification': 'grpc://notification:50051'
-
         }
     },
     'DataSourcePluginConnector': {
