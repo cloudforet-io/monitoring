@@ -33,10 +33,11 @@ class Alert(BaseAPI):
         params, metadata = await self.parse_request(request)
 
         if params.get('code') != 'TIME_OUT':
-            alert_info = self._update_alert_state(alert_id, access_key, state)
-            domain_name = self._get_domain_name(alert_info['domain_id'])
+            self._update_alert_state(alert_id, access_key, state)
 
-            return _make_redirect_response(alert_id, domain_name)
+            return {
+                'detail': f'Alert[{alert_id}] state was changed.'
+            }
         else:
             raise ERROR_REQUEST_TIMEOUT()
 
