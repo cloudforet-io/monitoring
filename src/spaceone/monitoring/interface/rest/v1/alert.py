@@ -36,7 +36,7 @@ class Alert(BaseAPI):
             self._update_alert_state(alert_id, access_key, state)
 
             return {
-                'detail': f'Alert(alert_id) state was changed.'
+                'detail': f'Alert({alert_id}) state was changed.'
             }
         else:
             raise ERROR_REQUEST_TIMEOUT()
