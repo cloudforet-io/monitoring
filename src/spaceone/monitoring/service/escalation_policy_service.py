@@ -47,6 +47,7 @@ class EscalationPolicyService(BaseService):
 
         project_id = params.get('project_id')
         domain_id = params['domain_id']
+        rules = params['rules']
 
         identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
 
@@ -55,6 +56,16 @@ class EscalationPolicyService(BaseService):
             params['scope'] = 'PROJECT'
         else:
             params['scope'] = 'GLOBAL'
+
+        if 'repeat_count' in params:
+            repeat_count = params.get('repeat_count')
+            if not self._is_valid_positive_number(repeat_count):
+                raise ERROR_INVALID_POSITIVE_NUMBER(value=repeat_count)
+
+        for rule in rules:
+            if escalate_minutes := rule.get('escalate_minutes'):
+                if not self._is_valid_positive_number(escalate_minutes):
+                    raise ERROR_INVALID_POSITIVE_NUMBER(value=escalate_minutes)
 
         return self.escalation_policy_mgr.create_escalation_policy(params)
 
@@ -81,7 +92,16 @@ class EscalationPolicyService(BaseService):
         escalation_policy_id = params['escalation_policy_id']
         domain_id = params['domain_id']
 
+        if 'repeat_count' in params:
+            repeat_count = params.get('repeat_count')
+            if not self._is_valid_positive_number(repeat_count):
+                raise ERROR_INVALID_POSITIVE_NUMBER(value=repeat_count)
+
         if 'rules' in params:
+            for rule in params['rules']:
+                if escalate_minutes := rule.get('escalate_minutes'):
+                    if not self._is_valid_positive_number(escalate_minutes):
+                        raise ERROR_INVALID_POSITIVE_NUMBER(value=escalate_minutes)
             params['repeat_count'] = params.get('repeat_count', 0)
 
         escalation_policy_vo = self.escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
@@ -223,3 +243,10 @@ class EscalationPolicyService(BaseService):
             self.escalation_policy_mgr.create_escalation_policy(default_escalation_policy)
 
         return True
+
+    @staticmethod
+    def _is_valid_positive_number(value: int):
+        if value <= 0:
+            return False
+        else:
+            return True
