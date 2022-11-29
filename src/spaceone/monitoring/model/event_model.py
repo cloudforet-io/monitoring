@@ -87,18 +87,14 @@ class CreateEventResource(BaseModel):
 
 
 class CreateEvent(BaseModel):
-    event_key: Union[str, None] = Field(...)
-    event_type: Union[str, None] = Field(...)
-    title: Union[str, None] = Field(...)
+    event_key: Union[str, None] = Field(None)
+    event_type: Union[str, None] = Field(None)
+    title: Union[str, None] = Field(None)
     description: Union[str, None] = Field(None)
-    severity: Union[str, None] = Field(...)
+    severity: Union[str, None] = Field(None)
     rule: Union[str, None] = Field(None)
     image_url: Union[str, None] = Field(None)
     resource: Union[CreateEventResource, None] = Field(None)
-    provider: Union[str, None] = Field(None)
-    account: Union[str, None] = Field(None)
-    raw_data: Union[dict, None] = Field(None)
     additional_info: Union[dict, None] = Field(None)
     project_id: Union[str, None] = Field(None)
-    created_at: Union[datetime, None] = Field(None)
     occurred_at: Union[datetime, None] = Field(None)
