@@ -62,7 +62,8 @@ class EventService(BaseService):
 
             if updated_version:
                 _LOGGER.debug(f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}')
-                webhook_vo: Webhook = self.webhook_mgr.get_webhook(webhook_data['webhook_id'], webhook_data['domain_id'])
+                webhook_vo: Webhook = self.webhook_mgr.get_webhook(webhook_data['webhook_id'],
+                                                                   webhook_data['domain_id'])
                 webhook_plugin_mgr.upgrade_webhook_plugin_version(webhook_vo, endpoint, updated_version)
                 cache.delete(f'webhook-data:{webhook_data["webhook_id"]}')
 
@@ -213,8 +214,9 @@ class EventService(BaseService):
                           f'(event_type = {event_data["event_type"]})')
             alert_vo = self._create_alert(event_data)
 
-            event_data['alert_id'] = alert_vo.alert_id
-            event_data['alert'] = alert_vo
+            if alert_vo:
+                event_data['alert_id'] = alert_vo.alert_id
+                event_data['alert'] = alert_vo
 
         self.event_mgr.create_event(event_data)
 
@@ -227,6 +229,10 @@ class EventService(BaseService):
             alert_data['urgency'] = event_data['urgency']
         else:
             alert_data['urgency'] = self._get_urgency_from_severity(event_data['severity'])
+
+        notification_urgency = self._get_notification_urgency(event_data['project_id'], event_data['domain_id'])
+        if alert_data['urgency'] == 'LOW' and notification_urgency == 'HIGH_ONLY':
+            return None
 
         escalation_policy_id, escalation_ttl = self._get_escalation_policy_info(event_data['project_id'],
                                                                                 event_data['domain_id'])
@@ -255,6 +261,10 @@ class EventService(BaseService):
             return 'HIGH'
         else:
             return 'LOW'
+
+    def _get_notification_urgency(self, project_id, domain_id):
+        project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(project_id, domain_id)
+        return project_alert_config_vo.options.notification
 
     @cache.cacheable(key='escalation-policy-info:{domain_id}:{project_id}', expire=300)
     def _get_escalation_policy_info(self, project_id, domain_id):
