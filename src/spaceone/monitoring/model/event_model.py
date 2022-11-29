@@ -1,6 +1,9 @@
 from mongoengine import *
 
 from spaceone.core.model.mongo_model import MongoModel
+from pydantic import BaseModel, Field
+from typing import Union
+from datetime import datetime
 
 
 class EventResource(EmbeddedDocument):
@@ -73,3 +76,29 @@ class Event(MongoModel):
             'occurred_at'
         ]
     }
+
+# Pydantic Model
+
+
+class CreateEventResource(BaseModel):
+    resource_id: Union[str, None] = Field(None)
+    resource_type: Union[str, None] = Field(None)
+    name: Union[str, None] = Field(None)
+
+
+class CreateEvent(BaseModel):
+    event_key: Union[str, None] = Field(...)
+    event_type: Union[str, None] = Field(...)
+    title: Union[str, None] = Field(...)
+    description: Union[str, None] = Field(None)
+    severity: Union[str, None] = Field(...)
+    rule: Union[str, None] = Field(None)
+    image_url: Union[str, None] = Field(None)
+    resource: Union[CreateEventResource, None] = Field(None)
+    provider: Union[str, None] = Field(None)
+    account: Union[str, None] = Field(None)
+    raw_data: Union[dict, None] = Field(None)
+    additional_info: Union[dict, None] = Field(None)
+    project_id: Union[str, None] = Field(None)
+    created_at: Union[datetime, None] = Field(None)
+    occurred_at: Union[datetime, None] = Field(None)

@@ -6,6 +6,7 @@ from spaceone.core.fastapi.api import BaseAPI, exception_handler
 from spaceone.core.error import *
 from spaceone.core.locator import Locator
 from spaceone.monitoring.service import EventService
+from spaceone.monitoring.model.event_model import CreateEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ router = InferringRouter()
 @cbv(router)
 class Event(BaseAPI):
     @router.post('/webhook/{webhook_id}/{access_key}/events')
-    async def create_event(self, webhook_id: str, access_key: str, request: Request):
+    async def create_event(self, webhook_id: str, access_key: str, request: Request, body: CreateEvent):
         params, metadata = await self.parse_request(request)
 
         event_service: EventService = self.locator.get_service('EventService')
