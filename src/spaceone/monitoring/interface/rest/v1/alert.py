@@ -26,7 +26,7 @@ class Alert(BaseAPI):
         alert_info = self._update_alert_state(alert_id, access_key, state)
         domain_name = self._get_domain_name(alert_info['domain_id'])
 
-        return _make_redirect_response(alert_id, domain_name)
+        return self._make_redirect_response(alert_id, domain_name)
 
     @router.post('/alert/{alert_id}/{access_key}/{state}')
     async def update_alert_state_post(self, alert_id: str, access_key: str, state: str, request: Request):
@@ -66,12 +66,12 @@ class Alert(BaseAPI):
         domain_info = identity_mgr.get_domain(domain_id)
         return domain_info['name']
 
+    @staticmethod
+    def _make_redirect_response(alert_id, domain_name):
+        console_domain = config.get_global('CONSOLE_DOMAIN')
 
-def _make_redirect_response(alert_id, domain_name):
-    console_domain = config.get_global('CONSOLE_DOMAIN')
-
-    if console_domain.strip() != '':
-        console_domain = console_domain.format(domain_name=domain_name)
-        return RedirectResponse(f'{console_domain}/alert-manager/alert/{alert_id}')
-    else:
-        return None
+        if console_domain.strip() != '':
+            console_domain = console_domain.format(domain_name=domain_name)
+            return RedirectResponse(f'{console_domain}/alert-manager/alert/{alert_id}')
+        else:
+            return None
