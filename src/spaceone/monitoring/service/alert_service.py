@@ -404,7 +404,7 @@ class AlertService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
-    @append_query_filter(['alert_number', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
+    @append_query_filter(['alert_number_str', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
                           'resource_id', 'triggered_by', 'webhook_id', 'escalation_policy_id', 'project_id',
                           'domain_id', 'user_projects'])
     @append_keyword_filter(['alert_id', 'title'])
@@ -413,7 +413,7 @@ class AlertService(BaseService):
 
         Args:
             params (dict): {
-                'alert_number': 'str',
+                'alert_number_str': 'str',
                 'alert_id': 'str',
                 'title': 'str',
                 'state': 'str',

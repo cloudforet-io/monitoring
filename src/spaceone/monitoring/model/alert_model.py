@@ -14,8 +14,14 @@ class AlertResource(EmbeddedDocument):
     name = StringField(default=None, null=True)
 
 
+class AlertNumber(MongoModel):
+    next = IntField(default=1)
+    domain_id = StringField(max_length=40)
+
+
 class Alert(MongoModel):
-    alert_number = SequenceField()
+    alert_number = IntField(required=True)
+    alert_number_str = StringField()
     alert_id = StringField(max_length=40, generate_id='alert', unique=True)
     title = StringField()
     state = StringField(max_length=20, default='TRIGGERED', choices=('TRIGGERED', 'ACKNOWLEDGED', 'RESOLVED', 'ERROR'))
