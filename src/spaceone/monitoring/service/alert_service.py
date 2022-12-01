@@ -93,7 +93,7 @@ class AlertService(BaseService):
         Returns:
             alert_vo (object)
         """
-        
+
         alert_id = params['alert_id']
         domain_id = params['domain_id']
         project_id = params.get('project_id')
@@ -404,16 +404,16 @@ class AlertService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
-    @append_query_filter(['alert_number_str', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
+    @append_query_filter(['alert_number', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
                           'resource_id', 'triggered_by', 'webhook_id', 'escalation_policy_id', 'project_id',
                           'domain_id', 'user_projects'])
-    @append_keyword_filter(['alert_id', 'title'])
+    @append_keyword_filter(['alert_id', 'alert_number_str', 'title'])
     def list(self, params):
         """ List alerts
 
         Args:
             params (dict): {
-                'alert_number_str': 'str',
+                'alert_number': 'str',
                 'alert_id': 'str',
                 'title': 'str',
                 'state': 'str',

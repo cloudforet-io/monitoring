@@ -114,6 +114,6 @@ class AlertManager(BaseManager):
             account_number_vo = alert_number_vos[0].increment('next', 1)
             self.transaction.add_rollback(_rollback, account_number_vo)
         else:
-            account_number_vo = self.alert_number_model.create({})
+            account_number_vo = self.alert_number_model.create({'domain_id': domain_id})
 
         return account_number_vo.next
