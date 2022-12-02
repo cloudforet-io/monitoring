@@ -54,7 +54,7 @@ class EscalationPolicyService(BaseService):
             identity_mgr.get_project(project_id, domain_id)
             params['scope'] = 'PROJECT'
         else:
-            params['scope'] = 'GLOBAL'
+            params['scope'] = 'DOMAIN'
 
         return self.escalation_policy_mgr.create_escalation_policy(params)
 
@@ -108,7 +108,7 @@ class EscalationPolicyService(BaseService):
         escalation_policy_vo: EscalationPolicy = self.escalation_policy_mgr.get_escalation_policy(escalation_policy_id,
                                                                                                   domain_id)
 
-        if escalation_policy_vo.scope != 'GLOBAL':
+        if escalation_policy_vo.scope != 'DOMAIN':
             raise ERROR_INVALID_ESCALATION_POLICY_SCOPE(escalation_policy_id=escalation_policy_id)
 
         if escalation_policy_vo.is_default:

@@ -19,7 +19,7 @@ class EscalationPolicy(MongoModel):
     repeat_count = IntField(default=0)
     finish_condition = StringField(max_length=20, default='ACKNOWLEDGED', choices=('ACKNOWLEDGED', 'RESOLVED'))
     tags = DictField()
-    scope = StringField(max_length=20, choices=('GLOBAL', 'PROJECT'))
+    scope = StringField(max_length=20, choices=('DOMAIN', 'PROJECT'))
     project_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
