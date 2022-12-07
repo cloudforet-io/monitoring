@@ -54,7 +54,6 @@ def AlertInfo(alert_vo: Alert, minimal=False):
 
     if not minimal:
         info.update({
-            'alert_number_str': alert_vo.alert_number_str,
             'description': alert_vo.description,
             'severity': alert_vo.severity,
             'rule': alert_vo.rule,
