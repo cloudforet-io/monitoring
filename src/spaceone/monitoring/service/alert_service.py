@@ -93,7 +93,7 @@ class AlertService(BaseService):
         Returns:
             alert_vo (object)
         """
-        
+
         alert_id = params['alert_id']
         domain_id = params['domain_id']
         project_id = params.get('project_id')
@@ -407,7 +407,7 @@ class AlertService(BaseService):
     @append_query_filter(['alert_number', 'alert_id', 'title', 'state', 'assignee', 'urgency', 'severity', 'is_snoozed',
                           'resource_id', 'triggered_by', 'webhook_id', 'escalation_policy_id', 'project_id',
                           'domain_id', 'user_projects'])
-    @append_keyword_filter(['alert_id', 'title'])
+    @append_keyword_filter(['alert_id', 'alert_number_str', 'title'])
     def list(self, params):
         """ List alerts
 

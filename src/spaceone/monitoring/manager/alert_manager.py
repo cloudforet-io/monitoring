@@ -1,7 +1,7 @@
 import logging
 
 from spaceone.core.manager import BaseManager
-from spaceone.monitoring.model.alert_model import Alert
+from spaceone.monitoring.model.alert_model import Alert, AlertNumber
 from spaceone.monitoring.error.alert import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -12,6 +12,7 @@ class AlertManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.alert_model: Alert = self.locator.get_model('Alert')
+        self.alert_number_model: AlertNumber = self.locator.get_model('AlertNumber')
 
     def create_alert(self, params):
         def _rollback(alert_vo):
@@ -20,6 +21,8 @@ class AlertManager(BaseManager):
                          f'({alert_vo.alert_id})')
             alert_vo.delete()
 
+        params['alert_number'] = self._get_alert_number(params['domain_id'])
+        params['alert_number_str'] = str(params['alert_number'])
         alert_vo: Alert = self.alert_model.create(params)
         self.transaction.add_rollback(_rollback, alert_vo)
 
@@ -100,3 +103,18 @@ class AlertManager(BaseManager):
 
     def stat_alerts(self, query):
         return self.alert_model.stat(**query)
+
+    def _get_alert_number(self, domain_id):
+        def _rollback(alert_number_vo: AlertNumber):
+            _LOGGER.info(f'[_get_alert_number._rollback] Decrement Number: {alert_number_vo.next}')
+            alert_number_vo.decrement('next', 1)
+
+        alert_number_vos = self.alert_number_model.filter(domain_id=domain_id)
+        if alert_number_vos.count() > 0:
+            account_number_vo = alert_number_vos[0].increment('next', 1)
+            self.transaction.add_rollback(_rollback, account_number_vo)
+        else:
+            account_number_vo = self.alert_number_model.create({'domain_id': domain_id})
+            self.transaction.add_rollback(_rollback, account_number_vo)
+
+        return account_number_vo.next
