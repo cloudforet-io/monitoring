@@ -5,7 +5,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class EscalationRule(EmbeddedDocument):
     notification_level = StringField(max_length=20, default='ALL')
-    escalate_minutes = IntField(default=0)
+    escalate_minutes = IntField(default=0, min_value=0)
 
     def to_dict(self):
         return self.to_mongo()
@@ -16,7 +16,7 @@ class EscalationPolicy(MongoModel):
     name = StringField(max_length=255, unique_with='domain_id')
     is_default = BooleanField(default=False)
     rules = ListField(EmbeddedDocumentField(EscalationRule))
-    repeat_count = IntField(default=0)
+    repeat_count = IntField(default=0, min_value=0)
     finish_condition = StringField(max_length=20, default='ACKNOWLEDGED', choices=('ACKNOWLEDGED', 'RESOLVED'))
     tags = DictField()
     scope = StringField(max_length=20, choices=('GLOBAL', 'PROJECT'))
