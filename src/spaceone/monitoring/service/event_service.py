@@ -264,7 +264,7 @@ class EventService(BaseService):
 
     def _get_notification_urgency(self, project_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(project_id, domain_id)
-        return project_alert_config_vo.options.notification
+        return project_alert_config_vo.options.notification_urgency
 
     @cache.cacheable(key='escalation-policy-info:{domain_id}:{project_id}', expire=300)
     def _get_escalation_policy_info(self, project_id, domain_id):
