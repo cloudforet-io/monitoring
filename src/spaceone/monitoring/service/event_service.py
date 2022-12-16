@@ -245,7 +245,8 @@ class EventService(BaseService):
 
         alert_vo = alert_mgr.create_alert(alert_data)
 
-        self._create_notification(alert_vo, 'create_alert_notification')
+        if self._check_notification_urgency(alert_vo):
+            self._create_notification(alert_vo, 'create_alert_notification')
 
         return alert_vo
 
@@ -278,6 +279,17 @@ class EventService(BaseService):
     def _get_project_alert_config(self, project_id, domain_id):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager('ProjectAlertConfigManager')
         return project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+
+    def _get_notification_urgency(self, project_id, domain_id):
+        project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(project_id, domain_id)
+        return project_alert_config_vo.options.notification_urgency
+
+    def _check_notification_urgency(self, alert_vo: Alert):
+        notification_urgency = self._get_notification_urgency(alert_vo.project_id, alert_vo.domain_id)
+        if alert_vo.urgency == 'LOW' and notification_urgency == 'HIGH_ONLY':
+            return False
+        else:
+            return True
 
     def _create_notification(self, alert_vo: Alert, method):
         # if alert_vo.state != 'ERROR':
