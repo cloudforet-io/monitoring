@@ -9,5 +9,5 @@ DEFAULT_ESCALATION_POLICY = {
     ],
     'repeat_count': 0,
     'finish_condition': 'ACKNOWLEDGED',
-    'scope': 'GLOBAL'
+    'scope': 'DOMAIN'
 }

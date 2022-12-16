@@ -49,7 +49,7 @@ class EscalationPolicyManager(BaseManager):
 
     def set_default_escalation_policy(self, params, escalation_policy_vo):
         global_escalation_policy_vos = self.escalation_policy_model.filter(domain_id=params['domain_id'],
-                                                                           scope='GLOBAL')
+                                                                           scope='DOMAIN')
 
         for global_escalation_policy_vo in global_escalation_policy_vos:
             global_escalation_policy_vo.update({'is_default': False})
