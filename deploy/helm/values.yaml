@@ -14,6 +14,36 @@ image:
     version: latest
 imagePullPolicy: IfNotPresent
 
+resources: {}
+#     grpc: 
+#         requests:
+#             memory: "128Mi"
+#             cpu: "25m"
+#         limits:
+#             memory: "256Mi"
+#             cpu: "50m"
+#     rest: 
+#         requests:
+#             memory: "128Mi"
+#             cpu: "25m"
+#         limits:
+#             memory: "256Mi"
+#             cpu: "50m"
+#     scheduler: 
+#         requests:
+#             memory: "128Mi"
+#             cpu: "25m"
+#         limits:
+#             memory: "256Mi"
+#             cpu: "50m"
+#     worker: 
+#         requests:
+#             memory: "128Mi"
+#             cpu: "25m"
+#         limits:
+#             memory: "256Mi"
+#             cpu: "50m"
+
 # Overwrite database
 database: {}
 
@@ -21,7 +51,12 @@ database: {}
 application: {}
 
 # Overwrite application rest config
-application_rest: {}
+application_rest: 
+    nginx:
+        image:
+            name: nginx
+            version: stable
+            imagePullPolicy: IfNotPresent
 
 # Overwrite scheduler config
 application_scheduler:
@@ -43,9 +78,26 @@ application_worker:
       queue: monitoring_q
       pool: 1
 
+##########################
 # local sidecar
 ##########################
-#sidecar:
+sidecar:
+    rest_web:
+        image:
+            name: nginx
+            version: stable
+            imagePullPolicy: IfNotPresent
+        resources: {}
+        #     requests:
+        #         memory: "128Mi"
+        #         cpu: "25m"
+        #     limits:
+        #         memory: "256Mi"
+        #         cpu: "50m"
+    grpc: {} 
+    rest: {}
+    scheduler: {}
+    worker: {}
 
 
 ##########################
