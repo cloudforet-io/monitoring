@@ -99,12 +99,12 @@ class TestMetricService(unittest.TestCase):
                 'cloud_service_id': cs_id_1,
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-1234'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }, {
                 'cloud_service_id': cs_id_2,
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }
         ]
 
@@ -164,43 +164,43 @@ class TestMetricService(unittest.TestCase):
                 'data': {'cloudwatch': {}},
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-1234'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }, {
                 'cloud_service_id': cs_id_2,
                 'data': {'cloudwatch': {}},
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }, {
                 'cloud_service_id': cs_id_3,
                 'data': {'cloudwatch': {}},
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }, {
                 'cloud_service_id': cs_id_4,
                 'data': {'cloudwatch': {}},
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }, {
                 'cloud_service_id': cs_id_5,
                 'data': {'cloudwatch': {}},
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }, {
                 'cloud_service_id': cs_id_6,
                 'data': {'cloudwatch': {}},
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }, {
                 'cloud_service_id': cs_id_7,
                 'data': {'cloudwatch': {}},
                 'region_code': 'ap-northeast-2',
                 'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-4567'},
-                'collection_info': {'secrets': [utils.generate_id('secret')]}
+                'collection_info': {'secret_id': [utils.generate_id('secret')]}
             }
         ]
 
