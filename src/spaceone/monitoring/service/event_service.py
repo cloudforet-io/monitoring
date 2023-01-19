@@ -62,7 +62,8 @@ class EventService(BaseService):
 
             if updated_version:
                 _LOGGER.debug(f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}')
-                webhook_vo: Webhook = self.webhook_mgr.get_webhook(webhook_data['webhook_id'], webhook_data['domain_id'])
+                webhook_vo: Webhook = self.webhook_mgr.get_webhook(webhook_data['webhook_id'],
+                                                                   webhook_data['domain_id'])
                 webhook_plugin_mgr.upgrade_webhook_plugin_version(webhook_vo, endpoint, updated_version)
                 cache.delete(f'webhook-data:{webhook_data["webhook_id"]}')
 
@@ -245,8 +246,7 @@ class EventService(BaseService):
 
         alert_vo = alert_mgr.create_alert(alert_data)
 
-        if self._check_notification_urgency(alert_vo):
-            self._create_notification(alert_vo, 'create_alert_notification')
+        self._create_notification(alert_vo, 'create_alert_notification')
 
         return alert_vo
 
@@ -283,13 +283,6 @@ class EventService(BaseService):
     def _get_notification_urgency(self, project_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(project_id, domain_id)
         return project_alert_config_vo.options.notification_urgency
-
-    def _check_notification_urgency(self, alert_vo: Alert):
-        notification_urgency = self._get_notification_urgency(alert_vo.project_id, alert_vo.domain_id)
-        if alert_vo.urgency == 'LOW' and notification_urgency == 'HIGH_ONLY':
-            return False
-        else:
-            return True
 
     def _create_notification(self, alert_vo: Alert, method):
         # if alert_vo.state != 'ERROR':
