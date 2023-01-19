@@ -36,7 +36,7 @@ class InventoryManager(BaseManager):
 
     @staticmethod
     def _make_query(resources, required_keys):
-        only_keys = list(set(['cloud_service_id', 'collection_info.secrets', 'region_code'] + required_keys))
+        only_keys = list(set(['cloud_service_id', 'collection_info.secret_id', 'region_code'] + required_keys))
         only_keys.sort()
 
         return {
