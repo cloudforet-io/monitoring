@@ -353,9 +353,9 @@ class JobService(BaseService):
 
     @staticmethod
     def _check_notification_options(alert_urgency, alert_id, alert_options):
-        if alert_options['notification_urgency'] == 'HIGH' and alert_urgency == 'LOW':
+        if alert_options['notification_urgency'] == 'HIGH_ONLY' and alert_urgency == 'LOW':
             _LOGGER.debug(f'[_check_notification_options] Stop notifications. '
-                          f'(notification_urgency = HIGH, alert_urgency = LOW, alert_id = {alert_id})')
+                          f'(notification_urgency = HIGH_ONLY, alert_urgency = LOW, alert_id = {alert_id})')
             return False
         else:
             return True
