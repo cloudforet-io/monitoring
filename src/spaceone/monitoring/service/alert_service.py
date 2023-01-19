@@ -65,8 +65,7 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.create_alert(params)
 
-        if self._check_notification_urgency(alert_vo.urgency, project_alert_config_vo):
-            self._create_notification(alert_vo, 'create_alert_notification')
+        self._create_notification(alert_vo, 'create_alert_notification')
 
         return alert_vo
 
@@ -476,14 +475,6 @@ class AlertService(BaseService):
             method,
             params
         )
-
-    @staticmethod
-    def _check_notification_urgency(urgency, project_alert_config_vo):
-        project_urgency = project_alert_config_vo.options.notification_urgency
-        if urgency == 'LOW' and project_urgency == 'HIGH_ONLY':
-            return False
-        else:
-            return True
 
     @staticmethod
     def _check_access_key(alert_id, access_key):
