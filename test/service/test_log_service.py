@@ -82,7 +82,7 @@ class TestMetricService(unittest.TestCase):
         mock_get_server.return_value = {
             'server_id': server_id,
             'reference': {'resource_id': 'arn:aws:ec2:ap-northeast-2:123456789012:instance/i-1234'},
-            'collection_info': {'secrets': [utils.generate_id('secret')]}
+            'collection_info': {'secret_id': [utils.generate_id('secret')]}
         }
 
         new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
