@@ -1,0 +1,19 @@
+apiVersion: skaffold/v4beta1
+kind: Config
+metadata:
+  name: monitoring
+build:
+  platforms: ["linux/amd64"]
+  tagPolicy:
+    sha256: {}
+  artifacts:
+    - image: ${IMAGE_REPOSITORY}/monitoring
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  helm:
+    releases:
+    - name: monitoring
+      chartPath: deploy/helm
+      valuesFiles:
+      - ${VALUES_LOCATION}/monitoring.yaml
