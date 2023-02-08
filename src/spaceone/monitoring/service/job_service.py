@@ -470,10 +470,6 @@ class JobService(BaseService):
             {
                 'key': 'Project',
                 'value': project_name
-            },
-            {
-                'key': 'Account',
-                'value': alert_vo.account
             }
         ]
 
@@ -495,6 +491,12 @@ class JobService(BaseService):
             tags.append({
                 'key': 'Status Message',
                 'value': alert_vo.status_message
+            })
+
+        if alert_vo.account:
+            tags.append({
+                'key': 'Account',
+                'value': alert_vo.account
             })
 
         callbacks = []
