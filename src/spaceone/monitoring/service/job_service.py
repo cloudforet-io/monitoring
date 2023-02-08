@@ -470,6 +470,10 @@ class JobService(BaseService):
             {
                 'key': 'Project',
                 'value': project_name
+            },
+            {
+                'key': 'Account',
+                'value': alert_vo.account
             }
         ]
 
