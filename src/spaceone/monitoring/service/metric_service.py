@@ -72,7 +72,8 @@ class MetricService(BaseService):
         list_metric_params = []
         for cloud_service_info in cloud_services_info:
             secret = self.secret_mgr.get_secret_from_resource(cloud_service_info, data_source_vo, domain_id)
-            secret_data = self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)
+            secret_data = self.secret_mgr.get_secret_data(secret.get('secret_id', ''), domain_id)
+
             query = self.get_query_from_cloud_service(cloud_service_info, plugin_info)
 
             list_metric_params.append({
@@ -187,7 +188,7 @@ class MetricService(BaseService):
             if cloud_service_id in metric_query:
                 region_code = self.get_region_from_resource(resource)
                 secret = self.secret_mgr.get_secret_from_resource(resource, data_source_vo, domain_id)
-                chunk_key = self._generate_chunk_key(provider, region_code, secret['secret_id'])
+                chunk_key = self._generate_chunk_key(provider, region_code, secret.get('secret_id', ''))
 
                 metric_query[cloud_service_id]['region_name'] = region_code
                 chunk_resource = {cloud_service_id: metric_query[cloud_service_id]}
