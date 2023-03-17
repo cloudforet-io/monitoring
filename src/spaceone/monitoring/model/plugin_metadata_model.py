@@ -34,3 +34,5 @@ class MetricPluginMetadataModel(Model):
 class LogPluginMetadataModel(Model):
     required_keys = ListType(StringType)
     view = DictType(BaseType)
+    supported_providers = ListType(StringType)
+
