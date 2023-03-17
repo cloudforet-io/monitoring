@@ -14,19 +14,25 @@ class SecretManager(BaseManager):
         self.secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
 
     def get_secret_from_resource(self, resource, data_source_vo, domain_id):
-        secret = None
-        resource_secrets = []
-        for collection_info in resource.get('collection_info', []):
-            if secret_id := collection_info.get('secret_id'):
-                resource_secrets.append(secret_id)
+        secret = {}
 
-        if data_source_vo.capability.get('use_resource_secret', False):
-            secret_filter = {
-                'provider': data_source_vo.plugin_info.provider,
-                'supported_schema': data_source_vo.capability.get('supported_schema', []),
-                'secrets': resource_secrets
-            }
-            secret = self.list_secrets_from_query(secret_filter, domain_id)[0]
+        if data_source_plugin_info := data_source_vo.plugin_info:
+            if secret_id := data_source_plugin_info.secret_id:
+                secret = self.list_secrets_from_query({'secret_id': secret_id})[0]
+
+        if not secret:
+            resource_secrets = []
+            for collection_info in resource.get('collection_info', []):
+                if secret_id := collection_info.get('secret_id'):
+                    resource_secrets.append(secret_id)
+
+            if data_source_vo.capability.get('use_resource_secret', False):
+                secret_filter = {
+                    'provider': data_source_vo.plugin_info.provider,
+                    'supported_schema': data_source_vo.capability.get('supported_schema', []),
+                    'secrets': resource_secrets
+                }
+                secret = self.list_secrets_from_query(secret_filter, domain_id)[0]
 
         return secret
 
