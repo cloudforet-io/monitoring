@@ -29,6 +29,7 @@ class TemplateModel(Model):
 class MetricPluginMetadataModel(Model):
     supported_stat = ListType(StringType, required=True)
     required_keys = ListType(StringType)
+    supported_providers = ListType(StringType)
 
 
 class LogPluginMetadataModel(Model):
