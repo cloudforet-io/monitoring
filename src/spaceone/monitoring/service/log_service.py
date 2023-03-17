@@ -51,6 +51,7 @@ class LogService(BaseService):
         start = params['start']
         end = params.get('end', str(datetime.datetime.now()))
         domain_id = params['domain_id']
+        secret_data = {}
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
         self._check_data_source_state(data_source_vo)
@@ -60,7 +61,7 @@ class LogService(BaseService):
         cloud_service_info = self.inventory_mgr.get_cloud_service(resource_id, domain_id)
         query = self.get_query_from_cloud_service(cloud_service_info, data_source_vo.plugin_info)
         secret = self.secret_mgr.get_secret_from_resource(cloud_service_info, data_source_vo, domain_id)
-        secret_data = self.secret_mgr.get_secret_data(secret['secret_id'], domain_id)
+        secret_data = self.secret_mgr.get_secret_data(secret.get('secret_id', ''), domain_id)
 
         logs_info = self.ds_plugin_mgr.list_logs(secret.get('schema'), plugin_options, secret_data,
                                                  query, params.get('keyword'),
