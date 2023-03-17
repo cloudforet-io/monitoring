@@ -18,7 +18,7 @@ class SecretManager(BaseManager):
 
         if data_source_plugin_info := data_source_vo.plugin_info:
             if secret_id := data_source_plugin_info.secret_id:
-                secret = self.list_secrets_from_query({'secret_id': secret_id})[0]
+                secret = self.list_secrets_from_query({'secret_id': secret_id}, domain_id)[0]
 
         if not secret:
             resource_secrets = []
