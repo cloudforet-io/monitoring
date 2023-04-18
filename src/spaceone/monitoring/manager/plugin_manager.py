@@ -24,4 +24,5 @@ class PluginManager(BaseManager):
             }
         )
 
+        _LOGGER.debug(f'[get_plugin_endpoint] response: {response}')
         return response['endpoint'], response.get('updated_version')
