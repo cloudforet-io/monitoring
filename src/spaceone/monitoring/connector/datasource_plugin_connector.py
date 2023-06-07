@@ -11,8 +11,8 @@ _LOGGER = logging.getLogger(__name__)
 
 class DataSourcePluginConnector(BaseConnector):
 
-    def __init__(self, transaction, config):
-        super().__init__(transaction, config)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.client = None
 
     def initialize(self, endpoint):
