@@ -81,12 +81,13 @@ class LogService(BaseService):
         metadata = plugin_info.metadata
         required_keys = metadata.get('required_keys', [])
 
-        _LOGGER.debug(f'[get_query_from_cloud_service] metadata: {metadata}')
-        _LOGGER.debug(f'[get_query_from_cloud_service] required_keys: {required_keys}')
-
         if required_keys:
             query_key = required_keys[0]
-            return get_dict_value(cloud_service_info, query_key, default_value={})
+            query = get_dict_value(cloud_service_info, query_key, default_value={})
+            if query:
+                return query
+            else:
+                raise ERROR_REQUIRED_KEYS_NOT_EXISTS(plugin_id=plugin_info.plugin_id)
         else:
             raise ERROR_REQUIRED_KEYS_NOT_EXISTS(plugin_id=plugin_info.plugin_id)
 
