@@ -55,7 +55,7 @@ class EventManager(BaseManager):
     def stat_events(self, query):
         return self.event_model.stat(**query)
 
-    def get_event_by_key(self, event_key, domain_id):
+    def get_event_by_key(self, event_key, domain_id, project_id):
         same_event_time = config.get_global('SAME_EVENT_TIME', 600)
         same_event_datetime = datetime.utcnow() - timedelta(seconds=same_event_time)
 
@@ -69,6 +69,11 @@ class EventManager(BaseManager):
                 {
                     'k': 'domain_id',
                     'v': domain_id,
+                    'o': 'eq'
+                },
+                {
+                    'k': 'project_id',
+                    'v': project_id,
                     'o': 'eq'
                 },
                 {
