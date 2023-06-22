@@ -25,9 +25,9 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class EventService(BaseService):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.resource = 'Event'
         self.event_mgr: EventManager = self.locator.get_manager('EventManager')
         self.webhook_mgr: WebhookManager = self.locator.get_manager('WebhookManager')
 
@@ -302,9 +302,6 @@ class EventService(BaseService):
 
     def _set_transaction_token(self):
         self.transaction.set_meta('token', config.get_global('TOKEN'))
-        self.transaction.service = 'monitoring'
-        self.transaction.resource = 'Event'
-        self.transaction.verb = 'create'
 
     @staticmethod
     def _create_error_event(webhook_name, error_message):
