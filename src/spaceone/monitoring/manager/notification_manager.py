@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import config
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 
@@ -11,7 +12,8 @@ class NotificationManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.notification_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
-                                                                                 service='notification')
+                                                                                 service='notification',
+                                                                                 token=config.get_global('TOKEN'))
 
     def create_notification(self, message):
         _LOGGER.debug(f'Notify message: {message}')
