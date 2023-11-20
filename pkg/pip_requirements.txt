@@ -1,4 +1,3 @@
-spaceone-core
 spaceone-api
 mongoengine
 redis
