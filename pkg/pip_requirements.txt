@@ -3,3 +3,4 @@ mongoengine
 redis
 schematics
 boto3
+pydantic
