@@ -3,15 +3,17 @@ from spaceone.monitoring.plugin.webhook.lib.server import WebhookPluginServer
 
 app = WebhookPluginServer()
 
+
 @app.route('Webhook.init')
 def webhook_init(params: dict) -> dict:
     """ init plugin by options
 
-    :param params (WebhookReauest): {
-        'options': 'dict'   # Required
-    }
+    Args:
+        params (WebhookInitRequest): {
+            'options': 'dict'      # Required
+        }
 
-    :return:
+    Returns:
         WebhookResponse: {
             'metadata': 'dict'
         }
@@ -21,13 +23,17 @@ def webhook_init(params: dict) -> dict:
 
 @app.route('Webhook.verify')
 def webhook_verify(params: dict) -> None:
-    """ verifying plugin
+    """ Verifying webhook plugin
 
-    :param params (WebhookRequest): {
-            'options': 'dict'   # Required
+    Args:
+        params (WebhookVerityRequest): {
+            'options': 'dict',      # Required
+            'secret_data': 'dict',  # Required
+            'schema': 'str',
+            'domain_id': 'str'      # Required
         }
 
-    :return:
+    Returns:
         None
     """
     pass
@@ -35,7 +41,7 @@ def webhook_verify(params: dict) -> None:
 
 @app.route('Event.parse')
 def event_parse(params: dict) -> List[dict]:
-    """ Persing Event Webhook
+    """ Parsing Event Webhook
 
     Args:
         params (EventRequest): {
@@ -46,16 +52,16 @@ def event_parse(params: dict) -> List[dict]:
     Returns:
         List[EventResponse]
         {
-            'event_key': 'str'
-            'event_type': 'str'
-            'title': 'str'
-            'description': 'str'
-            'severity': 'str'
-            'resource': dict
-            'rule': 'str'
-            'occurred_at': 'datetime'
-            'additional_info': dict
-            'image_url': ''
+            'event_key': 'str',         # Required
+            'event_type': 'str',        # Required
+            'title': 'str',
+            'description': 'str',
+            'severity': 'str',
+            'resource': 'dict',
+            'rule': 'str',              # Required
+            'occurred_at': 'datetime',  # Required
+            'additional_info': 'dict',
+            'image_url': 'str'
         }
     """
     pass

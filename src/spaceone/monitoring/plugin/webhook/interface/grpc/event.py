@@ -1,6 +1,9 @@
+import logging
 from spaceone.core.pygrpc import BaseAPI
 from spaceone.api.monitoring.plugin import event_pb2, event_pb2_grpc
 from spaceone.monitoring.plugin.webhook.service.event_service import EventService
+
+_Logger = logging.getLogger('spaceone')
 
 
 class Event(BaseAPI, event_pb2_grpc.EventServicer):
@@ -11,5 +14,5 @@ class Event(BaseAPI, event_pb2_grpc.EventServicer):
     def parse(self, request, context):
         params, metadata = self.parse_request(request, context)
         event_svc = EventService(metadata)
-        for response in event_svc.get_data(params):
-            yield self.dict_to_message(response)
+        response = event_svc.parse(params)
+        return self.dict_to_message(response)

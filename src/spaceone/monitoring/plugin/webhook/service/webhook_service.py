@@ -1,8 +1,8 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model, check_required
-from spaceone.monitoring.plugin.webhook.model.webhook_request import WebhookRequest
-from spaceone.monitoring.plugin.webhook.model.webhook_response import WebhookResponse
+from spaceone.core.service import BaseService, transaction, convert_model
+from spaceone.monitoring.plugin.webhook.model.webhook.request import WebhookInitRequest, WebhookVerityRequest
+from spaceone.monitoring.plugin.webhook.model.webhook.response import WebhookResponse
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -11,11 +11,10 @@ class WebhookService(BaseService):
 
     @transaction
     @convert_model
-    @check_required(['options'])
-    def init(self, params: WebhookRequest) -> Union[dict, WebhookResponse]:
+    def init(self, params: WebhookInitRequest) -> Union[dict, WebhookResponse]:
         """ init plugin by options
 
-        :param params (WebhookReauest): {
+        :param params: WebhookRequest: {
             'options': 'dict'   # Required
         }
 
@@ -24,18 +23,17 @@ class WebhookService(BaseService):
                 'metadata': 'dict'
             }
         """
-
         func = self.get_plugin_method('init')
         response = func(params.dict())
+        _LOGGER.debug(f'[WebhookService] init -> {response}')
         return WebhookResponse(**response)
 
     @transaction
     @convert_model
-    @check_required(['options'])
-    def verify(self, params: WebhookRequest) -> None:
+    def verify(self, params: WebhookVerityRequest) -> None:
         """ verifying plugin
 
-        :param params (WebhookRequest): {
+        :param params: WebhookRequest: {
                 'options': 'dict'   # Request
             }
 

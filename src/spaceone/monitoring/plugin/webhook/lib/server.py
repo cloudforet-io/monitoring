@@ -9,15 +9,15 @@ __all__ = ['WebhookPluginServer']
 
 class WebhookPluginServer(PluginServer):
 
-        _grpc_app: GRPCServer = app
-        _global_conf_path: str = 'spaceone.monitoring.plugin.webhook.conf.global_conf:global_conf'
-        _plugin_methods = {
-            'Webhook': {
-                'service': WebhookService,
-                'methods': ['init', 'verify']
-            },
-            'Event': {
-                'service': EventService,
-                'methods': ['parse']
-            }
+    _grpc_app: GRPCServer = app
+    _global_conf_path: str = 'spaceone.monitoring.plugin.webhook.conf.global_conf:global_conf'
+    _plugin_methods = {
+        'Webhook': {
+            'service': WebhookService,
+            'methods': ['init', 'verify']
+        },
+        'Event': {
+            'service': EventService,
+            'methods': ['parse']
         }
+    }

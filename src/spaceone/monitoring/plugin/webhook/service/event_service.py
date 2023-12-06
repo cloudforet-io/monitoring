@@ -1,8 +1,8 @@
 import logging
-from typing import List
-from spaceone.core.service import BaseService, transaction, convert_model, check_required
-from spaceone.monitoring.plugin.webhook.model.event_request import EventRequest
-from spaceone.monitoring.plugin.webhook.model.event_response import EventResponse
+from typing import Union
+from spaceone.core.service import BaseService, transaction, convert_model, change_timestamp_value
+from spaceone.monitoring.plugin.webhook.model.event.request import EventParseRequest
+from spaceone.monitoring.plugin.webhook.model.event.response import EventsResponse
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -11,9 +11,8 @@ class EventService(BaseService):
 
     @transaction
     @convert_model
-    @check_required(['options', 'data'])
-    def parse(self, params: EventRequest) -> List[EventResponse]:
-        """ Persing Event Webhook
+    def parse(self, params: EventParseRequest) -> Union[EventsResponse, dict]:
+        """ Parsing Event Webhook
 
         Args:
             params (EventRequest): {
@@ -22,7 +21,7 @@ class EventService(BaseService):
             }
 
         Returns:
-            List[EventResponse]
+            Union[EventResponse, dict]
         """
         func = self.get_plugin_method('parse')
         return func(params.dict())
