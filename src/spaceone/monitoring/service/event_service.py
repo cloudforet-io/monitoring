@@ -1,21 +1,22 @@
-import logging
 import copy
+import logging
 
-from spaceone.core.service import *
 from spaceone.core import utils, cache, config
+from spaceone.core.service import *
+
 from spaceone.monitoring.error.webhook import *
-from spaceone.monitoring.model.event_model import Event
-from spaceone.monitoring.model.alert_model import Alert
-from spaceone.monitoring.model.webhook_model import Webhook
-from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
-from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.manager.alert_manager import AlertManager
-from spaceone.monitoring.manager.webhook_manager import WebhookManager
 from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
 from spaceone.monitoring.manager.job_manager import JobManager
-from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
 from spaceone.monitoring.manager.project_alert_config_manager import ProjectAlertConfigManager
+from spaceone.monitoring.manager.webhook_manager import WebhookManager
+from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
+from spaceone.monitoring.model.alert_model import Alert
+from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
+from spaceone.monitoring.model.event_model import Event
+from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
+from spaceone.monitoring.model.webhook_model import Webhook
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -198,9 +199,7 @@ class EventService(BaseService):
                                                           event_data['project_id'])
 
         if event_vo and event_vo.alert.state != 'RESOLVED':
-            # Resolve alert when receiving recovery event
-            if event_data['event_type'] == 'RECOVERY':
-                self._update_alert_state(event_vo.alert)
+            self._update_alert(event_vo.alert, event_data)
 
             event_data['alert_id'] = event_vo.alert_id
             event_data['alert'] = event_vo.alert
@@ -247,7 +246,7 @@ class EventService(BaseService):
 
         alert_vo = alert_mgr.create_alert(alert_data)
 
-        self._create_notification(alert_vo, 'create_alert_notification')
+        self._create_notification(alert_vo.alert_id, alert_vo.domain_id, 'create_alert_notification')
 
         return alert_vo
 
@@ -265,12 +264,32 @@ class EventService(BaseService):
 
         return escalation_policy_vo.escalation_policy_id, escalation_policy_vo.repeat_count
 
-    def _update_alert_state(self, alert_vo: Alert):
-        if self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id) and alert_vo.state != 'RESOLVED':
-            alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
-            alert_mgr.update_alert_by_vo({'state': 'RESOLVED'}, alert_vo)
+    def _update_alert(self, alert_vo: Alert, event_data: dict) -> None:
+        # Resolve alert when receiving recovery event
+        alert_id = alert_vo.alert_id
+        domain_id = alert_vo.domain_id
 
-            self._create_notification(alert_vo, 'create_resolved_notification')
+        alert_mgr: AlertManager = self.locator.get_manager('AlertManager')
+        update_params = {
+            'description': event_data.get('description', '')
+        }
+
+        is_resolved = self._check_resolved_state(event_data, alert_vo)
+
+        if is_resolved:
+            update_params['state'] = 'RESOLVED'
+
+        alert_mgr.update_alert_by_vo(update_params, alert_vo)
+
+        if is_resolved:
+            self._create_notification(alert_id, domain_id, 'create_resolved_notification')
+
+    def _check_resolved_state(self, event_data: dict, alert_vo: Alert) -> bool:
+        if event_data['event_type'] == 'RECOVERY' and alert_vo.state != 'RESOLVED' \
+                and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id):
+            return True
+        else:
+            return False
 
     @cache.cacheable(key='auto-recovery:{domain_id}:{project_id}', expire=300)
     def _is_auto_recovery(self, project_id, domain_id):
@@ -285,7 +304,7 @@ class EventService(BaseService):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(project_id, domain_id)
         return project_alert_config_vo.options.notification_urgency
 
-    def _create_notification(self, alert_vo: Alert, method):
+    def _create_notification(self, alert_id, domain_id, method):
         # if alert_vo.state != 'ERROR':
         self._set_transaction_token()
 
@@ -295,8 +314,8 @@ class EventService(BaseService):
             'JobService',
             method,
             {
-                'alert_id': alert_vo.alert_id,
-                'domain_id': alert_vo.domain_id
+                'alert_id': alert_id,
+                'domain_id': domain_id
             }
         )
 
