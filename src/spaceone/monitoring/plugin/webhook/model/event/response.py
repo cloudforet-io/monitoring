@@ -3,10 +3,10 @@ from datetime import datetime
 from pydantic import BaseModel
 from spaceone.core import utils
 
-__all__ = ['EventResponse', 'EventsResponse']
+__all__ = ["EventResponse", "EventsResponse"]
 
-EventType = Literal['ALERT', 'RECOVERY']
-Severity = Literal['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'NOT_AVAILABLE', 'NONE']
+EventType = Literal["ALERT", "RECOVERY"]
+Severity = Literal["CRITICAL", "ERROR", "WARNING", "INFO", "NOT_AVAILABLE", "NONE"]
 
 
 class Resource(BaseModel):
@@ -29,7 +29,7 @@ class EventResponse(BaseModel):
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
-        data['occurred_at'] = utils.datetime_to_iso8601(data['occurred_at'])
+        data["occurred_at"] = utils.datetime_to_iso8601(data["occurred_at"])
         return data
 
 

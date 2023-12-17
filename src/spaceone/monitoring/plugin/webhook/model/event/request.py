@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-__all__ = ['EventParseRequest']
+__all__ = ["EventParseRequest"]
 
 
 class EventParseRequest(BaseModel):

@@ -1,4 +1,4 @@
-spaceone-api==2.0.13
+spaceone-api
 mongoengine
 redis
 schematics

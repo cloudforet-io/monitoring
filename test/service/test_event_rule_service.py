@@ -28,19 +28,17 @@ def key_value_name_func(testcase_func, param_num, param):
 
 
 class TestEventRuleService(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-        config.init_conf(package='spaceone.monitoring')
+        config.init_conf(package="spaceone.monitoring")
         config.set_service_config()
         config.set_global(MOCK_MODE=True)
-        connect('test', host='mongomock://localhost')
+        connect("test", host="mongomock://localhost")
 
-        cls.domain_id = utils.generate_id('domain')
-        cls.transaction = Transaction({
-            'service': 'monitoring',
-            'api_class': 'EventRule'
-        })
+        cls.domain_id = utils.generate_id("domain")
+        cls.transaction = Transaction(
+            {"service": "monitoring", "api_class": "EventRule"}
+        )
         super().setUpClass()
 
     @classmethod
@@ -50,74 +48,69 @@ class TestEventRuleService(unittest.TestCase):
 
     def tearDown(self, *args) -> None:
         print()
-        print('(tearDown) ==> Delete all data_sources')
+        print("(tearDown) ==> Delete all data_sources")
         event_rule_vos = EventRule.objects.filter()
         event_rule_vos.delete()
 
-    @parameterized.expand([["description", "test"], ["account", "1234567890"]], name_func=key_value_name_func)
-    @patch.object(IdentityManager, 'get_project', return_value={'project_id': 'project-xyz', 'name': 'Project X'})
+    @parameterized.expand(
+        [["description", "test"], ["account", "1234567890"]],
+        name_func=key_value_name_func,
+    )
+    @patch.object(
+        IdentityManager,
+        "get_project",
+        return_value={"project_id": "project-xyz", "name": "Project X"},
+    )
     def test_create_event_rule(self, key, value, *args):
         params = {
-            'name': 'aaa',
-            'conditions': [
-                {
-                    "key": key,
-                    "value": value,
-                    "operator": "contain"
-                }
-            ],
-            'conditions_policy': "ALL",
-            'actions': {
-                "add_additional_info": {}
-            },
-            'options': {},
-            'project_id': 'project-xyz',
-            'tags': {},
-            'domain_id': self.domain_id
+            "name": "aaa",
+            "conditions": [{"key": key, "value": value, "operator": "contain"}],
+            "conditions_policy": "ALL",
+            "actions": {"add_additional_info": {}},
+            "options": {},
+            "project_id": "project-xyz",
+            "tags": {},
+            "domain_id": self.domain_id,
         }
 
         event_rule_svc = EventRuleService(transaction=self.transaction)
         event_rule_svc_vo = event_rule_svc.create(params.copy())
 
-        print_data(event_rule_svc_vo.to_dict(), 'test_create_event_rule')
+        print_data(event_rule_svc_vo.to_dict(), "test_create_event_rule")
 
         self.assertIsInstance(event_rule_svc_vo, EventRule)
-        self.assertEqual(params['name'], event_rule_svc_vo.name)
-        self.assertEqual(params['domain_id'], event_rule_svc_vo.domain_id)
+        self.assertEqual(params["name"], event_rule_svc_vo.name)
+        self.assertEqual(params["domain_id"], event_rule_svc_vo.domain_id)
 
     def test_update_event_rule(self):
         event_rule_vo = EventRuleFactory(domain_id=self.domain_id)
 
-        condition = {
-            'key': 'title',
-            'value': 'new',
-            'operator': 'eq'
-        }
+        condition = {"key": "title", "value": "new", "operator": "eq"}
 
         params = {
             "event_rule_id": event_rule_vo.event_rule_id,
-            "conditions": [
-                condition
-            ],
+            "conditions": [condition],
             "conditions_policy": "ALL",
             "actions": {"add_additional_info": {}},
             "options": {},
-            "domain_id": event_rule_vo.domain_id
+            "domain_id": event_rule_vo.domain_id,
         }
 
-        self.transaction.method = 'update'
+        self.transaction.method = "update"
         event_rule_svc = EventRuleService(transaction=self.transaction)
         update_event_rule_vo = event_rule_svc.update(params.copy())
 
-        print_data(update_event_rule_vo.to_dict(), 'test_update_event_rule')
+        print_data(update_event_rule_vo.to_dict(), "test_update_event_rule")
         EventRuleInfo(update_event_rule_vo)
 
         self.assertIsInstance(update_event_rule_vo, EventRule)
-        self.assertEqual(condition['key'], update_event_rule_vo.conditions[0].key)
-        self.assertEqual(condition['value'], update_event_rule_vo.conditions[0].value)
-        self.assertEqual(condition['operator'], update_event_rule_vo.conditions[0].operator)
-        self.assertEqual(params['event_rule_id'], update_event_rule_vo.event_rule_id)
-        self.assertEqual(params['domain_id'], update_event_rule_vo.domain_id)
+        self.assertEqual(condition["key"], update_event_rule_vo.conditions[0].key)
+        self.assertEqual(condition["value"], update_event_rule_vo.conditions[0].value)
+        self.assertEqual(
+            condition["operator"], update_event_rule_vo.conditions[0].operator
+        )
+        self.assertEqual(params["event_rule_id"], update_event_rule_vo.event_rule_id)
+        self.assertEqual(params["domain_id"], update_event_rule_vo.domain_id)
 
     @parameterized.expand([[1], [2], [3]], name_func=order_name_func)
     def test_change_order_event_rule(self, current_order):
@@ -126,15 +119,15 @@ class TestEventRuleService(unittest.TestCase):
         target_event_rule_vo = event_rule_vos[0]
 
         params = {
-            'event_rule_id': target_event_rule_vo.event_rule_id,
-            'order': current_order,
-            'domain_id': self.domain_id
+            "event_rule_id": target_event_rule_vo.event_rule_id,
+            "order": current_order,
+            "domain_id": self.domain_id,
         }
 
-        self.transaction.method = 'change_order'
+        self.transaction.method = "change_order"
         event_rule_svc = EventRuleService(transaction=self.transaction)
         result = event_rule_svc.change_order(params)
-        print_data(result.to_dict(), f'test_change_order(order={current_order})')
+        print_data(result.to_dict(), f"test_change_order(order={current_order})")
 
         self.assertIsInstance(result, EventRule)
         self.assertEqual(result.order, current_order)
@@ -146,12 +139,12 @@ class TestEventRuleService(unittest.TestCase):
         target_event_rule_vo = event_rule_vos[2]
 
         params = {
-            'event_rule_id': target_event_rule_vo.event_rule_id,
-            'order': current_order,
-            'domain_id': self.domain_id
+            "event_rule_id": target_event_rule_vo.event_rule_id,
+            "order": current_order,
+            "domain_id": self.domain_id,
         }
 
-        self.transaction.method = 'change_order'
+        self.transaction.method = "change_order"
         event_rule_svc = EventRuleService(transaction=self.transaction)
 
         with self.assertRaises(ERROR_INVALID_PARAMETER):
@@ -163,12 +156,12 @@ class TestEventRuleService(unittest.TestCase):
         target_event_rule_vo = event_rule_vos[2]
 
         params = {
-            'event_rule_id': target_event_rule_vo.event_rule_id,
-            'order': 7,
-            'domain_id': self.domain_id
+            "event_rule_id": target_event_rule_vo.event_rule_id,
+            "order": 7,
+            "domain_id": self.domain_id,
         }
 
-        self.transaction.method = 'change_order'
+        self.transaction.method = "change_order"
         event_rule_svc = EventRuleService(transaction=self.transaction)
 
         with self.assertRaises(ERROR_INVALID_PARAMETER):
@@ -178,11 +171,11 @@ class TestEventRuleService(unittest.TestCase):
         event_rule_vo = EventRuleFactory(domain_id=self.domain_id)
 
         params = {
-            'event_rule_id': event_rule_vo.event_rule_id,
-            'domain_id': self.domain_id
+            "event_rule_id": event_rule_vo.event_rule_id,
+            "domain_id": self.domain_id,
         }
 
-        self.transaction.method = 'delete'
+        self.transaction.method = "delete"
         event_rule_svc = EventRuleService(transaction=self.transaction)
         result = event_rule_svc.delete(params)
 
@@ -192,15 +185,15 @@ class TestEventRuleService(unittest.TestCase):
         event_rule_vo = EventRuleFactory(domain_id=self.domain_id)
 
         params = {
-            'event_rule_id': event_rule_vo.event_rule_id,
-            'domain_id': self.domain_id
+            "event_rule_id": event_rule_vo.event_rule_id,
+            "domain_id": self.domain_id,
         }
 
-        self.transaction.method = 'get'
+        self.transaction.method = "get"
         event_rule_svc = EventRuleService(transaction=self.transaction)
         get_event_rule_vo = event_rule_svc.get(params)
 
-        print_data(get_event_rule_vo.to_dict(), 'test_get_event_rule')
+        print_data(get_event_rule_vo.to_dict(), "test_get_event_rule")
         EventRuleInfo(get_event_rule_vo)
 
         self.assertIsInstance(get_event_rule_vo, EventRule)
@@ -210,11 +203,11 @@ class TestEventRuleService(unittest.TestCase):
         list(map(lambda vo: vo.save(), event_rule_vos))
 
         params = {
-            'event_rule_id': event_rule_vos[0].event_rule_id,
-            'domain_id': self.domain_id
+            "event_rule_id": event_rule_vos[0].event_rule_id,
+            "domain_id": self.domain_id,
         }
 
-        self.transaction.method = 'list'
+        self.transaction.method = "list"
         event_rule_svc = EventRuleService(transaction=self.transaction)
         event_rule_svc_vos, total_count = event_rule_svc.list(params)
         EventRulesInfo(event_rule_svc_vos, total_count)
@@ -228,22 +221,16 @@ class TestEventRuleService(unittest.TestCase):
         list(map(lambda vo: vo.save(), event_rule_vos))
 
         params = {
-            'domain_id': self.domain_id,
-            'query': {
-                'distinct': 'event_rule_id',
-                'page': {
-                    'start': 2,
-                    'limit': 3
-                }
-            }
+            "domain_id": self.domain_id,
+            "query": {"distinct": "event_rule_id", "page": {"start": 2, "limit": 3}},
         }
 
-        self.transaction.method = 'stat'
+        self.transaction.method = "stat"
         event_rule_svc = EventRuleService(transaction=self.transaction)
         values = event_rule_svc.stat(params)
         StatisticsInfo(values)
 
-        print_data(values, 'test_stat_event_rule_distinct')
+        print_data(values, "test_stat_event_rule_distinct")
 
 
 if __name__ == "__main__":

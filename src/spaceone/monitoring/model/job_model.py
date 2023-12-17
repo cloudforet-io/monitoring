@@ -9,9 +9,13 @@ class Error(EmbeddedDocument):
 
 
 class Job(MongoModel):
-    job_id = StringField(max_length=40, generate_id='job', unique=True)
+    job_id = StringField(max_length=40, generate_id="job", unique=True)
     domain_id = StringField(max_length=40, required=True)
-    status = StringField(max_length=20, default='IN_PROGRESS', choices=('IN_PROGRESS', 'SUCCESS', 'ERROR', 'TIMEOUT'))
+    status = StringField(
+        max_length=20,
+        default="IN_PROGRESS",
+        choices=("IN_PROGRESS", "SUCCESS", "ERROR", "TIMEOUT"),
+    )
     errors = ListField(EmbeddedDocumentField(Error, default=None, null=True))
     total_tasks = IntField(default=0)
     remained_tasks = IntField(default=0)
@@ -20,22 +24,20 @@ class Job(MongoModel):
     finished_at = DateTimeField(default=None, null=True)
 
     meta = {
-        'updatable_fields': [
-            'status',
-            'errors',
-            'total_tasks',
-            'remained_tasks',
-            'finished_at'
+        "updatable_fields": [
+            "status",
+            "errors",
+            "total_tasks",
+            "remained_tasks",
+            "finished_at",
         ],
-        'ordering': [
-            '-created_at'
-        ],
-        'indexes': [
+        "ordering": ["-created_at"],
+        "indexes": [
             # 'job_id',
-            'domain_id',
-            'status',
-            'total_tasks',
-            'remained_tasks',
-            'created_at'
-        ]
+            "domain_id",
+            "status",
+            "total_tasks",
+            "remained_tasks",
+            "created_at",
+        ],
     }

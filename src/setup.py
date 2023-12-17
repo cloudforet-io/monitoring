@@ -18,20 +18,15 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name='spaceone-monitoring',
-    version=os.environ.get('PACKAGE_VERSION'),
-    description='SpaceONE monitoring service',
-    long_description='',
-    url='https://www.spaceone.dev/',
-    author='MEGAZONE SpaceONE Team',
-    author_email='admin@spaceone.dev',
-    license='Apache License 2.0',
+    name="spaceone-monitoring",
+    version=os.environ.get("PACKAGE_VERSION"),
+    description="SpaceONE monitoring service",
+    long_description="",
+    url="https://www.spaceone.dev/",
+    author="MEGAZONE SpaceONE Team",
+    author_email="admin@spaceone.dev",
+    license="Apache License 2.0",
     packages=find_packages(),
-    install_requires=[
-        'spaceone-api==2.0.13',
-        'mongoengine',
-        'redis',
-        'schematics'
-    ],
+    install_requires=["spaceone-api==2.0.13", "mongoengine", "redis", "schematics"],
     zip_safe=False,
 )

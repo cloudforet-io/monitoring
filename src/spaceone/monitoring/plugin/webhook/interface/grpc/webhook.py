@@ -4,7 +4,6 @@ from spaceone.monitoring.plugin.webhook.service.webhook_service import WebhookSe
 
 
 class Webhook(BaseAPI, webhook_pb2_grpc.WebhookServicer):
-
     pb2 = webhook_pb2
     pb2_grpc = webhook_pb2_grpc
 

@@ -1,49 +1,61 @@
-WEBHOOK_DOMAIN = ''
-CONSOLE_DOMAIN = ''
+WEBHOOK_DOMAIN = ""
+CONSOLE_DOMAIN = ""
 
 # Service Description
-TITLE = 'Documentation for Monitoring Webhook'
-DESCRIPTION = ''
+TITLE = "Documentation for Monitoring Webhook"
+DESCRIPTION = ""
 
+# Database Settings
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {
-    'default': {
-        'db': 'monitoring',
-        'host': 'localhost',
-        'port': 27017,
-        'username': '',
-        'password': ''
+    "default": {
+        "db": "monitoring",
+        "host": "localhost",
+        "port": 27017,
+        "username": "",
+        "password": "",
     }
 }
 
+# Cache Settings
 CACHES = {
-    'default': {},
-    'local': {
-        'backend': 'spaceone.core.cache.local_cache.LocalCache',
-        'max_size': 128,
-        'ttl': 300
-    }
+    "default": {},
+    "local": {
+        "backend": "spaceone.core.cache.local_cache.LocalCache",
+        "max_size": 128,
+        "ttl": 300,
+    },
 }
 
+# Handler Settings
 HANDLERS = {
+    # "authentication": [{
+    #     "backend": "spaceone.core.handler.authentication_handler:SpaceONEAuthenticationHandler"
+    # }],
+    # "authorization": [{
+    #     "backend": "spaceone.core.handler.authorization_handler:SpaceONEAuthorizationHandler"
+    # }],
+    # "mutation": [{
+    #     "backend": "spaceone.core.handler.mutation_handler:SpaceONEMutationHandler"
+    # }],
+    # "event": []
 }
 
+# Connector Settings
 CONNECTORS = {
-    'SpaceConnector': {
-        'backend': 'spaceone.core.connector.space_connector.SpaceConnector',
-        'endpoints': {
-            'identity': 'grpc://identity:50051',
-            'inventory': 'grpc://inventory:50051',
-            'plugin': 'grpc://plugin:50051',
-            'repository': 'grpc://repository:50051',
-            'secret': 'grpc://secret:50051',
-            'notification': 'grpc://notification:50051'
-        }
+    "SpaceConnector": {
+        "backend": "spaceone.core.connector.space_connector.SpaceConnector",
+        "endpoints": {
+            "identity": "grpc://identity:50051",
+            "inventory": "grpc://inventory:50051",
+            "plugin": "grpc://plugin:50051",
+            "repository": "grpc://repository:50051",
+            "secret": "grpc://secret:50051",
+            "notification": "grpc://notification:50051",
+        },
     },
-    'DataSourcePluginConnector': {
-    },
-    'WebhookPluginConnector': {
-    },
+    "DataSourcePluginConnector": {},
+    "WebhookPluginConnector": {},
 }
 
 # Scheduler Settings
