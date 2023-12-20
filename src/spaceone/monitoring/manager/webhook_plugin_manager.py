@@ -17,7 +17,7 @@ class WebhookPluginManager(BaseManager):
             "WebhookPluginConnector"
         )
 
-    def initialize(self, endpoint):
+    def initialize(self, endpoint: str) -> None:
         _LOGGER.debug(f"[initialize] webhook plugin endpoint: {endpoint}")
         self.wp_connector.initialize(endpoint)
 

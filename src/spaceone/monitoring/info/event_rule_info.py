@@ -1,8 +1,9 @@
 import functools
 from typing import List
+
 from spaceone.api.monitoring.v1 import event_rule_pb2
-from spaceone.core.pygrpc.message_type import *
 from spaceone.core import utils
+from spaceone.core.pygrpc.message_type import *
 
 from spaceone.monitoring.model.event_rule_model import (
     EventRule,
@@ -27,23 +28,6 @@ def EventRuleConditionsInfo(condition_vos: List[EventRuleCondition]):
     return conditions_info
 
 
-def EventRuleActionResponderInfo(responders_data):
-    if responders_data is None:
-        responders_data = []
-
-    responders_info = []
-
-    for responder in responders_data:
-        info = {
-            "resource_type": responder.get("resource_type"),
-            "resource_id": responder.get("resource_id"),
-        }
-
-        responders_info.append(event_rule_pb2.EventRuleActionResponder(**info))
-
-    return responders_info
-
-
 def EventRuleActionsInfo(actions_data):
     if actions_data is None:
         return None
@@ -51,9 +35,7 @@ def EventRuleActionsInfo(actions_data):
         info = {}
 
         for key, value in actions_data.items():
-            if key == "add_responder":
-                info[key] = EventRuleActionResponderInfo(value)
-            elif key == "add_additional_info":
+            if key == "add_additional_info":
                 info[key] = change_struct_type(value)
             else:
                 info[key] = value
@@ -75,7 +57,7 @@ def EventRuleInfo(event_rule_vo: EventRule, minimal=False):
         "event_rule_id": event_rule_vo.event_rule_id,
         "name": event_rule_vo.name,
         "order": event_rule_vo.order,
-        "scope": event_rule_vo.scope,
+        "resource_group": event_rule_vo.resource_group,
         "project_id": event_rule_vo.project_id,
     }
 

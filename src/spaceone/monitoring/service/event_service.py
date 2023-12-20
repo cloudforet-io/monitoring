@@ -36,14 +36,14 @@ class EventService(BaseService):
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @check_required(["webhook_id", "access_key", "data"])
-    def create(self, params):
+    def create(self, params: dict) -> None:
         """Create event
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
-                'access_key': 'str',
-                'data': 'str'
+                'webhook_id': 'str',    # required
+                'access_key': 'str',    # required
+                'data': 'str'           # required
             }
 
         Returns:
@@ -108,17 +108,21 @@ class EventService(BaseService):
 
         Args:
             params (dict): {
-                'event_id': 'str',
-                'domain_id': 'str',
-                'only': 'list
+                'event_id': 'str',    # required
+                'domain_id': 'str',   # injected from auth (required)
             }
 
         Returns:
             event_vo (object)
         """
 
+        event_id = params["event_id"]
+        domain_id = params["domain_id"]
+        workspace_id = params.get("workspace_id")
+        user_projects = params.get("user_projects")
+
         return self.event_mgr.get_event(
-            params["event_id"], params["domain_id"], params.get("only")
+            event_id, domain_id, workspace_id, user_projects
         )
 
     @transaction(
@@ -136,7 +140,7 @@ class EventService(BaseService):
             "alert_id",
             "webhook_id",
             "project_id",
-            "domain_id",
+            "workspace_id" "domain_id",
             "user_projects",
         ]
     )
@@ -146,6 +150,7 @@ class EventService(BaseService):
 
         Args:
             params (dict): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'event_id': 'str',
                 'event_key': 'str',
                 'event_type': 'str',
@@ -154,9 +159,9 @@ class EventService(BaseService):
                 'alert_id': 'str',
                 'webhook_id': 'str',
                 'project_id': 'str',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'user_projects': 'list', // from meta
+                'workspace_id': 'str',
+                'domain_id': 'str',         # injected from auth (required)
+                'user_projects': 'list',    # injected from auth
             }
 
         Returns:
@@ -172,15 +177,17 @@ class EventService(BaseService):
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @check_required(["query", "domain_id"])
-    @append_query_filter(["domain_id", "user_projects"])
+    @append_query_filter(["domain_id", "workspace_id", "user_projects"])
     @append_keyword_filter(["event_id", "title"])
     def stat(self, params):
         """
         Args:
             params (dict): {
-                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'user_projects': 'list', // from meta
+                'domain_id': 'str',         # injected from auth (required)
+                'workspace_id': 'str',      # injected from auth
+                'user_projects': 'list',    # injected from auth
+
             }
 
         Returns:
@@ -224,6 +231,7 @@ class EventService(BaseService):
         )
         event_data["webhook_id"] = webhook_data["webhook_id"]
         event_data["project_id"] = webhook_data["project_id"]
+        event_data["workspace_id"] = webhook_data["workspace_id"]
         event_data["domain_id"] = webhook_data["domain_id"]
         event_data["severity"] = event_data.get("severity", "NONE")
         event_data["account"] = event_data.get("account", "")
@@ -233,11 +241,17 @@ class EventService(BaseService):
 
         # Change event data by event rule
         event_data = event_rule_mgr.change_event_data(
-            event_data, webhook_data["project_id"], webhook_data["domain_id"]
+            event_data,
+            webhook_data["project_id"],
+            webhook_data["domain_id"],
+            webhook_data["workspace_id"],
         )
 
         event_vo: Event = self.event_mgr.get_event_by_key(
-            event_data["event_key"], event_data["domain_id"], event_data["project_id"]
+            event_data["event_key"],
+            event_data["domain_id"],
+            event_data["project_id"],
+            event_data["workspace_id"],
         )
 
         if event_vo and event_vo.alert.state != "RESOLVED":
@@ -344,9 +358,9 @@ class EventService(BaseService):
 
     def _check_resolved_state(self, event_data: dict, alert_vo: Alert) -> bool:
         if (
-                event_data["event_type"] == "RECOVERY"
-                and alert_vo.state != "RESOLVED"
-                and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id)
+            event_data["event_type"] == "RECOVERY"
+            and alert_vo.state != "RESOLVED"
+            and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id)
         ):
             return True
         else:

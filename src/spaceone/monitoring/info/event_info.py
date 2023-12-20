@@ -1,7 +1,9 @@
 import functools
+
 from spaceone.api.monitoring.v1 import event_pb2
-from spaceone.core.pygrpc.message_type import *
 from spaceone.core import utils
+from spaceone.core.pygrpc.message_type import *
+
 from spaceone.monitoring.model.event_model import Event
 
 __all__ = ["EventInfo", "EventsInfo"]
@@ -44,6 +46,7 @@ def EventInfo(event_vo: Event, minimal=False):
                 "alert_id": event_vo.alert_id,
                 "webhook_id": event_vo.webhook_id,
                 "project_id": event_vo.project_id,
+                "workspace_id": event_vo.workspace_id,
                 "domain_id": event_vo.domain_id,
                 "created_at": utils.datetime_to_iso8601(event_vo.created_at),
                 "occurred_at": utils.datetime_to_iso8601(event_vo.occurred_at),

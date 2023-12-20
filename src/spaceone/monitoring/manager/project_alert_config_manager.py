@@ -2,6 +2,7 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+
 from spaceone.monitoring.error.project_alert_config import *
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 
@@ -15,13 +16,13 @@ class ProjectAlertConfigManager(BaseManager):
             "ProjectAlertConfig"
         )
 
-    def create_project_alert_config(self, params):
-        def _rollback(project_alert_config_vo: ProjectAlertConfig):
+    def create_project_alert_config(self, params: dict) -> ProjectAlertConfig:
+        def _rollback(vo: ProjectAlertConfig):
             _LOGGER.info(
                 f"[create_project_alert_config._rollback] "
-                f"Delete project alert config : {project_alert_config_vo.project_id}"
+                f"Delete project alert config : {vo.project_id}"
             )
-            project_alert_config_vo.delete()
+            vo.delete()
 
         project_alert_config_vo: ProjectAlertConfig = (
             self.project_alert_config_model.create(params)
@@ -32,12 +33,14 @@ class ProjectAlertConfigManager(BaseManager):
 
     def update_project_alert_config(self, params):
         project_alert_config_vo: ProjectAlertConfig = self.get_project_alert_config(
-            params["project_id"], params["domain_id"]
+            params["project_id"], params["domain_id"], params["workspace_id"]
         )
         return self.update_project_alert_config_by_vo(params, project_alert_config_vo)
 
-    def update_project_alert_config_by_vo(self, params, project_alert_config_vo):
-        def _rollback(old_data):
+    def update_project_alert_config_by_vo(
+        self, params: dict, project_alert_config_vo: ProjectAlertConfig
+    ) -> ProjectAlertConfig:
+        def _rollback(old_data: dict):
             _LOGGER.info(
                 f"[update_project_alert_config_by_vo._rollback] Revert Data : "
                 f'{old_data["project_id"]}'
@@ -58,9 +61,11 @@ class ProjectAlertConfigManager(BaseManager):
 
         return updated_vo
 
-    def delete_project_alert_config(self, project_id, domain_id):
+    def delete_project_alert_config(
+        self, project_id: str, domain_id: str, workspace_id: str
+    ):
         project_alert_config_vo: ProjectAlertConfig = self.get_project_alert_config(
-            project_id, domain_id
+            project_id, domain_id, workspace_id
         )
 
         cache.delete(f"project-alert-options:{domain_id}:{project_id}")
@@ -69,18 +74,22 @@ class ProjectAlertConfigManager(BaseManager):
 
         project_alert_config_vo.delete()
 
-    def get_project_alert_config(self, project_id, domain_id, only=None):
+    def get_project_alert_config(
+        self, project_id: str, domain_id: str, workspace_id: str
+    ) -> ProjectAlertConfig:
         try:
             return self.project_alert_config_model.get(
-                project_id=project_id, domain_id=domain_id, only=only
+                project_id=project_id, domain_id=domain_id, workspace_id=workspace_id
             )
         except ERROR_NOT_FOUND as e:
-            raise ERROR_ALERT_FEATURE_IS_NOT_ACTIVATED(project_id=project_id)
+            raise ERROR_ALERT_FEATURE_IS_NOT_ACTIVATED(
+                project_id=project_id, workspace_id=workspace_id
+            )
         except Exception as e:
             raise e
 
-    def list_project_alert_configs(self, query={}):
+    def list_project_alert_configs(self, query: dict) -> dict:
         return self.project_alert_config_model.query(**query)
 
-    def stat_project_alert_configs(self, query):
+    def stat_project_alert_configs(self, query: dict) -> dict:
         return self.project_alert_config_model.stat(**query)

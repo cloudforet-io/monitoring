@@ -1,8 +1,10 @@
 import functools
+
 from spaceone.api.monitoring.v1 import webhook_pb2
-from spaceone.core.pygrpc.message_type import *
-from spaceone.core import utils
 from spaceone.core import config
+from spaceone.core import utils
+from spaceone.core.pygrpc.message_type import *
+
 from spaceone.monitoring.model.webhook_model import Webhook
 
 __all__ = ["WebhookInfo", "WebhooksInfo"]
@@ -35,6 +37,7 @@ def WebhookInfo(webhook_vo: Webhook, minimal=False):
         "state": webhook_vo.state,
         "webhook_url": webhook_url,
         "project_id": webhook_vo.project_id,
+        "workspace_id": webhook_vo.workspace_id,
     }
 
     if not minimal:

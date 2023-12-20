@@ -1,43 +1,35 @@
-import copy
 import logging
-import time
-from typing import List, Union
 from datetime import timedelta, datetime
+from typing import Union
 
-from spaceone.core.service import *
-from spaceone.core.error import *
 from spaceone.core import cache, config, utils
-from spaceone.monitoring.model.alert_model import Alert
-from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
-from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
+from spaceone.core.service import *
+
 from spaceone.monitoring.manager.alert_manager import AlertManager
-from spaceone.monitoring.manager.identity_manager import IdentityManager
-from spaceone.monitoring.manager.webhook_manager import WebhookManager
-from spaceone.monitoring.manager.maintenance_window_manager import (
-    MaintenanceWindowManager,
-)
-from spaceone.monitoring.manager.project_alert_config_manager import (
-    ProjectAlertConfigManager,
-)
 from spaceone.monitoring.manager.escalation_policy_manager import (
     EscalationPolicyManager,
 )
-from spaceone.monitoring.manager.notification_manager import NotificationManager
+from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.job_manager import JobManager
+from spaceone.monitoring.manager.notification_manager import NotificationManager
+from spaceone.monitoring.manager.project_alert_config_manager import (
+    ProjectAlertConfigManager,
+)
+from spaceone.monitoring.manager.webhook_manager import WebhookManager
+from spaceone.monitoring.model.alert_model import Alert
+from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
+from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
 @event_handler
 class JobService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.job_mgr: JobManager = self.locator.get_manager("JobManager")
 
-    @transaction(append_meta={"authorization.scope": "SYSTEM"})
+    @transaction
     def create_jobs_by_domain(self, params):
         """Create jobs by domain
 
@@ -59,7 +51,7 @@ class JobService(BaseService):
                 {"domain_id": domain_id},
             )
 
-    @transaction(append_meta={"authorization.scope": "SYSTEM"})
+    @transaction
     @check_required(["domain_id"])
     def create_job(self, params):
         """Create job
@@ -108,7 +100,7 @@ class JobService(BaseService):
             self.job_mgr.change_error_status(job_vo, e)
             self.transaction.execute_rollback()
 
-    @transaction(append_meta={"authorization.scope": "SYSTEM"})
+    @transaction
     @check_required(["alert_id", "domain_id"])
     def create_assigned_notification(self, params):
         """Create assigned notification
@@ -141,7 +133,7 @@ class JobService(BaseService):
 
         notification_mgr.create_notification(message)
 
-    @transaction(append_meta={"authorization.scope": "SYSTEM"})
+    @transaction
     @check_required(["alert_id", "domain_id"])
     def create_resolved_notification(self, params):
         """Create resolved notification
@@ -171,28 +163,22 @@ class JobService(BaseService):
         ) = self._get_escalation_policy_rules_and_finish_condition(
             escalation_policy_id, domain_id
         )
-        maintenance_window_state = self._get_project_maintenance_window_state(
-            project_id, domain_id
-        )
 
-        if self._check_maintenance_window(
-            project_id, alert_id, maintenance_window_state
-        ):
-            title = f"[Resolved] {alert_vo.title}"
+        title = f"[Resolved] {alert_vo.title}"
 
-            for step in range(alert_vo.escalation_step):
-                notification_level = rules[step]["notification_level"]
+        for step in range(alert_vo.escalation_step):
+            notification_level = rules[step]["notification_level"]
 
-                notification_mgr: NotificationManager = self.locator.get_manager(
-                    "NotificationManager"
-                )
-                message = self._create_message(
-                    alert_vo, title, "SUCCESS", notification_level=notification_level
-                )
+            notification_mgr: NotificationManager = self.locator.get_manager(
+                "NotificationManager"
+            )
+            message = self._create_message(
+                alert_vo, title, "SUCCESS", notification_level=notification_level
+            )
 
-                notification_mgr.create_notification(message)
+            notification_mgr.create_notification(message)
 
-    @transaction(append_meta={"authorization.scope": "SYSTEM"})
+    @transaction
     @check_required(["alert_id", "domain_id"])
     def create_alert_notification(self, params):
         """Create alert notification
@@ -228,9 +214,6 @@ class JobService(BaseService):
             ) = self._get_escalation_policy_rules_and_finish_condition(
                 escalation_policy_id, domain_id
             )
-            maintenance_window_state = self._get_project_maintenance_window_state(
-                project_id, domain_id
-            )
 
             # Check Notification Urgency and Finish Condition
             if not (
@@ -239,9 +222,6 @@ class JobService(BaseService):
                 )
                 and self._check_finish_condition(
                     alert_vo.state, alert_id, finish_condition
-                )
-                and self._check_maintenance_window(
-                    project_id, alert_id, maintenance_window_state
                 )
             ):
                 alert_mgr.update_alert_by_vo({"escalation_ttl": 0}, alert_vo)
@@ -269,12 +249,6 @@ class JobService(BaseService):
                     )
                     notification_mgr.create_notification(message)
 
-                    for project_id in alert_vo.project_dependencies:
-                        dependent_project_message = copy.deepcopy(message)
-                        dependent_project_message["resource_id"] = project_id
-                        del dependent_project_message["message"]["callbacks"]
-                        notification_mgr.create_notification(dependent_project_message)
-
             if job_id:
                 job_vo = self.job_mgr.get_job(job_id, domain_id)
                 job_mgr.decrease_remained_tasks(job_vo)
@@ -299,7 +273,7 @@ class JobService(BaseService):
         response = alert_mgr.stat_alerts(query)
         return response.get("results", [])
 
-    def _list_open_alerts(self, domain_id) -> List[Alert]:
+    def _list_open_alerts(self, domain_id):
         alert_mgr: AlertManager = self.locator.get_manager("AlertManager")
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager(
             "ProjectAlertConfigManager"
@@ -359,30 +333,6 @@ class JobService(BaseService):
 
         return rules, escalation_policy_vo.finish_condition
 
-    @cache.cacheable(key="maintenance-window-state:{domain_id}:{project_id}", expire=60)
-    def _get_project_maintenance_window_state(self, project_id, domain_id):
-        query = {
-            "filter": [
-                {"k": "projects", "v": project_id, "o": "eq"},
-                {"k": "state", "v": "OPEN", "o": "eq"},
-                {"k": "domain_id", "v": domain_id, "o": "eq"},
-            ],
-            "count_only": True,
-        }
-
-        maintenance_window_mgr: MaintenanceWindowManager = self.locator.get_manager(
-            "MaintenanceWindowManager"
-        )
-        (
-            maintenance_window_vos,
-            total_count,
-        ) = maintenance_window_mgr.list_maintenance_windows(query)
-
-        if total_count > 0:
-            return "OPEN"
-        else:
-            return "CLOSED"
-
     @staticmethod
     def _get_current_escalation_rule(alert_vo: Alert, rules):
         return rules[alert_vo.escalation_step - 1]
@@ -408,17 +358,6 @@ class JobService(BaseService):
                 f"[_check_finish_condition] Stop notifications. "
                 f"(finish_condition = ACKNOWLEDGED, alert_state = ACKNOWLEDGED, "
                 f"alert_id = {alert_id})"
-            )
-            return False
-        else:
-            return True
-
-    @staticmethod
-    def _check_maintenance_window(project_id, alert_id, maintenance_window_state):
-        if maintenance_window_state == "OPEN":
-            _LOGGER.debug(
-                f"[_check_maintenance_window] Stop notifications. "
-                f"(project_id = {project_id}, maintenance_window_state = OPEN, alert_id = {alert_id})"
             )
             return False
         else:
@@ -537,9 +476,6 @@ class JobService(BaseService):
                     "value": self._get_user_name(alert_vo.assignee, domain_id),
                 }
             )
-
-        if alert_vo.status_message and alert_vo.status_message != "":
-            tags.append({"key": "Status Message", "value": alert_vo.status_message})
 
         if alert_vo.account:
             tags.append({"key": "Account", "value": alert_vo.account})

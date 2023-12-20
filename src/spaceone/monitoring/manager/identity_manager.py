@@ -1,9 +1,8 @@
 import logging
 
-from spaceone.core import cache
 from spaceone.core import config
-from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.core.manager import BaseManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,9 +27,17 @@ class IdentityManager(BaseManager):
             "User.get", {"user_id": user_id, "domain_id": domain_id}
         )
 
-    def get_project(self, project_id, domain_id):
+    def get_project(self, project_id: str, domain_id: str = None) -> dict:
+        conditions = {"project_id": project_id}
+
+        if domain_id:
+            conditions["domain_id"] = domain_id
+
+        return self.identity_connector.dispatch("Project.get", conditions)
+
+    def check_workspace(self, workspace_id: str, domain_id: str) -> dict:
         return self.identity_connector.dispatch(
-            "Project.get", {"project_id": project_id, "domain_id": domain_id}
+            "Workspace.check", {"workspace_id": workspace_id, "domain_id": domain_id}
         )
 
     def get_service_account(self, service_account_id, domain_id):
@@ -41,7 +48,7 @@ class IdentityManager(BaseManager):
 
     def get_resource(self, resource_type, resource_id, domain_id):
         if resource_type == "identity.Project":
-            return self.get_project(resource_id, domain_id)
+            return self.get_project(resource_id)
         elif resource_type == "identity.ServiceAccount":
             return self.get_service_account(resource_id, domain_id)
 

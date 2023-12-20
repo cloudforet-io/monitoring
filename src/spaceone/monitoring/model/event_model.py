@@ -1,9 +1,9 @@
-from mongoengine import *
-
-from spaceone.core.model.mongo_model import MongoModel
-from pydantic import BaseModel, Field
-from typing import Union
 from datetime import datetime
+from typing import Union
+
+from mongoengine import *
+from pydantic import BaseModel, Field
+from spaceone.core.model.mongo_model import MongoModel
 
 
 class EventResource(EmbeddedDocument):
@@ -36,12 +36,13 @@ class Event(MongoModel):
     alert_id = StringField(max_length=40)
     webhook_id = StringField(max_length=40)
     project_id = StringField(max_length=40)
+    workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     occurred_at = DateTimeField(default=None, null=True)
 
     meta = {
-        "updatable_fields": ["alert_id", "project_id", "alert", "alert_id"],
+        "updatable_fields": ["alert_id", "project_id", "alert"],
         "minimal_fields": [
             "event_id",
             "event_key",
@@ -49,6 +50,7 @@ class Event(MongoModel):
             "title",
             "severity",
             "alert_id",
+            "project_id",
         ],
         "change_query_keys": {
             "user_projects": "project_id",
@@ -69,6 +71,7 @@ class Event(MongoModel):
             "alert_id",
             "webhook_id",
             "project_id",
+            "workspace_id",
             "domain_id",
             "created_at",
             "occurred_at",

@@ -1,6 +1,8 @@
 import functools
+
 from spaceone.api.monitoring.v1 import note_pb2
 from spaceone.core import utils
+
 from spaceone.monitoring.model.note_model import Note
 
 __all__ = ["NoteInfo", "NotesInfo"]
@@ -12,12 +14,13 @@ def NoteInfo(note_vo: Note, minimal=False):
         "note": note_vo.note,
         "alert_id": note_vo.alert_id,
         "created_by": note_vo.created_by,
+        "workspace_id": note_vo.workspace_id,
+        "project_id": note_vo.project_id,
     }
 
     if not minimal:
         info.update(
             {
-                "project_id": note_vo.project_id,
                 "domain_id": note_vo.domain_id,
                 "created_at": utils.datetime_to_iso8601(note_vo.created_at),
             }

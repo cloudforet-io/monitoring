@@ -1,8 +1,9 @@
 import functools
 from typing import List
+
 from spaceone.api.monitoring.v1 import escalation_policy_pb2
-from spaceone.core.pygrpc.message_type import *
 from spaceone.core import utils
+from spaceone.core.pygrpc.message_type import *
 
 from spaceone.monitoring.model.escalation_policy_model import (
     EscalationPolicy,
@@ -33,6 +34,7 @@ def EscalationPolicyInfo(escalation_policy_vo: EscalationPolicy, minimal=False):
         "escalation_policy_id": escalation_policy_vo.escalation_policy_id,
         "name": escalation_policy_vo.name,
         "is_default": escalation_policy_vo.is_default,
+        "project_id": escalation_policy_vo.project_id,
     }
 
     if not minimal:
@@ -42,8 +44,8 @@ def EscalationPolicyInfo(escalation_policy_vo: EscalationPolicy, minimal=False):
                 "repeat_count": escalation_policy_vo.repeat_count,
                 "finish_condition": escalation_policy_vo.finish_condition,
                 "tags": change_struct_type(escalation_policy_vo.tags),
-                "scope": escalation_policy_vo.scope,
-                "project_id": escalation_policy_vo.project_id,
+                "resource_group": escalation_policy_vo.resource_group,
+                "workspace_id": escalation_policy_vo.workspace_id,
                 "domain_id": escalation_policy_vo.domain_id,
                 "created_at": utils.datetime_to_iso8601(
                     escalation_policy_vo.created_at

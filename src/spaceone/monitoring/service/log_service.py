@@ -45,11 +45,11 @@ class LogService(BaseService):
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'resource_id': 'str',
+                'data_source_id': 'str',   # required
+                'resource_id': 'str',      # required
                 'keyword': 'str',
-                'start': 'datetime',
-                'end': 'datetime',
+                'start': 'datetime',       # required
+                'end': 'datetime',         # default
                 'sort': 'dict',
                 'limit': 'int',
                 'domain_id': 'str'

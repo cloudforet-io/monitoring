@@ -32,18 +32,19 @@ class AlertService(BaseService):
         permission="monitoring:Alert.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["title", "project_id", "domain_id"])
-    def create(self, params):
+    @check_required(["title", "project_id", "domain_id", "workspace_id"])
+    def create(self, params: dict) -> Alert:
         """Create alert
 
         Args:
             params (dict): {
-                'title': 'str',
+                'title': 'str',           # required
                 'description': 'str',
                 'assignee': 'str',
                 'urgency': 'str',
-                'project_id': 'str',
-                'domain_id': 'str'
+                'project_id': 'str',      # required
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
             }
 
         Returns:
@@ -52,13 +53,16 @@ class AlertService(BaseService):
 
         project_id = params["project_id"]
         domain_id = params["domain_id"]
+        workspace_id = params["workspace_id"]
 
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager(
             "ProjectAlertConfigManager"
         )
 
         project_alert_config_vo: ProjectAlertConfig = (
-            project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+            project_alert_config_mgr.get_project_alert_config(
+                project_id, domain_id, workspace_id
+            )
         )
         escalation_policy_vo: EscalationPolicy = (
             project_alert_config_vo.escalation_policy
@@ -70,7 +74,7 @@ class AlertService(BaseService):
 
         # TODO: Check Assignee
 
-        params["triggered_by"] = self.transaction.get_meta("user_id")
+        params["triggered_by"] = self.transaction.get_meta("authorization.user_id")
 
         alert_vo = self.alert_mgr.create_alert(params)
 
@@ -82,24 +86,24 @@ class AlertService(BaseService):
         permission="monitoring:Alert.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["alert_id", "domain_id"])
+    @check_required(["alert_id", "domain_id", "workspace_id"])
     def update(self, params):
         """Update alert
 
         Args:
             params (dict): {
-                'alert_id': 'str',
+                'alert_id': 'str',             # required
                 'title': 'str',
                 'state': 'str',
-                'status_message': 'str',
                 'description': 'str',
                 'assignee': 'str',
                 'urgency': 'str',
-                'project_id': 'str',
-                'reset_status_message': 'bool',
+                'project_id': 'str',           # required
                 'reset_description': 'bool',
                 'reset_assignee': 'bool',
-                'domain_id': 'str'
+                'domain_id': 'str',            # injected from auth (required)
+                'workspace_id': 'str',         # injected from auth (required)
+                'user_projects': 'list',       # injected from auth
             }
 
         Returns:
@@ -108,11 +112,11 @@ class AlertService(BaseService):
 
         alert_id = params["alert_id"]
         domain_id = params["domain_id"]
+        workspace_id = params["workspace_id"]
+        user_projects = params.get("user_projects")
         project_id = params.get("project_id")
         state = params.get("state")
         assignee = params.get("assignee")
-        status_message = params.get("status_message")
-        reset_status_message = params.get("reset_status_message", False)
         reset_description = params.get("reset_description", False)
         reset_assignee = params.get("reset_assignee", False)
 
@@ -125,7 +129,9 @@ class AlertService(BaseService):
             )
 
             project_alert_config_vo: ProjectAlertConfig = (
-                project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+                project_alert_config_mgr.get_project_alert_config(
+                    project_id, domain_id, workspace_id
+                )
             )
             escalation_policy_vo: EscalationPolicy = (
                 project_alert_config_vo.escalation_policy
@@ -149,18 +155,14 @@ class AlertService(BaseService):
                 params["acknowledged_at"] = None
                 params["resolved_at"] = None
 
-        alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
+        alert_vo = self.alert_mgr.get_alert(
+            alert_id, domain_id, workspace_id, user_projects
+        )
 
         if alert_vo.state == "ERROR":
             raise ERROR_INVALID_PARAMETER(
                 key="state", reason="The error state cannot be changed."
             )
-
-        if alert_vo.state != state and state == "RESOLVED" and status_message is None:
-            params["status_message"] = ""
-
-        if reset_status_message:
-            params["status_message"] = ""
 
         if reset_description:
             params["description"] = ""
@@ -190,6 +192,39 @@ class AlertService(BaseService):
 
         return updated_alert_vo
 
+    @transaction(
+        permission="monitoring:Alert.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @check_required(["alert_id", "domain_id", "workspace_id"])
+    def assign_user(self, params):
+        """Assign user to alert
+
+        Args:
+            params (dict): {
+                'alert_id': 'str',             # required
+                'assignee': 'str',             # required
+                'domain_id': 'str',            # injected from auth (required)
+                'workspace_id': 'str',         # injected from auth (required)
+                'user_projects': 'list',       # injected from auth
+            }
+
+        Returns:
+            alert_vo (object)
+        """
+
+        alert_id = params["alert_id"]
+        domain_id = params["domain_id"]
+        workspace_id = params["workspace_id"]
+        user_projects = params.get("user_projects")
+        assignee = params["assignee"]
+
+        alert_vo = self.alert_mgr.get_alert(
+            alert_id, domain_id, workspace_id, user_projects
+        )
+        # TODO: Not Implemented
+        pass
+
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @check_required(["alert_id", "access_key", "state"])
     def update_state(self, params):
@@ -197,9 +232,9 @@ class AlertService(BaseService):
 
         Args:
             params (dict): {
-                'alert_id': 'str',
-                'access_key': 'str',
-                'state': 'str'
+                'alert_id': 'str',            # required
+                'access_key': 'str',          # required
+                'state': 'str'                # required
             }
 
         Returns:
@@ -245,191 +280,47 @@ class AlertService(BaseService):
 
         return updated_alert_vo
 
-    @transaction
-    @check_required(["alerts", "merge_to", "domain_id"])
-    def merge(self, params):
-        """Merge alerts
-
-        Args:
-            params (dict): {
-                'alerts': 'list',
-                'merge_to': 'str',
-                'domain_id': 'str',
-            }
-
-        Returns:
-            alert_vo (object)
-        """
-        merge_to = params["merge_to"]
-        alerts = params["alerts"]
-        domain_id = params["domain_id"]
-
-        self._check_merge_condition(merge_to=merge_to, alert_ids=alerts)
-        alerts.remove(merge_to)
-
-        events = []
-
-        for alert_id in alerts:
-            event_vos = self.event_mgr.filter_events(
-                alert_id=alert_id, domain_id=domain_id
-            )
-            events += event_vos
-
-        alert_vo = self.alert_mgr.get_alert(merge_to, domain_id)
-        update_event_params = {"alert_id": merge_to, "alert": alert_vo}
-
-        for event_vo in events:
-            self.event_mgr.update_event_by_vo(
-                params=update_event_params, event_vo=event_vo
-            )
-
-        for alert_id in alerts:
-            self.alert_mgr.delete_alert(
-                alert_id=alert_id, domain_id=params["domain_id"]
-            )
-
-        return alert_vo
-
-    @transaction
-    @check_required(["alert_id", "end_time", "domain_id"])
-    @change_timestamp_value(["end_time"], timestamp_format="iso8601")
-    def snooze(self, params):
-        """Snooze alert
-
-        Args:
-            params (dict): {
-                'alert_id': 'str',
-                'end_time': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            alert_vo (object)
-        """
-
-        alert_id = params["alert_id"]
-        domain_id = params["domain_id"]
-
-        alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
-
-        # TODO: Check end_times
-
-        params["is_snoozed"] = True
-        params["snoozed_end_time"] = params["end_time"]
-
-        return self.alert_mgr.update_alert_by_vo(params, alert_vo)
-
-    @transaction
-    @check_required(["alert_id", "resource_type", "resource_id", "domain_id"])
-    def add_responder(self, params):
-        """Add alert responder
-
-        Args:
-            params (dict): {
-                'alert_id': 'str',
-                'resource_type': 'str',
-                'resource_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            alert_vo (object)
-        """
-
-        # TODO: Check resource_type and resource_id
-
-        return self.alert_mgr.add_responder(params)
-
-    @transaction
-    @check_required(["alert_id", "resource_type", "resource_id", "domain_id"])
-    def remove_responder(self, params):
-        """Remove alert responder
-
-        Args:
-            params (dict): {
-                'alert_id': 'str',
-                'resource_type': 'str',
-                'resource_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            alert_vo (object)
-        """
-
-        return self.alert_mgr.remove_responder(params)
-
-    @transaction
-    @check_required(["alert_id", "project_id", "domain_id"])
-    def add_project_dependency(self, params):
-        """Add dependent project
-
-        Args:
-            params (dict): {
-                'alert_id': 'str',
-                'project_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            alert_vo (object)
-        """
-
-        # TODO: Check project_id
-
-        return self.alert_mgr.add_project_dependency(params)
-
-    @transaction
-    @check_required(["alert_id", "project_id", "domain_id"])
-    def remove_project_dependency(self, params):
-        """Remove dependent project
-
-        Args:
-            params (dict): {
-                'alert_id': 'str',
-                'project_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            alert_vo (object)
-        """
-
-        return self.alert_mgr.remove_project_dependency(params)
-
     @transaction(
         permission="monitoring:Alert.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["alert_id", "domain_id"])
+    @check_required(["alert_id", "domain_id", "workspace_id"])
     def delete(self, params):
         """Delete alert
 
         Args:
             params (dict): {
                 'alert_id': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str',            # injected from auth (required)
+                'workspace_id': 'str',         # injected from auth (required)
+                'user_projects': 'list',       # injected from auth
             }
 
         Returns:
             None
         """
 
-        self.alert_mgr.delete_alert(params["alert_id"], params["domain_id"])
+        self.alert_mgr.delete_alert(
+            params["alert_id"],
+            params["domain_id"],
+            params["workspace_id"],
+            params.get("user_projects"),
+        )
 
     @transaction(
         permission="monitoring:Alert.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["alert_id", "domain_id"])
+    @check_required(["alert_id", "domain_id", "workspace_id"])
     def get(self, params):
         """Get alert
 
         Args:
             params (dict): {
                 'alert_id': 'str',
-                'domain_id': 'str',
-                'only': 'list
+                'domain_id': 'str',            # injected from auth (required)
+                'workspace_id': 'str',         # injected from auth (required)
+                'user_projects': 'list',       # injected from auth
             }
 
         Returns:
@@ -437,7 +328,10 @@ class AlertService(BaseService):
         """
 
         return self.alert_mgr.get_alert(
-            params["alert_id"], params["domain_id"], params.get("only")
+            params["alert_id"],
+            params["domain_id"],
+            params["workspace_id"],
+            params.get("user_projects"),
         )
 
     @transaction(
@@ -454,13 +348,13 @@ class AlertService(BaseService):
             "assignee",
             "urgency",
             "severity",
-            "is_snoozed",
             "resource_id",
             "triggered_by",
             "webhook_id",
             "escalation_policy_id",
             "project_id",
             "domain_id",
+            "workspace_id",
             "user_projects",
         ]
     )
@@ -470,6 +364,7 @@ class AlertService(BaseService):
 
         Args:
             params (dict): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'alert_number': 'str',
                 'alert_id': 'str',
                 'title': 'str',
@@ -477,14 +372,13 @@ class AlertService(BaseService):
                 'assignee': 'str',
                 'urgency': 'str',
                 'severity': 'str',
-                'is_snoozed': 'bool',
                 'resource_id': 'str',
                 'webhook_id': 'bool',
                 'escalation_policy_id': 'str',
                 'project_id': 'str',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'user_projects': 'list', // from meta
+                'workspace_id': 'str',
+                'domain_id': 'str',                             # injected from auth (required)
+                'user_projects': 'list'                         # injected from auth
             }
 
         Returns:
@@ -499,16 +393,17 @@ class AlertService(BaseService):
         permission="monitoring:Alert.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["query", "domain_id"])
-    @append_query_filter(["domain_id", "user_projects"])
+    @check_required(["query", "domain_id", "workspace_id"])
+    @append_query_filter(["domain_id", "workspace_id", "user_projects"])
     @append_keyword_filter(["alert_id", "title"])
     def stat(self, params):
         """
         Args:
             params (dict): {
-                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'user_projects': 'list', // from meta
+                'domain_id': 'str',            # injected from auth (required)
+                'workspace_id': 'str',         # injected from auth (required)
+                'user_projects': 'list',       # injected from auth
             }
 
         Returns:
@@ -519,8 +414,14 @@ class AlertService(BaseService):
         query = params.get("query", {})
         return self.alert_mgr.stat_alerts(query)
 
-    def _create_notification(self, alert_vo: Alert, method, user_id=None):
-        params = {"alert_id": alert_vo.alert_id, "domain_id": alert_vo.domain_id}
+    def _create_notification(
+        self, alert_vo: Alert, method: str, user_id: str = None
+    ) -> None:
+        params = {
+            "alert_id": alert_vo.alert_id,
+            "domain_id": alert_vo.domain_id,
+            "workspace_id": alert_vo.workspace_id,
+        }
 
         if user_id:
             params["user_id"] = user_id
@@ -531,7 +432,7 @@ class AlertService(BaseService):
         )
 
     @staticmethod
-    def _check_access_key(alert_id, access_key):
+    def _check_access_key(alert_id: str, access_key: str) -> str:
         domain_id = cache.get(f"alert-notification-callback:{alert_id}:{access_key}")
 
         if domain_id is None:
@@ -540,13 +441,8 @@ class AlertService(BaseService):
         return domain_id
 
     @staticmethod
-    def _check_state(state):
+    def _check_state(state: str) -> None:
         if state not in ["ACKNOWLEDGED", "RESOLVED"]:
             raise ERROR_INVALID_PARAMETER(
                 key="state", reason="Unsupported state. (ACKNOWLEDGED | RESOLVED)"
             )
-
-    @staticmethod
-    def _check_merge_condition(merge_to, alert_ids):
-        if merge_to not in alert_ids:
-            raise ERROR_MERGE_ALERT_NOT_EXIST(alert_id=merge_to)

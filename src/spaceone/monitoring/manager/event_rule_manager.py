@@ -1,10 +1,11 @@
-import logging
 import functools
+import logging
 from typing import List
 
 from spaceone.core import utils
 from spaceone.core.manager import BaseManager
-from spaceone.monitoring.manager import IdentityManager
+
+# from spaceone.monitoring.manager import IdentityManager
 from spaceone.monitoring.model.event_rule_model import EventRule, EventRuleCondition
 
 _LOGGER = logging.getLogger(__name__)
@@ -14,17 +15,17 @@ class EventRuleManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.event_rule_model: EventRule = self.locator.get_model("EventRule")
-        self.identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
+        # self.identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
         self._service_account_info = {}
 
-    def create_event_rule(self, params):
-        def _rollback(event_rule_vo: EventRule):
+    def create_event_rule(self, params: dict) -> EventRule:
+        def _rollback(vo: EventRule):
             _LOGGER.info(
                 f"[create_event_rule._rollback] "
-                f"Delete event rule : {event_rule_vo.name} "
-                f"({event_rule_vo.event_rule_id})"
+                f"Delete event rule : {vo.name} "
+                f"({vo.event_rule_id})"
             )
-            event_rule_vo.delete()
+            vo.delete()
 
         event_rule_vo: EventRule = self.event_rule_model.create(params)
         self.transaction.add_rollback(_rollback, event_rule_vo)
@@ -33,12 +34,12 @@ class EventRuleManager(BaseManager):
 
     def update_event_rule(self, params):
         event_rule_vo: EventRule = self.get_event_rule(
-            params["event_rule_id"], params["domain_id"]
+            params["event_rule_id"], params["domain_id"], params["workspace_id"]
         )
         return self.update_event_rule_by_vo(params, event_rule_vo)
 
-    def update_event_rule_by_vo(self, params, event_rule_vo):
-        def _rollback(old_data):
+    def update_event_rule_by_vo(self, params: dict, event_rule_vo: EventRule):
+        def _rollback(old_data: dict):
             _LOGGER.info(
                 f"[update_event_rule_by_vo._rollback] Revert Data : "
                 f'{old_data["event_rule_id"]}'
@@ -56,20 +57,33 @@ class EventRuleManager(BaseManager):
     def delete_event_rule_by_vo(self, event_rule_vo):
         event_rule_vo.delete()
 
-    def get_event_rule(self, event_rule_id, domain_id, only=None):
-        return self.event_rule_model.get(
-            event_rule_id=event_rule_id, domain_id=domain_id, only=only
-        )
+    def get_event_rule(
+        self,
+        event_rule_id: str,
+        domain_id: str,
+        workspace_id: str,
+        user_projects: list = None,
+    ):
+        conditions = {
+            "event_rule_id": event_rule_id,
+            "domain_id": domain_id,
+            "workspace_id": workspace_id,
+        }
 
-    def list_event_rules(self, query={}):
+        if user_projects:
+            conditions["project_id"] = user_projects
+
+        return self.event_rule_model.get(**conditions)
+
+    def list_event_rules(self, query: dict) -> dict:
         return self.event_rule_model.query(**query)
 
-    def stat_event_rules(self, query):
+    def stat_event_rules(self, query: dict) -> dict:
         return self.event_rule_model.stat(**query)
 
-    def change_event_data(self, event_data, project_id, domain_id):
+    def change_event_data(self, event_data, project_id, domain_id, workspace_id):
         event_rule_vos: List[EventRule] = self._get_project_event_rules(
-            project_id, domain_id
+            project_id, domain_id, workspace_id
         )
 
         for event_rule_vo in event_rule_vos:
@@ -98,12 +112,6 @@ class EventRuleManager(BaseManager):
             if action == "change_urgency":
                 event_data["urgency"] = value
 
-            if action == "add_project_dependency":
-                event_data["project_dependencies"] = value
-
-            if action == "add_responder":
-                event_data["responders"] = value
-
             if action == "add_additional_info":
                 event_data["additional_info"] = event_data.get("additional_info", {})
                 event_data["additional_info"].update(value)
@@ -111,18 +119,19 @@ class EventRuleManager(BaseManager):
             if action == "no_notification":
                 event_data["no_notification"] = value
 
-            if action == "match_service_account":
-                source = value["source"]
-                target_key = value["target"]
-                target_value = utils.get_dict_value(event_data, source)
-                if target_value:
-                    service_account_info = self._get_service_account(
-                        target_key, target_value, domain_id
-                    )
-                    if service_account_info:
-                        event_data["project_id"] = service_account_info.get(
-                            "project_info", {}
-                        ).get("project_id")
+            # TODO: Refactor Match Service Account
+            # if action == "match_service_account":
+            #     source = value["source"]
+            #     target_key = value["target"]
+            #     target_value = utils.get_dict_value(event_data, source)
+            #     if target_value:
+            #         service_account_info = self._get_service_account(
+            #             target_key, target_value, domain_id
+            #         )
+            #         if service_account_info:
+            #             event_data["project_id"] = service_account_info.get(
+            #                 "project_info", {}
+            #             ).get("project_id")
 
         return event_data
 
@@ -176,11 +185,12 @@ class EventRuleManager(BaseManager):
 
         return False
 
-    def _get_project_event_rules(self, project_id, domain_id):
+    def _get_project_event_rules(self, project_id, domain_id, workspace_id):
         query = {
             "filter": [
                 {"k": "project_id", "v": project_id, "o": "eq"},
                 {"k": "domain_id", "v": domain_id, "o": "eq"},
+                {"k": "workspace_id", "v": workspace_id, "o": "eq"},
             ],
             "sort": {"key": "order"},
         }
@@ -188,26 +198,26 @@ class EventRuleManager(BaseManager):
         event_rule_vos, total_count = self.list_event_rules(query)
         return event_rule_vos
 
-    def _get_service_account(self, target_key, target_value, domain_id):
-        if f"{domain_id}:{target_key}:{target_value}" in self._service_account_info:
-            return self._service_account_info[
-                f"{domain_id}:{target_key}:{target_value}"
-            ]
-
-        query = {
-            "filter": [{"k": target_key, "v": target_value, "o": "eq"}],
-            "only": ["service_account_id", "project_info"],
-        }
-
-        response = self.identity_mgr.list_service_accounts(query, domain_id)
-        results = response.get("results", [])
-        total_count = response.get("total_count", 0)
-
-        service_account_info = None
-        if total_count > 0:
-            service_account_info = results[0]
-
-        self._service_account_info[
-            f"{domain_id}:{target_key}:{target_value}"
-        ] = service_account_info
-        return service_account_info
+    # def _get_service_account(self, target_key, target_value, domain_id):
+    #     if f"{domain_id}:{target_key}:{target_value}" in self._service_account_info:
+    #         return self._service_account_info[
+    #             f"{domain_id}:{target_key}:{target_value}"
+    #         ]
+    #
+    #     query = {
+    #         "filter": [{"k": target_key, "v": target_value, "o": "eq"}],
+    #         "only": ["service_account_id", "project_info"],
+    #     }
+    #
+    #     response = self.identity_mgr.list_service_accounts(query, domain_id)
+    #     results = response.get("results", [])
+    #     total_count = response.get("total_count", 0)
+    #
+    #     service_account_info = None
+    #     if total_count > 0:
+    #         service_account_info = results[0]
+    #
+    #     self._service_account_info[
+    #         f"{domain_id}:{target_key}:{target_value}"
+    #     ] = service_account_info
+    #     return service_account_info

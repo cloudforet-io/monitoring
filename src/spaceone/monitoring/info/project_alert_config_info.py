@@ -1,11 +1,13 @@
 import functools
+
 from spaceone.api.monitoring.v1 import project_alert_config_pb2
 from spaceone.core import utils
+
+from spaceone.monitoring.info.escalation_policy_info import EscalationPolicyInfo
 from spaceone.monitoring.model.project_alert_config_model import (
     ProjectAlertConfig,
     AlertOptions,
 )
-from spaceone.monitoring.info.escalation_policy_info import EscalationPolicyInfo
 
 __all__ = ["ProjectAlertConfigInfo", "ProjectAlertConfigsInfo"]
 
@@ -25,6 +27,7 @@ def AlertOptionsInfo(vo: AlertOptions):
 def ProjectAlertConfigInfo(project_alert_config_vo: ProjectAlertConfig, minimal=False):
     info = {
         "project_id": project_alert_config_vo.project_id,
+        "workspace_id": project_alert_config_vo.workspace_id,
         "options": AlertOptionsInfo(project_alert_config_vo.options),
     }
 

@@ -1,7 +1,8 @@
 import logging
 
-from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.core.manager import BaseManager
+
 from spaceone.monitoring.error import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class SecretManager(BaseManager):
 
         return secret
 
-    def list_secrets(self, query, domain_id):
+    def list_secrets(self, query: dict, domain_id: str) -> dict:
         return self.secret_connector.dispatch(
             "Secret.list", {"query": query, "domain_id": domain_id}
         )
@@ -62,7 +63,9 @@ class SecretManager(BaseManager):
 
         return response.get("results", [])
 
-    def get_secret_data_from_plugin(self, plugin_info, capability, domain_id):
+    def get_secret_data_from_plugin(
+        self, plugin_info: dict, capability: dict, domain_id: str
+    ) -> (dict, dict):
         plugin_id = plugin_info["plugin_id"]
         secret_id = plugin_info.get("secret_id")
         provider = plugin_info.get("provider")
@@ -93,12 +96,12 @@ class SecretManager(BaseManager):
 
         result = response["results"][0]
         secret_id = result["secret_id"]
-        schema = result.get("schema")
+        schema_id = result.get("schema_id")
 
-        return self.get_secret_data(secret_id, domain_id), schema
+        return self.get_secret_data(secret_id, domain_id), schema_id
 
     @staticmethod
-    def _check_plugin_secret(use_resource_secret, plugin_info):
+    def _check_plugin_secret(use_resource_secret: bool, plugin_info: dict) -> None:
         secret_id = plugin_info.get("secret_id")
         provider = plugin_info.get("provider")
 
@@ -121,7 +124,7 @@ class SecretManager(BaseManager):
         query = {"filter": []}
 
         if supported_schema:
-            query["filter"].append({"k": "schema", "v": supported_schema, "o": "in"})
+            query["filter"].append({"k": "schema_id", "v": supported_schema, "o": "in"})
 
         if secret_id:
             query["filter"].append({"k": "secret_id", "v": secret_id, "o": "eq"})

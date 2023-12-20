@@ -27,9 +27,12 @@ class WebhookService(BaseService):
             "WebhookPluginManager"
         )
 
-    @transaction(permission="monitoring:Webhook.write", role_types=["WORKSPACE_MEMBER"])
-    @check_required(["name", "plugin_info", "project_id", "domain_id"])
-    def create(self, params):
+    @transaction(
+        permission="monitoring:Webhook.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @check_required(["name", "plugin_info", "project_id", "domain_id", "workspace_id"])
+    def create(self, params: dict) -> Webhook:
         """Create webhook
 
         Args:
@@ -38,21 +41,25 @@ class WebhookService(BaseService):
                 'plugin_info': 'dict',
                 'project_id': 'str'
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str',          # injected from auth (required)
+                'workspace_id': 'str',       # injected from auth (required)
             }
 
         Returns:
             webhook_vo (object)
         """
 
-        domain_id = params["domain_id"]
         project_id = params["project_id"]
+        domain_id = params["domain_id"]
+        workspace_id = params["workspace_id"]
 
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager(
             "ProjectAlertConfigManager"
         )
 
-        project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+        project_alert_config_mgr.get_project_alert_config(
+            project_id, domain_id, workspace_id
+        )
 
         self._check_plugin_info(params["plugin_info"])
         plugin_info = self._get_plugin(params["plugin_info"], domain_id)
@@ -78,17 +85,22 @@ class WebhookService(BaseService):
             {"access_key": access_key, "webhook_url": webhook_url}, webhook_vo
         )
 
-    @transaction(permission="monitoring:Webhook.write", role_types=["WORKSPACE_MEMBER"])
-    @check_required(["webhook_id", "domain_id"])
-    def update(self, params):
+    @transaction(
+        permission="monitoring:Webhook.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @check_required(["webhook_id", "domain_id", "workspace_id"])
+    def update(self, params: dict) -> Webhook:
         """Update webhook
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
+                'webhook_id': 'str',      # required
                 'name': 'dict',
                 'tags': 'dict'
-                'domain_id': 'str'
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
@@ -97,19 +109,29 @@ class WebhookService(BaseService):
 
         webhook_id = params["webhook_id"]
         domain_id = params["domain_id"]
-        webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id)
+        workspace_id = params["workspace_id"]
+        user_projects = params.get("user_projects")
+
+        webhook_vo = self.webhook_mgr.get_webhook(
+            webhook_id, domain_id, workspace_id, user_projects
+        )
 
         return self.webhook_mgr.update_webhook_by_vo(params, webhook_vo)
 
-    @transaction(permission="monitoring:Webhook.write", role_types=["WORKSPACE_MEMBER"])
-    @check_required(["webhook_id", "domain_id"])
-    def enable(self, params):
+    @transaction(
+        permission="monitoring:Webhook.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @check_required(["webhook_id", "domain_id", "workspace_id"])
+    def enable(self, params: dict) -> Webhook:
         """Enable webhook
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
-                'domain_id': 'str'
+                'webhook_id': 'str',      # required
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
@@ -118,19 +140,29 @@ class WebhookService(BaseService):
 
         webhook_id = params["webhook_id"]
         domain_id = params["domain_id"]
-        webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id)
+        workspace_id = params["workspace_id"]
+        user_projects = params.get("user_projects")
+
+        webhook_vo = self.webhook_mgr.get_webhook(
+            webhook_id, domain_id, workspace_id, user_projects
+        )
 
         return self.webhook_mgr.update_webhook_by_vo({"state": "ENABLED"}, webhook_vo)
 
-    @transaction(permission="monitoring:Webhook.write", role_types=["WORKSPACE_MEMBER"])
-    @check_required(["webhook_id", "domain_id"])
-    def disable(self, params):
+    @transaction(
+        permission="monitoring:Webhook.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @check_required(["webhook_id", "domain_id", "workspace_id"])
+    def disable(self, params: dict) -> Webhook:
         """Disable webhook
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
-                'domain_id': 'str'
+                'webhook_id': 'str',      # required
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
@@ -139,36 +171,56 @@ class WebhookService(BaseService):
 
         webhook_id = params["webhook_id"]
         domain_id = params["domain_id"]
-        webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id)
+        workspace_id = params["workspace_id"]
+        user_projects = params.get("user_projects")
+
+        webhook_vo = self.webhook_mgr.get_webhook(
+            webhook_id, domain_id, workspace_id, user_projects
+        )
 
         return self.webhook_mgr.update_webhook_by_vo({"state": "DISABLED"}, webhook_vo)
 
-    @transaction(permission="monitoring:Webhook.write", role_types=["WORKSPACE_MEMBER"])
-    @check_required(["webhook_id", "domain_id"])
-    def delete(self, params):
+    @transaction(
+        permission="monitoring:Webhook.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @check_required(["webhook_id", "domain_id", "workspace_id"])
+    def delete(self, params: dict) -> None:
         """Delete webhook
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
-                'domain_id': 'str'
+                'webhook_id': 'str',      # required
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
             None
         """
 
-        self.webhook_mgr.delete_webhook(params["webhook_id"], params["domain_id"])
+        self.webhook_mgr.delete_webhook(
+            params["webhook_id"],
+            params["domain_id"],
+            params["workspace_id"],
+            params.get("user_projects"),
+        )
 
-    @transaction(permission="monitoring:Webhook.write", role_types=["WORKSPACE_MEMBER"])
+    @transaction(
+        permission="monitoring:Webhook.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @check_required(["webhook_id", "domain_id"])
     def verify_plugin(self, params):
         """Verify webhook plugin
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
-                'domain_id': 'str'
+                'webhook_id': 'str',      # required
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
@@ -177,24 +229,34 @@ class WebhookService(BaseService):
 
         webhook_id = params["webhook_id"]
         domain_id = params["domain_id"]
-        webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id)
+        workspace_id = params["workspace_id"]
+        user_projects = params.get("user_projects")
+
+        webhook_vo = self.webhook_mgr.get_webhook(
+            webhook_id, domain_id, workspace_id, user_projects
+        )
 
         endpoint = self.webhook_plugin_mgr.get_webhook_plugin_endpoint_by_vo(webhook_vo)
 
         self._verify_plugin(endpoint, webhook_vo.plugin_info.options)
 
-    @transaction(permission="monitoring:Webhook.write", role_types=["WORKSPACE_MEMBER"])
-    @check_required(["webhook_id", "domain_id"])
+    @transaction(
+        permission="monitoring:Webhook.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @check_required(["webhook_id", "domain_id", "workspace_id"])
     def update_plugin(self, params):
         """Update webhook plugin
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
+                'webhook_id': 'str',      # required
                 'version': 'str',
                 'options': 'dict',
                 'upgrade_mode': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
@@ -202,12 +264,17 @@ class WebhookService(BaseService):
         """
 
         webhook_id = params["webhook_id"]
-        domain_id = params["domain_id"]
         options = params.get("options")
         version = params.get("version")
         upgrade_mode = params.get("upgrade_mode")
 
-        webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id)
+        domain_id = params["domain_id"]
+        workspace_id = params["workspace_id"]
+        user_projects = params.get("user_projects")
+
+        webhook_vo = self.webhook_mgr.get_webhook(
+            webhook_id, domain_id, workspace_id, user_projects
+        )
         plugin_info = webhook_vo.plugin_info.to_dict()
 
         if version:
@@ -238,15 +305,16 @@ class WebhookService(BaseService):
         permission="monitoring:Webhook.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["webhook_id", "domain_id"])
+    @check_required(["webhook_id", "domain_id", "workspace_id"])
     def get(self, params):
         """Get webhook
 
         Args:
             params (dict): {
-                'webhook_id': 'str',
-                'domain_id': 'str',
-                'only': 'list
+                'webhook_id': 'str',      # required
+                'domain_id': 'str',       # injected from auth (required)
+                'workspace_id': 'str',    # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
@@ -254,7 +322,10 @@ class WebhookService(BaseService):
         """
 
         return self.webhook_mgr.get_webhook(
-            params["webhook_id"], params["domain_id"], params.get("only")
+            params["webhook_id"],
+            params["domain_id"],
+            params["workspace_id"],
+            params.get("user_projects"),
         )
 
     @transaction(
@@ -270,6 +341,7 @@ class WebhookService(BaseService):
             "access_key",
             "project_id",
             "domain_id",
+            "workspace_id",
             "user_projects",
         ]
     )
@@ -279,13 +351,13 @@ class WebhookService(BaseService):
 
         Args:
             params (dict): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'webhook_id': 'str',
                 'name': 'str',
                 'state': 'str',
                 'project_id': 'str',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'user_projects': 'list', // from meta
+                'domain_id': 'str',       # injected from auth (required)
+                'user_projects': 'list',  # injected from auth
             }
 
         Returns:
@@ -300,16 +372,17 @@ class WebhookService(BaseService):
         permission="monitoring:Webhook.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["query", "domain_id"])
-    @append_query_filter(["domain_id", "user_projects"])
+    @check_required(["query", "domain_id", "workspace_id"])
+    @append_query_filter(["domain_id", "workspace_id", "user_projects"])
     @append_keyword_filter(["webhook_id", "name"])
     def stat(self, params):
         """
         Args:
             params (dict): {
-                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'user_projects': 'list', // from meta
+                'domain_id': 'str',          # injected from auth (required)
+                'workspace_id': 'str',       # injected from auth (required)
+                'user_projects': 'list',     # injected from auth
             }
 
         Returns:
@@ -321,19 +394,19 @@ class WebhookService(BaseService):
         return self.webhook_mgr.stat_webhooks(query)
 
     @staticmethod
-    def _generate_access_key():
+    def _generate_access_key() -> str:
         return utils.random_string(16)
 
     @staticmethod
-    def _make_webhook_url(webhook_id, access_key):
+    def _make_webhook_url(webhook_id: str, access_key: str):
         return f"/monitoring/v1/webhook/{webhook_id}/{access_key}/events"
 
     @staticmethod
-    def _check_plugin_info(plugin_info_params):
+    def _check_plugin_info(plugin_info_params: dict) -> None:
         if "plugin_id" not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
-    def _get_plugin(self, plugin_info, domain_id):
+    def _get_plugin(self, plugin_info: dict, domain_id: str):
         plugin_id = plugin_info["plugin_id"]
 
         repo_mgr: RepositoryManager = self.locator.get_manager("RepositoryManager")
@@ -341,10 +414,10 @@ class WebhookService(BaseService):
 
         return plugin_info
 
-    def _init_plugin(self, endpoint, options):
+    def _init_plugin(self, endpoint: str, options: dict):
         self.webhook_plugin_mgr.initialize(endpoint)
         return self.webhook_plugin_mgr.init_plugin(options)
 
-    def _verify_plugin(self, endpoint, options):
+    def _verify_plugin(self, endpoint: str, options: dict):
         self.webhook_plugin_mgr.initialize(endpoint)
         self.webhook_plugin_mgr.verify_plugin(options)

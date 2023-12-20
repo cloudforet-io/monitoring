@@ -8,6 +8,4 @@ class ERROR_INVALID_ESCALATION_POLICY(ERROR_INVALID_ARGUMENT):
 
 
 class ERROR_ALERT_FEATURE_IS_NOT_ACTIVATED(ERROR_INVALID_ARGUMENT):
-    _message = (
-        "The alert feature is not activated in the project. (project_id = {project_id})"
-    )
+    _message = "The alert feature is not activated in the project. (project_id = {project_id}, workspace_id = {workspace_id})"

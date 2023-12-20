@@ -44,9 +44,9 @@ class MetricService(BaseService):
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'resources': 'list',
-                'domain_id': 'str'
+                'data_source_id': 'str',   # required
+                'resources': 'list',       # required
+                'domain_id': 'str'         # injected from auth (required)
             }
 
         Returns:
@@ -90,7 +90,7 @@ class MetricService(BaseService):
 
             list_metric_params.append(
                 {
-                    "schema": secret.get("schema"),
+                    "schema": secret.get("schema_id"),
                     "options": plugin_info.options,
                     "secret_data": secret_data,
                     "query": query,
@@ -131,14 +131,14 @@ class MetricService(BaseService):
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'metric_query': 'dict',
-                'metric': 'str',
-                'start': 'str',
-                'end': 'str',
+                'data_source_id': 'str',    # required
+                'metric_query': 'dict',     # required
+                'metric': 'str',            # required
+                'start': 'str',             # required
+                'end': 'str',               # required
                 'period': 'int',
                 'stat': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str'          # injected from auth (required)
             }
 
         Returns:
@@ -238,7 +238,7 @@ class MetricService(BaseService):
                         )
 
                     if "schema" not in chunk_info:
-                        chunk_info.update({"schema": secret.get("schema")})
+                        chunk_info.update({"schema": secret.get("schema_id")})
 
                     _metric_query = chunk_info["metric_query"]
 

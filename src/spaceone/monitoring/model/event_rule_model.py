@@ -22,9 +22,10 @@ class EventRule(MongoModel):
     actions = DictField()
     options = EmbeddedDocumentField(EventRuleOptions, default=EventRuleOptions)
     tags = DictField()
-    scope = StringField(max_length=20, choices=("GLOBAL", "PROJECT"))
+    resource_group = StringField(max_length=40, choices=("WORKSPACE", "PROJECT"))
     project_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40)
+    workspace_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
@@ -37,15 +38,23 @@ class EventRule(MongoModel):
             "options",
             "tags",
         ],
-        "minimal_fields": ["event_rule_id", "name", "order", "scope", "project_id"],
+        "minimal_fields": [
+            "event_rule_id",
+            "name",
+            "order",
+            "resource_group",
+            "project_id",
+            "workspace_id",
+        ],
         "change_query_keys": {"user_projects": "project_id"},
         "ordering": ["order"],
         "indexes": [
             # 'event_rule_id',
             "order",
             "conditions_policy",
-            "scope",
+            "resource_group",
             "project_id",
+            "workspace_id",
             "domain_id",
         ],
     }

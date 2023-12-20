@@ -10,18 +10,20 @@ class Note(MongoModel):
     alert = ReferenceField("Alert", reverse_delete_rule=CASCADE)
     created_by = StringField(max_length=40)
     project_id = StringField(max_length=40)
+    workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
         "updatable_fields": ["note", "project_id"],
-        "minimal_fields": ["note_id", "note", "alert_id", "created_by"],
+        "minimal_fields": ["note_id", "note", "alert_id", "created_by", "workspace_id"],
         "change_query_keys": {"user_projects": "project_id"},
         "ordering": ["-created_at"],
         "indexes": [
             # 'note_id',
             "alert_id",
             "created_by",
+            "workspace_id",
             "domain_id",
         ],
     }

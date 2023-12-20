@@ -11,6 +11,7 @@ from spaceone.monitoring.manager.data_source_plugin_manager import (
 )
 from spaceone.monitoring.manager.repository_manager import RepositoryManager
 from spaceone.monitoring.manager.secret_manager import SecretManager
+from spaceone.monitoring.model import DataSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,15 +32,15 @@ class DataSourceService(BaseService):
 
     @transaction(permission="monitoring:DataSource.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["name", "plugin_info", "domain_id"])
-    def register(self, params):
+    def register(self, params: dict) -> DataSource:
         """Register data source
 
         Args:
             params (dict): {
-                'name': 'str',
-                'plugin_info': 'dict',
+                'name': 'str',           # required
+                'plugin_info': 'dict',   # required
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str'       # injected from auth (required)
             }
 
         Returns:
@@ -78,10 +79,10 @@ class DataSourceService(BaseService):
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
+                'data_source_id': 'str',   # required
                 'name': 'dict',
                 'tags': 'dict'
-                'domain_id': 'str'
+                'domain_id': 'str'         # injected from auth (required)
             }
 
         Returns:
@@ -95,13 +96,13 @@ class DataSourceService(BaseService):
 
     @transaction(permission="monitoring:DataSource.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["data_source_id", "domain_id"])
-    def enable(self, params):
+    def enable(self, params: dict) -> DataSource:
         """Enable data source
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'domain_id': 'str'
+                'data_source_id': 'str',   # required
+                'domain_id': 'str'         # injected from auth (required)
             }
 
         Returns:
@@ -118,13 +119,13 @@ class DataSourceService(BaseService):
 
     @transaction(permission="monitoring:DataSource.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["data_source_id", "domain_id"])
-    def disable(self, params):
+    def disable(self, params: dict) -> DataSource:
         """Disable data source
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'domain_id': 'str'
+                'data_source_id': 'str',   # required
+                'domain_id': 'str'         # injected from auth (required)
             }
 
         Returns:
@@ -141,13 +142,13 @@ class DataSourceService(BaseService):
 
     @transaction(permission="monitoring:DataSource.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["data_source_id", "domain_id"])
-    def deregister(self, params):
+    def deregister(self, params: dict) -> None:
         """Deregister data source
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'domain_id': 'str'
+                'data_source_id': 'str',   # required
+                'domain_id': 'str'         # injected from auth (required)
             }
 
         Returns:
@@ -160,13 +161,13 @@ class DataSourceService(BaseService):
 
     @transaction(permission="monitoring:DataSource.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["data_source_id", "domain_id"])
-    def verify_plugin(self, params):
+    def verify_plugin(self, params: dict) -> None:
         """Verify data source plugin
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'domain_id': 'str'
+                'data_source_id': 'str',   # required
+                'domain_id': 'str'         # injected from auth (required)
             }
 
         Returns:
@@ -195,11 +196,11 @@ class DataSourceService(BaseService):
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
+                'data_source_id': 'str',   # required
                 'version': 'str',
                 'options': 'dict',
                 'upgrade_mode': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str'         # injected from auth (required)
             }
 
         Returns:
@@ -251,9 +252,8 @@ class DataSourceService(BaseService):
 
         Args:
             params (dict): {
-                'data_source_id': 'str',
-                'domain_id': 'str',
-                'only': 'list
+                'data_source_id': 'str',    # required
+                'domain_id': 'str',         # injected from auth (required)
             }
 
         Returns:
@@ -262,9 +262,7 @@ class DataSourceService(BaseService):
         domain_id = params["domain_id"]
         self._initialize_data_sources(domain_id)
 
-        return self.data_source_mgr.get_data_source(
-            params["data_source_id"], domain_id, params.get("only")
-        )
+        return self.data_source_mgr.get_data_source(params["data_source_id"], domain_id)
 
     @transaction(
         permission="monitoring:DataSource.read",
@@ -280,13 +278,13 @@ class DataSourceService(BaseService):
 
         Args:
             params (dict): {
+                'query': 'dict (spaceone.api.core.v1.Query)'
                 'data_source_id': 'str',
                 'name': 'str',
                 'state': 'str',
                 'monitoring_type': 'str',
                 'provider': 'str',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
+                'domain_id': 'str',             # injected from auth (required)
             }
 
         Returns:
@@ -310,8 +308,8 @@ class DataSourceService(BaseService):
         """
         Args:
             params (dict): {
-                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                'domain_id': 'str',        # injected from auth (required)
             }
 
         Returns:
@@ -323,7 +321,7 @@ class DataSourceService(BaseService):
         return self.data_source_mgr.stat_data_sources(query)
 
     @staticmethod
-    def _check_plugin_capability(capability):
+    def _check_plugin_capability(capability: dict) -> None:
         if "monitoring_type" not in capability:
             raise ERROR_WRONG_PLUGIN_SETTINGS(key="capability.monitoring_type")
         else:
@@ -334,7 +332,7 @@ class DataSourceService(BaseService):
             raise ERROR_WRONG_PLUGIN_SETTINGS(key="capability.supported_schema")
 
     @staticmethod
-    def _check_plugin_info(plugin_info_params):
+    def _check_plugin_info(plugin_info_params: dict) -> None:
         if "plugin_id" not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
@@ -350,20 +348,22 @@ class DataSourceService(BaseService):
         if secret_id is None and provider is None:
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.[secret_id | provider]")
 
-    def _get_plugin(self, plugin_info, domain_id):
+    def _get_plugin(self, plugin_info: dict, domain_id: str) -> dict:
         plugin_id = plugin_info["plugin_id"]
 
         repo_mgr: RepositoryManager = self.locator.get_manager("RepositoryManager")
         return repo_mgr.get_plugin(plugin_id, domain_id)
 
-    def _init_plugin(self, endpoint, options, monitoring_type):
+    def _init_plugin(self, endpoint: str, options: dict, monitoring_type: str) -> dict:
         self.ds_plugin_mgr.initialize(endpoint)
         return self.ds_plugin_mgr.init_plugin(options, monitoring_type)
 
-    def _verify_plugin(self, endpoint, plugin_info, capability, domain_id):
+    def _verify_plugin(
+        self, endpoint: str, plugin_info: dict, capability: dict, domain_id: str
+    ) -> None:
         options = plugin_info.get("options", {})
         secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-        secret_data, schema = secret_mgr.get_secret_data_from_plugin(
+        secret_data, schema_id = secret_mgr.get_secret_data_from_plugin(
             plugin_info, capability, domain_id
         )
 
@@ -371,7 +371,7 @@ class DataSourceService(BaseService):
             "DataSourcePluginManager"
         )
         ds_plugin_mgr.initialize(endpoint)
-        ds_plugin_mgr.verify_plugin(options, secret_data, schema)
+        ds_plugin_mgr.verify_plugin(options, secret_data, schema_id)
 
     @cache.cacheable(key="init-data-source:{domain_id}", expire=300)
     def _initialize_data_sources(self, domain_id):

@@ -1,6 +1,7 @@
 import logging
 
 from spaceone.core.manager import BaseManager
+
 from spaceone.monitoring.model.data_source_model import DataSource
 
 _LOGGER = logging.getLogger(__name__)
@@ -11,14 +12,14 @@ class DataSourceManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.data_source_model: DataSource = self.locator.get_model("DataSource")
 
-    def register_data_source(self, params):
-        def _rollback(data_source_vo):
+    def register_data_source(self, params: dict) -> DataSource:
+        def _rollback(vo: DataSource):
             _LOGGER.info(
                 f"[register_data_source._rollback] "
-                f"Delete data source : {data_source_vo.name} "
-                f"({data_source_vo.data_source_id})"
+                f"Delete data source : {vo.name} "
+                f"({vo.data_source_id})"
             )
-            data_source_vo.delete()
+            vo.delete()
 
         data_source_vo: DataSource = self.data_source_model.create(params)
         self.transaction.add_rollback(_rollback, data_source_vo)
@@ -31,8 +32,10 @@ class DataSourceManager(BaseManager):
         )
         return self.update_data_source_by_vo(params, data_source_vo)
 
-    def update_data_source_by_vo(self, params, data_source_vo):
-        def _rollback(old_data):
+    def update_data_source_by_vo(
+        self, params: dict, data_source_vo: DataSource
+    ) -> DataSource:
+        def _rollback(old_data: dict) -> None:
             _LOGGER.info(
                 f"[update_data_source_by_vo._rollback] Revert Data : "
                 f'{old_data["data_source_id"]}'
@@ -42,17 +45,17 @@ class DataSourceManager(BaseManager):
         self.transaction.add_rollback(_rollback, data_source_vo.to_dict())
         return data_source_vo.update(params)
 
-    def deregister_data_source(self, data_source_id, domain_id):
+    def deregister_data_source(self, data_source_id: str, domain_id: str) -> None:
         data_source_vo: DataSource = self.get_data_source(data_source_id, domain_id)
         data_source_vo.delete()
 
-    def get_data_source(self, data_source_id, domain_id, only=None):
+    def get_data_source(self, data_source_id: str, domain_id: str) -> DataSource:
         return self.data_source_model.get(
-            data_source_id=data_source_id, domain_id=domain_id, only=only
+            data_source_id=data_source_id, domain_id=domain_id
         )
 
-    def list_data_sources(self, query={}):
+    def list_data_sources(self, query: dict) -> dict:
         return self.data_source_model.query(**query)
 
-    def stat_data_sources(self, query):
+    def stat_data_sources(self, query: dict) -> dict:
         return self.data_source_model.stat(**query)

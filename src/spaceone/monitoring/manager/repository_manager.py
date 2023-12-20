@@ -1,7 +1,8 @@
 import logging
 
-from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.core.manager import BaseManager
+
 from spaceone.monitoring.error import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -14,9 +15,10 @@ class RepositoryManager(BaseManager):
             "SpaceConnector", service="repository"
         )
 
-    def get_plugin(self, plugin_id, domain_id):
+    def get_plugin(self, plugin_id: str, domain_id: str):
         return self.repo_connector.dispatch(
-            "Plugin.get", {"plugin_id": plugin_id, "domain_id": domain_id}
+            "Plugin.get",
+            {"plugin_id": plugin_id, "domain_id": domain_id},
         )
 
     def check_plugin_version(self, plugin_id, version, domain_id):

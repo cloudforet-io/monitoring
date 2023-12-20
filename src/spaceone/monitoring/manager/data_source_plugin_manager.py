@@ -1,11 +1,12 @@
 import logging
 
 from spaceone.core.manager import BaseManager
-from spaceone.monitoring.error import *
-from spaceone.monitoring.manager.plugin_manager import PluginManager
+
 from spaceone.monitoring.connector.datasource_plugin_connector import (
     DataSourcePluginConnector,
 )
+from spaceone.monitoring.error import *
+from spaceone.monitoring.manager.plugin_manager import PluginManager
 from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.model.plugin_metadata_model import (
     MetricPluginMetadataModel,
@@ -22,11 +23,11 @@ class DataSourcePluginManager(BaseManager):
             "DataSourcePluginConnector"
         )
 
-    def initialize(self, endpoint):
+    def initialize(self, endpoint: str) -> None:
         _LOGGER.debug(f"[initialize] data source plugin endpoint: {endpoint}")
         self.dsp_connector.initialize(endpoint)
 
-    def init_plugin(self, options, monitoring_type):
+    def init_plugin(self, options: dict, monitoring_type: str) -> dict:
         plugin_info = self.dsp_connector.init(options)
 
         _LOGGER.debug(f"[plugin_info] {plugin_info}")
@@ -36,8 +37,8 @@ class DataSourcePluginManager(BaseManager):
 
         return plugin_metadata
 
-    def verify_plugin(self, options, secret_data, schema):
-        self.dsp_connector.verify(options, secret_data, schema)
+    def verify_plugin(self, options, secret_data, schema_id):
+        self.dsp_connector.verify(options, secret_data, schema_id)
 
     def list_metrics(self, schema, options, secret_data, query):
         return self.dsp_connector.list_metrics(schema, options, secret_data, query)
@@ -58,7 +59,7 @@ class DataSourcePluginManager(BaseManager):
         return {"results": results}
 
     @staticmethod
-    def _validate_plugin_metadata(plugin_metadata, monitoring_type):
+    def _validate_plugin_metadata(plugin_metadata: dict, monitoring_type: str) -> None:
         try:
             if monitoring_type == "METRIC":
                 MetricPluginMetadataModel(plugin_metadata).validate()
@@ -89,7 +90,9 @@ class DataSourcePluginManager(BaseManager):
 
         return endpoint
 
-    def get_data_source_plugin_endpoint(self, plugin_info, domain_id):
+    def get_data_source_plugin_endpoint(
+        self, plugin_info: dict, domain_id: str
+    ) -> dict:
         plugin_mgr: PluginManager = self.locator.get_manager("PluginManager")
         return plugin_mgr.get_plugin_endpoint(plugin_info, domain_id)
 
