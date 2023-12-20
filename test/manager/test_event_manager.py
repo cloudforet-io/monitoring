@@ -14,19 +14,15 @@ from test.factory.event_factory import EventFactory
 
 
 class TestEventManager(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-        config.init_conf(package='spaceone.monitoring')
+        config.init_conf(package="spaceone.monitoring")
         config.set_service_config()
         config.set_global(MOCK_MODE=True)
-        connect('test', host='mongomock://localhost')
+        connect("test", host="mongomock://localhost")
 
-        cls.domain_id = utils.generate_id('domain')
-        cls.transaction = Transaction({
-            'service': 'monitoring',
-            'api_class': 'Event'
-        })
+        cls.domain_id = utils.generate_id("domain")
+        cls.transaction = Transaction({"service": "monitoring", "api_class": "Event"})
         super().setUpClass()
 
     @classmethod
@@ -36,18 +32,24 @@ class TestEventManager(unittest.TestCase):
 
     def tearDown(self, *args) -> None:
         print()
-        print('(tearDown) ==> Delete all data_sources')
+        print("(tearDown) ==> Delete all data_sources")
         event_vos = Event.objects.filter()
         event_vos.delete()
 
     def test_update_event_by_vo(self):
-        test_event = EventFactory(alert_id='alert-400c20b10a5c',  domain_id='domain-58010aa2e451', event_type='ALERT')
-        merge_to = 'alert-b02c18c373ae'
-        event_params = {'alert_id': merge_to}
+        test_event = EventFactory(
+            alert_id="alert-400c20b10a5c",
+            domain_id="domain-58010aa2e451",
+            event_type="ALERT",
+        )
+        merge_to = "alert-b02c18c373ae"
+        event_params = {"alert_id": merge_to}
 
-        self.transaction.method = 'update'
+        self.transaction.method = "update"
         event_mgr = EventManager(transaction=self.transaction)
-        updated_event_info = event_mgr.update_event_by_vo(event_params.copy(), event_vo=test_event)
+        updated_event_info = event_mgr.update_event_by_vo(
+            event_params.copy(), event_vo=test_event
+        )
 
         self.assertEqual(merge_to, updated_event_info.alert_id)
 

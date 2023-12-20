@@ -4,9 +4,9 @@ from spaceone.monitoring.plugin.webhook.lib.server import WebhookPluginServer
 app = WebhookPluginServer()
 
 
-@app.route('Webhook.init')
+@app.route("Webhook.init")
 def webhook_init(params: dict) -> dict:
-    """ init plugin by options
+    """init plugin by options
 
     Args:
         params (WebhookInitRequest): {
@@ -21,9 +21,9 @@ def webhook_init(params: dict) -> dict:
     pass
 
 
-@app.route('Webhook.verify')
+@app.route("Webhook.verify")
 def webhook_verify(params: dict) -> None:
-    """ Verifying webhook plugin
+    """Verifying webhook plugin
 
     Args:
         params (WebhookVerityRequest): {
@@ -39,9 +39,9 @@ def webhook_verify(params: dict) -> None:
     pass
 
 
-@app.route('Event.parse')
+@app.route("Event.parse")
 def event_parse(params: dict) -> List[dict]:
-    """ Parsing Event Webhook
+    """Parsing Event Webhook
 
     Args:
         params (EventRequest): {

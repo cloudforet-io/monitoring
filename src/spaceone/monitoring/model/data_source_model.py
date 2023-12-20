@@ -10,17 +10,21 @@ class PluginInfo(EmbeddedDocument):
     metadata = DictField(default={})
     secret_id = StringField(max_length=40, default=None, null=True)
     provider = StringField(max_length=40, default=None, null=True)
-    upgrade_mode = StringField(max_length=255, choices=('AUTO', 'MANUAL'), default='AUTO')
+    upgrade_mode = StringField(
+        max_length=255, choices=("AUTO", "MANUAL"), default="AUTO"
+    )
 
     def to_dict(self):
         return dict(self.to_mongo())
 
 
 class DataSource(MongoModel):
-    data_source_id = StringField(max_length=40, generate_id='ds', unique=True)
-    name = StringField(max_length=255, unique_with='domain_id')
-    state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
-    monitoring_type = StringField(max_length=20, choices=('METRIC', 'LOG'))
+    data_source_id = StringField(max_length=40, generate_id="ds", unique=True)
+    name = StringField(max_length=255, unique_with="domain_id")
+    state = StringField(
+        max_length=20, default="ENABLED", choices=("ENABLED", "DISABLED")
+    )
+    monitoring_type = StringField(max_length=20, choices=("METRIC", "LOG"))
     provider = StringField(max_length=40, default=None, null=True)
     capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
@@ -29,28 +33,20 @@ class DataSource(MongoModel):
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
-        'updatable_fields': [
-            'name',
-            'state',
-            'capability',
-            'plugin_info',
-            'tags'
+        "updatable_fields": ["name", "state", "capability", "plugin_info", "tags"],
+        "minimal_fields": [
+            "data_source_id",
+            "name",
+            "state",
+            "monitoring_type",
+            "provider",
         ],
-        'minimal_fields': [
-            'data_source_id',
-            'name',
-            'state',
-            'monitoring_type',
-            'provider'
-        ],
-        'ordering': [
-            'name'
-        ],
-        'indexes': [
+        "ordering": ["name"],
+        "indexes": [
             # 'data_source_id',
-            'state',
-            'monitoring_type',
-            'provider',
-            'domain_id',
-        ]
+            "state",
+            "monitoring_type",
+            "provider",
+            "domain_id",
+        ],
     }

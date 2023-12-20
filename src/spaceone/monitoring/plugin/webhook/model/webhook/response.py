@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-__all__ = ['WebhookResponse']
+__all__ = ["WebhookResponse"]
 
 
 class WebhookResponse(BaseModel):

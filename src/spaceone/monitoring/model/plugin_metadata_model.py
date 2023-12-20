@@ -4,7 +4,7 @@ from schematics.exceptions import ValidationError
 from schematics.types import BaseType, ListType, DictType, StringType
 from schematics.types.compound import ModelType
 
-__all__ = ['MetricPluginMetadataModel', 'LogPluginMetadataModel']
+__all__ = ["MetricPluginMetadataModel", "LogPluginMetadataModel"]
 
 
 class JSONSchemaType(BaseType):
@@ -12,7 +12,9 @@ class JSONSchemaType(BaseType):
         try:
             jsonschema.Draft7Validator.check_schema(value)
         except Exception as e:
-            raise ValidationError(key=f'Plugin metadata is invalid. (filter_format = {str(value)}')
+            raise ValidationError(
+                key=f"Plugin metadata is invalid. (filter_format = {str(value)}"
+            )
 
 
 class DynamicField(Model):
@@ -36,4 +38,3 @@ class LogPluginMetadataModel(Model):
     required_keys = ListType(StringType)
     view = DictType(BaseType)
     supported_providers = ListType(StringType)
-

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-__all__ = ['WebhookInitRequest', 'WebhookVerityRequest']
+__all__ = ["WebhookInitRequest", "WebhookVerityRequest"]
 
 
 class WebhookInitRequest(BaseModel):
