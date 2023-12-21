@@ -14,10 +14,7 @@ class PluginManager(BaseManager):
         )
 
     def get_plugin_endpoint(self, plugin_info: dict, domain_id: str) -> (str, str):
-        plugin_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", service="plugin"
-        )
-        response = plugin_connector.dispatch(
+        response = self.plugin_connector.dispatch(
             "Plugin.get_plugin_endpoint",
             {
                 "plugin_id": plugin_info["plugin_id"],

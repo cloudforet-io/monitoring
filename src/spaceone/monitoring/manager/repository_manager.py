@@ -15,10 +15,10 @@ class RepositoryManager(BaseManager):
             "SpaceConnector", service="repository"
         )
 
-    def get_plugin(self, plugin_id: str, domain_id: str):
+    def get_plugin(self, plugin_id: str):
         return self.repo_connector.dispatch(
             "Plugin.get",
-            {"plugin_id": plugin_id, "domain_id": domain_id},
+            {"plugin_id": plugin_id},
         )
 
     def check_plugin_version(self, plugin_id, version, domain_id):

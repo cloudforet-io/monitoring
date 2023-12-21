@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 @event_handler
 class WebhookService(BaseService):
     resource = "Webhook"
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
@@ -408,11 +408,11 @@ class WebhookService(BaseService):
         if "plugin_id" not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
-    def _get_plugin(self, plugin_info: dict, domain_id: str):
+    def _get_plugin(self, plugin_info: dict):
         plugin_id = plugin_info["plugin_id"]
 
         repo_mgr: RepositoryManager = self.locator.get_manager("RepositoryManager")
-        plugin_info = repo_mgr.get_plugin(plugin_id, domain_id)
+        plugin_info = repo_mgr.get_plugin(plugin_id)
 
         return plugin_info
 

@@ -1,11 +1,9 @@
 import logging
 
 from google.protobuf.json_format import MessageToDict
-
-from spaceone.core.connector import BaseConnector
 from spaceone.core import pygrpc
+from spaceone.core.connector import BaseConnector
 from spaceone.core.utils import parse_endpoint
-from spaceone.core.error import *
 
 __all__ = ["WebhookPluginConnector"]
 
@@ -27,6 +25,7 @@ class WebhookPluginConnector(BaseConnector):
         self.client = pygrpc.client(
             endpoint=f'{e.get("hostname")}:{e.get("port")}', version="plugin"
         )
+        print(self.client)
 
     def init(self, options):
         response = self.client.Webhook.init(

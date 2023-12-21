@@ -354,7 +354,7 @@ class DataSourceService(BaseService):
         plugin_id = plugin_info["plugin_id"]
 
         repo_mgr: RepositoryManager = self.locator.get_manager("RepositoryManager")
-        return repo_mgr.get_plugin(plugin_id, domain_id)
+        return repo_mgr.get_plugin(plugin_id)
 
     def _init_plugin(self, endpoint: str, options: dict, monitoring_type: str) -> dict:
         self.ds_plugin_mgr.initialize(endpoint)

@@ -1,11 +1,12 @@
 import logging
 
 from spaceone.core.manager import BaseManager
-from spaceone.monitoring.model.webhook_model import Webhook
-from spaceone.monitoring.manager.plugin_manager import PluginManager
+
 from spaceone.monitoring.connector.webhook_plugin_connector import (
     WebhookPluginConnector,
 )
+from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.model.webhook_model import Webhook
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,10 +55,11 @@ class WebhookPluginManager(BaseManager):
         return plugin_mgr.get_plugin_endpoint(plugin_info, domain_id)
 
     def upgrade_webhook_plugin_version(
-        self, webhook_vo: Webhook, endpoint, updated_version
+            self, webhook_vo: Webhook, endpoint, updated_version
     ):
         plugin_info = webhook_vo.plugin_info.to_dict()
         self.initialize(endpoint)
+        print(endpoint)
         plugin_metadata = self.init_plugin(plugin_info.get("options", {}))
         plugin_info["version"] = updated_version
         plugin_info["metadata"] = plugin_metadata
