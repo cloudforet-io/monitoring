@@ -1,7 +1,6 @@
 import copy
 import logging
 
-from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.monitoring.conf.default_escalation_policy import DEFAULT_ESCALATION_POLICY
@@ -34,7 +33,6 @@ class EscalationPolicyManager(BaseManager):
 
         return escalation_policy_vo
 
-    @cache.cacheable(key="escalation-policy:{domain_id}:default:init", expire=300)
     def create_default_escalation_policy(
             self, domain_id, workspace_id, project_id=None
     ):
@@ -51,6 +49,9 @@ class EscalationPolicyManager(BaseManager):
             default_escalation_policy["workspace_id"] = workspace_id
             default_escalation_policy["project_id"] = "*"
 
+        if isinstance(workspace_id, list):
+            default_escalation_policy["workspace_id"] = workspace_id[0]
+
         return self.create_escalation_policy(default_escalation_policy)
 
     def update_escalation_policy_by_vo(
@@ -66,10 +67,6 @@ class EscalationPolicyManager(BaseManager):
         self.transaction.add_rollback(_rollback, escalation_policy_vo.to_dict())
 
         updated_vo: EscalationPolicy = escalation_policy_vo.update(params)
-
-        cache.delete(
-            f"escalation-policy-condition:{updated_vo.domain_id}:{updated_vo.workspace_id}:{updated_vo.escalation_policy_id}"
-        )
 
         return updated_vo
 
@@ -151,10 +148,6 @@ class EscalationPolicyManager(BaseManager):
             raise ERROR_DEFAULT_ESCALATION_POLICY_NOT_ALLOW_DELETION(
                 escalation_policy_id=escalation_policy_id
             )
-
-        cache.delete(
-            f"escalation-policy-condition:{domain_id}:{workspace_id}:{escalation_policy_id}"
-        )
 
         escalation_policy_vo.delete()
 
