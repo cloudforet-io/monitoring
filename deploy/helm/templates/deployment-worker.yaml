@@ -1,114 +1,114 @@
-{ { - if .Values.enabled } }
-  { { - if .Values.worker } }
+{{- if .Values.enabled }}
+{{- if .Values.worker }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-  { { include "spaceone.labels" . | indent 4 } }
-spaceone.service: { { .Values.name } }
-name: { { .Values.name } }-worker
-namespace: { { .Values.global.namespace | default .Release.Namespace } }
+{{ include "spaceone.labels" . | indent 4 }}
+    spaceone.service: {{ .Values.name }}
+  name: {{ .Values.name }}-worker
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
 spec:
-  replicas: { { .Values.replicas_worker | default .Values.replicas } }
+  replicas: {{ .Values.replicas_worker | default .Values.replicas }}
   revisionHistoryLimit: 3
   selector:
     matchLabels:
-      spaceone.service: { { .Values.name } }-worker
+      spaceone.service: {{ .Values.name }}-worker
   template:
     metadata:
       annotations:
         spaceone.deployment.tool: helm
-        spaceone.database-flag: { { print .Values.database | sha256sum } }
-        spaceone.shared-flag: { { print .Values.global.shared | sha256sum } }
-        spaceone.application-flag: { { print .Values.application_worker | sha256sum } }
+        spaceone.database-flag: {{ print .Values.database | sha256sum }}
+        spaceone.shared-flag: {{ print .Values.global.shared | sha256sum }}
+        spaceone.application-flag: {{ print .Values.application_worker | sha256sum }}
       labels:
-  { { include "spaceone.labels" . | indent 8 } }
-spaceone.service: { { .Values.name } }-worker
-spec:
-  { { - if .Values.global.serviceAccountName } }
-serviceAccountName: { { .Values.global.serviceAccountName } }
-  { { - end } }
-terminationGracePeriodSeconds: { { .Values.gracePeriod } }
-  { { - if .Values.imagePullSecrets } }
-  { { - with .Values.imagePullSecrets } }
-imagePullSecrets:
-  { { - toYaml . | nindent 8 } }
-  { { - end } }
-  { { - end } }
-containers:
-  - name: { { .Values.name } }-worker
-    image: { { .Values.image.name } }:{{ .Values.image.version }}
-    imagePullPolicy: { { .Values.imagePullPolicy } }
-  { { - if .Values.resources.worker } }
-resources:
-  { { - toYaml .Values.resources.worker | nindent 12 } }
-  { { - end } }
-command: [ 'spaceone', 'run', 'scheduler', 'spaceone.{{ regexReplaceAll "-" .Values.name "_" }}' ]
-volumeMounts:
-  - name: default-conf
-    mountPath: /opt/spaceone/{{ .Values.name }}/config/config.yaml
-    subPath: config.yaml
-    readOnly: true
-  - name: timezone
-    mountPath: /etc/localtime
-  - name: log-volume
-    mountPath: /var/log/spaceone
-  - name: database-conf
-    mountPath: /opt/spaceone/{{ .Values.name }}/config/database.yaml
-    subPath: database.yaml
-    readOnly: true
-  - name: shared-conf
-    mountPath: /opt/spaceone/{{ .Values.name }}/config/shared.yaml
-    subPath: shared.yaml
-    readOnly: true
-  - name: application-conf
-    mountPath: /opt/spaceone/{{ .Values.name }}/config/application.yaml
-    subPath: application.yaml
-    readOnly: true
-  { { - if .Values.volumeMounts.application_worker } }
-  { { - toYaml .Values.volumeMounts.application_worker | nindent 12 } }
-  { { - end } }
-env:
-  - name: SPACEONE_CONFIG_FILE
-    value: /opt/spaceone/{{ .Values.name }}/config/config.yaml
-  { { - if .Values.global.common_env } }
-  { { - toYaml .Values.global.common_env | nindent 12 } }
-  { { - end } }
+{{ include "spaceone.labels" . | indent 8 }}
+        spaceone.service: {{ .Values.name }}-worker
+    spec:
+{{- if .Values.global.serviceAccountName }}
+      serviceAccountName: {{ .Values.global.serviceAccountName }}
+{{- end }}
+      terminationGracePeriodSeconds: {{ .Values.gracePeriod }}
+{{- if .Values.imagePullSecrets}}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end}}
+      containers:
+        - name: {{ .Values.name }}-worker
+          image: {{ .Values.image.name }}:{{ .Values.image.version }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+{{- if .Values.resources.worker }}
+          resources:
+          {{- toYaml .Values.resources.worker | nindent 12 }}
+{{- end }}
+          command: ['spaceone', 'run', 'scheduler', 'spaceone.{{ regexReplaceAll "-" .Values.name "_" }}']
+          volumeMounts:
+            - name: default-conf
+              mountPath: /opt/spaceone/{{ .Values.name }}/config/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: timezone
+              mountPath: /etc/localtime
+            - name: log-volume
+              mountPath: /var/log/spaceone
+            - name: database-conf
+              mountPath: /opt/spaceone/{{ .Values.name }}/config/database.yaml
+              subPath: database.yaml
+              readOnly: true
+            - name: shared-conf
+              mountPath: /opt/spaceone/{{ .Values.name }}/config/shared.yaml
+              subPath: shared.yaml
+              readOnly: true
+            - name: application-conf
+              mountPath: /opt/spaceone/{{ .Values.name }}/config/application.yaml
+              subPath: application.yaml
+              readOnly: true
+{{- if .Values.volumeMounts.application_worker }}
+{{- toYaml .Values.volumeMounts.application_worker | nindent 12 }}
+{{- end }}
+          env:
+            - name: SPACEONE_CONFIG_FILE
+              value: /opt/spaceone/{{ .Values.name }}/config/config.yaml
+{{- if .Values.global.common_env }}
+{{- toYaml .Values.global.common_env | nindent 12 }}
+{{- end }}
 
-  { { - if .Values.sidecar.worker } }
-  { { - toYaml .Values.sidecar.worker | nindent 8 } }
-  { { - end } }
+{{- if .Values.sidecar.worker }}
+{{- toYaml .Values.sidecar.worker | nindent 8 }}
+{{- end }}
 
 
-  { { - if .Values.global.backend.sidecar } }
-  { { - toYaml .Values.global.backend.sidecar | nindent 8 } }
-  { { - end } }
+{{- if .Values.global.backend.sidecar }}
+{{- toYaml .Values.global.backend.sidecar | nindent 8 }}
+{{- end }}
 
-volumes:
-  - name: default-conf
-    configMap:
-      name: { { .Values.name } }-conf
-  - name: database-conf
-  configMap:
-    name: { { .Values.name } }-database-conf
-  - name: shared-conf
-  configMap:
-    name: shared-conf
-  - name: application-conf
-    configMap:
-      name: { { .Values.name } }-application-worker-conf
+      volumes:
+        - name: default-conf
+          configMap:
+            name: {{ .Values.name }}-conf
+        - name: database-conf
+          configMap:
+            name: {{ .Values.name }}-database-conf
+        - name: shared-conf
+          configMap:
+            name: shared-conf
+        - name: application-conf
+          configMap:
+            name: {{ .Values.name }}-application-worker-conf
 
-  { { - if .Values.volumes } }
-  { { - toYaml .Values.volumes | nindent 8 } }
-  { { - end } }
-  
-  { { - if .Values.global.backend.volumes } }
-  { { - toYaml .Values.global.backend.volumes | nindent 8 } }
-  { { - end } }
-  
-  { { - if .Values.pod.spec } }
-  { { - toYaml .Values.pod.spec | nindent 6 } }
-  { { - end } }
-  
-  { { - end } }
-  { { - end } }
+{{- if .Values.volumes }}
+{{- toYaml .Values.volumes | nindent 8 }}
+{{- end }}
+
+{{- if .Values.global.backend.volumes }}
+{{- toYaml .Values.global.backend.volumes | nindent 8 }}
+{{- end }}
+
+{{- if .Values.pod.spec }}
+{{- toYaml .Values.pod.spec | nindent 6 }}
+{{- end }}
+
+{{- end }}
+{{- end }}
