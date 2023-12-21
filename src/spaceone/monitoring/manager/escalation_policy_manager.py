@@ -1,7 +1,6 @@
 import copy
 import logging
 
-from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.monitoring.conf.default_escalation_policy import DEFAULT_ESCALATION_POLICY
@@ -34,22 +33,17 @@ class EscalationPolicyManager(BaseManager):
 
         return escalation_policy_vo
 
-    @cache.cacheable(key="escalation-policy:{domain_id}:default:init", expire=300)
     def create_default_escalation_policy(
-            self, domain_id, workspace_id, project_id=None
+            self, domain_id, workspace_id
     ):
         default_escalation_policy = copy.deepcopy(DEFAULT_ESCALATION_POLICY)
+        default_escalation_policy["resource_group"] = "WORKSPACE"
+        default_escalation_policy["domain_id"] = domain_id
+        default_escalation_policy["workspace_id"] = workspace_id
+        default_escalation_policy["project_id"] = "*"
 
-        if project_id:
-            default_escalation_policy["resource_group"] = "PROJECT"
-            default_escalation_policy["domain_id"] = domain_id
-            default_escalation_policy["workspace_id"] = workspace_id
-            default_escalation_policy["project_id"] = project_id
-        else:
-            default_escalation_policy["resource_group"] = "WORKSPACE"
-            default_escalation_policy["domain_id"] = domain_id
-            default_escalation_policy["workspace_id"] = workspace_id
-            default_escalation_policy["project_id"] = "*"
+        if isinstance(workspace_id, list):
+            default_escalation_policy["workspace_id"] = workspace_id[0]
 
         return self.create_escalation_policy(default_escalation_policy)
 
@@ -67,10 +61,6 @@ class EscalationPolicyManager(BaseManager):
 
         updated_vo: EscalationPolicy = escalation_policy_vo.update(params)
 
-        cache.delete(
-            f"escalation-policy-condition:{updated_vo.domain_id}:{updated_vo.workspace_id}:{updated_vo.escalation_policy_id}"
-        )
-
         return updated_vo
 
     def set_default_escalation_policy(self, params, escalation_policy_vo):
@@ -85,7 +75,7 @@ class EscalationPolicyManager(BaseManager):
 
         return escalation_policy_vo.update({"is_default": True})
 
-    def is_default_escalation_policy(self, domain_id, workspace_id, project_id=None):
+    def is_default_escalation_policy(self, domain_id, workspace_id):
         if isinstance(workspace_id, list):
             workspace_id = workspace_id[0]
 
@@ -97,9 +87,6 @@ class EscalationPolicyManager(BaseManager):
             ],
         }
 
-        if project_id:
-            query["filter"].append({"k": "project_id", "v": project_id, "o": "eq"})
-
         (
             escalation_policy_vos,
             total_count,
@@ -110,19 +97,15 @@ class EscalationPolicyManager(BaseManager):
         return True
 
     def get_default_escalation_policy(
-            self, workspace_id: str, domain_id: str, project_id: str
+            self, workspace_id: str, domain_id: str
     ) -> EscalationPolicy:
-        if not self.is_default_escalation_policy(workspace_id, domain_id, project_id):
+        if not self.is_default_escalation_policy(domain_id, workspace_id):
             return self.create_default_escalation_policy(domain_id, workspace_id)
         else:
-            # TODO: need to refactor
             query = {
-                "filter": [
-                    {"k": "domain_id", "v": domain_id, "o": "eq"},
-                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
-                    {"k": "project_id", "v": project_id, "o": "eq"},
-                    {"k": "is_default", "v": True, "o": "eq"},
-                ]
+                "domain_id": domain_id,
+                "workspace_id": workspace_id,
+                "is_default": True
             }
 
             return self.escalation_policy_model.get(**query)
@@ -151,10 +134,6 @@ class EscalationPolicyManager(BaseManager):
             raise ERROR_DEFAULT_ESCALATION_POLICY_NOT_ALLOW_DELETION(
                 escalation_policy_id=escalation_policy_id
             )
-
-        cache.delete(
-            f"escalation-policy-condition:{domain_id}:{workspace_id}:{escalation_policy_id}"
-        )
 
         escalation_policy_vo.delete()
 

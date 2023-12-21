@@ -77,7 +77,7 @@ class ProjectAlertConfigService(BaseService):
 
         else:
             escalation_policy_vo = escalation_policy_mgr.get_default_escalation_policy(
-                workspace_id, domain_id, project_id
+                workspace_id, domain_id
             )
             params["escalation_policy_id"] = escalation_policy_vo.escalation_policy_id
             params["escalation_policy"] = escalation_policy_vo
@@ -150,9 +150,9 @@ class ProjectAlertConfigService(BaseService):
 
     @transaction(
         permission="monitoring:ProjectAlertConfig.write",
-        role_types=["WORKSPACE_MEMBER"],
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["WORKSPACE_OWNER", "project_id", "domain_id", "workspace_id"])
+    @check_required(["project_id", "domain_id", "workspace_id"])
     def delete(self, params):
         """Delete project alert configuration
 
