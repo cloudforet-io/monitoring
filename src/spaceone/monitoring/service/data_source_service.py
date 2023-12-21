@@ -21,6 +21,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class DataSourceService(BaseService):
+    resource = "DataSource"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data_source_mgr: DataSourceManager = self.locator.get_manager(
@@ -337,8 +339,8 @@ class DataSourceService(BaseService):
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
         if (
-            plugin_info_params.get("upgrade_mode", "AUTO") == "MANUAL"
-            and "version" not in plugin_info_params
+                plugin_info_params.get("upgrade_mode", "AUTO") == "MANUAL"
+                and "version" not in plugin_info_params
         ):
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.version")
 
@@ -359,11 +361,11 @@ class DataSourceService(BaseService):
         return self.ds_plugin_mgr.init_plugin(options, monitoring_type)
 
     def _verify_plugin(
-        self, endpoint: str, plugin_info: dict, capability: dict, domain_id: str
+            self, endpoint: str, plugin_info: dict, capability: dict, domain_id: str
     ) -> None:
         options = plugin_info.get("options", {})
         secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-        secret_data, schema_id = secret_mgr.get_secret_data_from_plugin(
+        secret_data, schema = secret_mgr.get_secret_data_from_plugin(
             plugin_info, capability, domain_id
         )
 
@@ -371,7 +373,7 @@ class DataSourceService(BaseService):
             "DataSourcePluginManager"
         )
         ds_plugin_mgr.initialize(endpoint)
-        ds_plugin_mgr.verify_plugin(options, secret_data, schema_id)
+        ds_plugin_mgr.verify_plugin(options, secret_data, schema)
 
     @cache.cacheable(key="init-data-source:{domain_id}", expire=300)
     def _initialize_data_sources(self, domain_id):
@@ -390,8 +392,8 @@ class DataSourceService(BaseService):
         global_conf = config.get_global()
         for _data_source in global_conf.get("INSTALLED_DATA_SOURCE_PLUGINS", []):
             if (
-                _data_source["plugin_info"]["plugin_id"]
-                not in installed_data_sources_ids
+                    _data_source["plugin_info"]["plugin_id"]
+                    not in installed_data_sources_ids
             ):
                 try:
                     _LOGGER.debug(

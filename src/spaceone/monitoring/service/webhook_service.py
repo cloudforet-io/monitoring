@@ -20,6 +20,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class WebhookService(BaseService):
+    resource = "Webhook"
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")

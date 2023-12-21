@@ -64,7 +64,7 @@ class SecretManager(BaseManager):
         return response.get("results", [])
 
     def get_secret_data_from_plugin(
-        self, plugin_info: dict, capability: dict, domain_id: str
+            self, plugin_info: dict, capability: dict, domain_id: str
     ) -> (dict, dict):
         plugin_id = plugin_info["plugin_id"]
         secret_id = plugin_info.get("secret_id")
@@ -96,9 +96,9 @@ class SecretManager(BaseManager):
 
         result = response["results"][0]
         secret_id = result["secret_id"]
-        schema_id = result.get("schema_id")
+        schema = result.get("schema_id")
 
-        return self.get_secret_data(secret_id, domain_id), schema_id
+        return self.get_secret_data(secret_id, domain_id), schema
 
     @staticmethod
     def _check_plugin_secret(use_resource_secret: bool, plugin_info: dict) -> None:

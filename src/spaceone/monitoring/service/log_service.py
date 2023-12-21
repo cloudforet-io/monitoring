@@ -21,6 +21,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class LogService(BaseService):
+    resource = "Log"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")

@@ -23,6 +23,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class AlertService(BaseService):
+    resource = "Alert"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.alert_mgr: AlertManager = self.locator.get_manager("AlertManager")
@@ -415,7 +417,7 @@ class AlertService(BaseService):
         return self.alert_mgr.stat_alerts(query)
 
     def _create_notification(
-        self, alert_vo: Alert, method: str, user_id: str = None
+            self, alert_vo: Alert, method: str, user_id: str = None
     ) -> None:
         params = {
             "alert_id": alert_vo.alert_id,
