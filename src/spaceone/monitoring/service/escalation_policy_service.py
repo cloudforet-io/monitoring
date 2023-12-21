@@ -250,14 +250,13 @@ class EscalationPolicyService(BaseService):
         """
         domain_id = params["domain_id"]
         workspace_id = params["workspace_id"]
-        project_id = params.get("project_id")
+
         if not self.escalation_policy_mgr.is_default_escalation_policy(
-                domain_id, workspace_id, project_id
+                domain_id, workspace_id
         ):
             self.escalation_policy_mgr.create_default_escalation_policy(
-                domain_id, workspace_id, project_id
+                domain_id, workspace_id
             )
-
         query = params.get("query", {})
         return self.escalation_policy_mgr.list_escalation_policies(query)
 

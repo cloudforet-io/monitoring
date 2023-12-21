@@ -1,6 +1,5 @@
 import logging
 
-from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
@@ -16,7 +15,7 @@ class IdentityManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.identity_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", service="identity", token=config.get_global("TOKEN")
+            "SpaceConnector", service="identity"
         )
 
     def get_domain(self, domain_id):
