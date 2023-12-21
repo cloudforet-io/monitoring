@@ -25,6 +25,8 @@ _LOGGER = logging.getLogger(__name__)
 
 @event_handler
 class JobService(BaseService):
+    resource = "Job"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.job_mgr: JobManager = self.locator.get_manager("JobManager")
@@ -217,12 +219,12 @@ class JobService(BaseService):
 
             # Check Notification Urgency and Finish Condition
             if not (
-                self._check_notification_options(
-                    alert_vo.urgency, alert_id, alert_options
-                )
-                and self._check_finish_condition(
-                    alert_vo.state, alert_id, finish_condition
-                )
+                    self._check_notification_options(
+                        alert_vo.urgency, alert_id, alert_options
+                    )
+                    and self._check_finish_condition(
+                alert_vo.state, alert_id, finish_condition
+            )
             ):
                 alert_mgr.update_alert_by_vo({"escalation_ttl": 0}, alert_vo)
 
@@ -319,7 +321,7 @@ class JobService(BaseService):
         key="escalation-policy-condition:{domain_id}:{escalation_policy_id}", expire=300
     )
     def _get_escalation_policy_rules_and_finish_condition(
-        self, escalation_policy_id, domain_id
+            self, escalation_policy_id, domain_id
     ):
         escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager(
             "EscalationPolicyManager"
@@ -340,8 +342,8 @@ class JobService(BaseService):
     @staticmethod
     def _check_notification_options(alert_urgency, alert_id, alert_options):
         if (
-            alert_options["notification_urgency"] == "HIGH_ONLY"
-            and alert_urgency == "LOW"
+                alert_options["notification_urgency"] == "HIGH_ONLY"
+                and alert_urgency == "LOW"
         ):
             _LOGGER.debug(
                 f"[_check_notification_options] Stop notifications. "
@@ -365,7 +367,7 @@ class JobService(BaseService):
 
     @staticmethod
     def _check_escalation_time_and_escalate_alert(
-        alert_mgr: AlertManager, alert_vo: Alert, rules
+            alert_mgr: AlertManager, alert_vo: Alert, rules
     ):
         current_step = alert_vo.escalation_step
         escalation_ttl = alert_vo.escalation_ttl
@@ -436,14 +438,14 @@ class JobService(BaseService):
                 return False, alert_vo
 
     def _create_message(
-        self,
-        alert_vo: Alert,
-        title: str,
-        notification_type: str,
-        notification_level="ALL",
-        has_callback=False,
-        has_short_description=False,
-        user_id=None,
+            self,
+            alert_vo: Alert,
+            title: str,
+            notification_type: str,
+            notification_level="ALL",
+            has_callback=False,
+            has_short_description=False,
+            user_id=None,
     ):
         domain_id = alert_vo.domain_id
         project_name = self._get_project_name(alert_vo.project_id, domain_id)

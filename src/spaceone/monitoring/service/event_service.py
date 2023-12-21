@@ -28,6 +28,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class EventService(BaseService):
+    resource = "Event"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.resource = "Event"
@@ -358,9 +360,9 @@ class EventService(BaseService):
 
     def _check_resolved_state(self, event_data: dict, alert_vo: Alert) -> bool:
         if (
-            event_data["event_type"] == "RECOVERY"
-            and alert_vo.state != "RESOLVED"
-            and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id)
+                event_data["event_type"] == "RECOVERY"
+                and alert_vo.state != "RESOLVED"
+                and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id)
         ):
             return True
         else:

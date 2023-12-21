@@ -14,6 +14,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class NoteService(BaseService):
+    resource = "Note"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.note_mgr: NoteManager = self.locator.get_manager("NoteManager")

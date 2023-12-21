@@ -21,6 +21,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class MetricService(BaseService):
+    resource = "Metric"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.inventory_mgr: InventoryManager = self.locator.get_manager(
@@ -90,7 +92,7 @@ class MetricService(BaseService):
 
             list_metric_params.append(
                 {
-                    "schema": secret.get("schema_id"),
+                    "schema": secret.get("schema"),
                     "options": plugin_info.options,
                     "secret_data": secret_data,
                     "query": query,
@@ -104,7 +106,7 @@ class MetricService(BaseService):
 
         metric_responses = []
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=MAX_CONCURRENT_WORKER
+                max_workers=MAX_CONCURRENT_WORKER
         ) as executor:
             future_executors = []
 
@@ -238,7 +240,7 @@ class MetricService(BaseService):
                         )
 
                     if "schema" not in chunk_info:
-                        chunk_info.update({"schema": secret.get("schema_id")})
+                        chunk_info.update({"schema": secret.get("schema")})
 
                     _metric_query = chunk_info["metric_query"]
 

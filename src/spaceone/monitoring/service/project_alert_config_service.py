@@ -20,6 +20,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class ProjectAlertConfigService(BaseService):
+    resource = "ProjectAlertConfig"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project_alert_config_mgr: ProjectAlertConfigManager = (
@@ -64,8 +66,8 @@ class ProjectAlertConfigService(BaseService):
                 escalation_policy_id, workspace_id, domain_id
             )
             if (
-                escalation_policy_vo.resource_group == "PROJECT"
-                and escalation_policy_vo.project_id != project_id
+                    escalation_policy_vo.resource_group == "PROJECT"
+                    and escalation_policy_vo.project_id != project_id
             ):
                 raise ERROR_INVALID_ESCALATION_POLICY(
                     escalation_policy_id=escalation_policy_id
@@ -122,8 +124,8 @@ class ProjectAlertConfigService(BaseService):
                 escalation_policy_id, domain_id, workspace_id
             )
             if (
-                escalation_policy_vo.resource_group == "PROJECT"
-                and escalation_policy_vo.project_id != project_id
+                    escalation_policy_vo.resource_group == "PROJECT"
+                    and escalation_policy_vo.project_id != project_id
             ):
                 raise ERROR_INVALID_ESCALATION_POLICY(
                     escalation_policy_id=escalation_policy_id

@@ -17,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class EscalationPolicyService(BaseService):
+    resource = "EscalationPolicy"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager(
@@ -250,7 +252,7 @@ class EscalationPolicyService(BaseService):
         workspace_id = params["workspace_id"]
         project_id = params.get("project_id")
         if not self.escalation_policy_mgr.is_default_escalation_policy(
-            domain_id, workspace_id, project_id
+                domain_id, workspace_id, project_id
         ):
             self.escalation_policy_mgr.create_default_escalation_policy(
                 domain_id, workspace_id, project_id
