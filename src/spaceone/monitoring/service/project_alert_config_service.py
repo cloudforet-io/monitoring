@@ -30,7 +30,7 @@ class ProjectAlertConfigService(BaseService):
 
     @transaction(
         permission="monitoring:ProjectAlertConfig.write",
-        role_types=["WORKSPACE_MEMBER"],
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @check_required(["project_id", "domain_id", "workspace_id"])
     def create(self, params: dict) -> ProjectAlertConfig:
@@ -86,7 +86,7 @@ class ProjectAlertConfigService(BaseService):
 
     @transaction(
         permission="monitoring:ProjectAlertConfig.write",
-        role_types=["WORKSPACE_MEMBER"],
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @check_required(["project_id", "domain_id", "workspace_id"])
     def update(self, params):
@@ -152,7 +152,7 @@ class ProjectAlertConfigService(BaseService):
         permission="monitoring:ProjectAlertConfig.write",
         role_types=["WORKSPACE_MEMBER"],
     )
-    @check_required(["project_id", "domain_id", "workspace_id"])
+    @check_required(["WORKSPACE_OWNER", "project_id", "domain_id", "workspace_id"])
     def delete(self, params):
         """Delete project alert configuration
 
