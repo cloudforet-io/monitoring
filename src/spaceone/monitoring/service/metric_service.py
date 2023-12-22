@@ -6,6 +6,7 @@ from spaceone.core.utils import get_dict_value, random_string
 
 from spaceone.monitoring.conf.global_conf import *
 from spaceone.monitoring.error import *
+from spaceone.monitoring.manager import PluginManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 from spaceone.monitoring.manager.data_source_plugin_manager import (
     DataSourcePluginManager,
@@ -64,7 +65,26 @@ class MetricService(BaseService):
         plugin_info = data_source_vo.plugin_info
         plugin_metadata = plugin_info.metadata
         self._check_plugin_metadata(plugin_metadata, params, data_source_id)
-        self.plugin_initialize(data_source_vo)
+
+        plugin_info = data_source_vo.plugin_info.to_dict()
+        plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+        endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
+            plugin_info, data_source_vo.domain_id
+        )
+
+        if updated_version:
+            _LOGGER.debug(
+                f'[get_data_source_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}'
+            )
+            plugin_info = data_source_vo.plugin_info.to_dict()
+            plugin_metadata = self.init_plugin(
+                endpoint, plugin_info.get("options", {}), data_source_vo.monitoring_type
+            )
+            plugin_info["version"] = updated_version
+            plugin_info["metadata"] = plugin_metadata
+            self.data_source_mgr.update_data_source_by_vo(
+                {"plugin_info": plugin_info}, data_source_vo
+            )
 
         metrics_dict = {}
         and_metric_keys = []
@@ -106,13 +126,13 @@ class MetricService(BaseService):
 
         metric_responses = []
         with concurrent.futures.ThreadPoolExecutor(
-                max_workers=MAX_CONCURRENT_WORKER
+            max_workers=MAX_CONCURRENT_WORKER
         ) as executor:
             future_executors = []
 
             for _params in list_metric_params:
                 future_executors.append(
-                    executor.submit(self.list_metrics_info, _params)
+                    executor.submit(self.list_metrics_info, _params, endpoint)
                 )
 
             for future in concurrent.futures.as_completed(future_executors):
@@ -155,7 +175,26 @@ class MetricService(BaseService):
 
         plugin_metadata = data_source_vo.plugin_info.metadata
         self._check_plugin_metadata(plugin_metadata, params, data_source_id)
-        self.plugin_initialize(data_source_vo)
+
+        plugin_info = data_source_vo.plugin_info.to_dict()
+        plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+        endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
+            plugin_info, data_source_vo.domain_id
+        )
+
+        if updated_version:
+            _LOGGER.debug(
+                f'[get_data_source_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}'
+            )
+            plugin_info = data_source_vo.plugin_info.to_dict()
+            plugin_metadata = self.init_plugin(
+                endpoint, plugin_info.get("options", {}), data_source_vo.monitoring_type
+            )
+            plugin_info["version"] = updated_version
+            plugin_info["metadata"] = plugin_metadata
+            self.data_source_mgr.update_data_source_by_vo(
+                {"plugin_info": plugin_info}, data_source_vo
+            )
 
         response = {"labels": [], "values": {}, "domain_id": domain_id}
 
@@ -184,7 +223,13 @@ class MetricService(BaseService):
             if "schema" in chunk_resources:
                 metric_data_params.update({"schema": chunk_resources.get("schema")})
 
-            metric_data_response = self.get_metric_data(metric_data_params)
+            try:
+                metric_data_response = self.ds_plugin_mgr.get_metric_data(
+                    endpoint, metric_data_params
+                )
+            except Exception as e:
+                _LOGGER.error(f"[get_metric_data] {e}")
+                metric_data_response = {"labels": [], "values": {}}
 
             if not response["labels"] and metric_data_response.get("labels", []):
                 response["labels"] = metric_data_response["labels"]
@@ -270,23 +315,7 @@ class MetricService(BaseService):
 
         return chunk_resources
 
-    def plugin_initialize(self, data_source_vo):
-        endpoint = self.ds_plugin_mgr.get_data_source_plugin_endpoint_by_vo(
-            data_source_vo
-        )
-        self.ds_plugin_mgr.initialize(endpoint)
-
-    def get_metric_data(self, params):
-        metric_data_info = {"labels": [], "values": {}}
-
-        try:
-            metric_data_info = self.ds_plugin_mgr.get_metric_data(params)
-        except Exception as e:
-            print(e)
-
-        return metric_data_info
-
-    def list_metrics_info(self, params):
+    def list_metrics_info(self, params, endpoint):
         schema = params.get("schema")
         secret_data = params["secret_data"]
         cloud_service_id = params["cloud_service_id"]
@@ -295,7 +324,7 @@ class MetricService(BaseService):
 
         try:
             metrics_info = self.ds_plugin_mgr.list_metrics(
-                schema, options, secret_data, query
+                endpoint, schema, options, secret_data, query
             )
             _LOGGER.debug(f"[list_metric_info] metrics_info: {metrics_info}")
             return {

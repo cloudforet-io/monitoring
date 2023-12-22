@@ -1,6 +1,8 @@
 from spaceone.api.monitoring.v1 import webhook_pb2, webhook_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
 
+from spaceone.monitoring.service import WebhookService
+
 
 class Webhook(BaseAPI, webhook_pb2_grpc.WebhookServicer):
     pb2 = webhook_pb2
@@ -48,7 +50,7 @@ class Webhook(BaseAPI, webhook_pb2_grpc.WebhookServicer):
     def verify_plugin(self, request, context):
         params, metadata = self.parse_request(request, context)
 
-        with self.locator.get_service("WebhookService", metadata) as webhook_service:
+        with self.locator.get_service(WebhookService, metadata) as webhook_service:
             webhook_service.verify_plugin(params)
             return self.locator.get_info("EmptyInfo")
 

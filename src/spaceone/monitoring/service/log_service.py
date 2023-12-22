@@ -5,6 +5,7 @@ from spaceone.core.service import *
 from spaceone.core.utils import get_dict_value
 
 from spaceone.monitoring.error import *
+from spaceone.monitoring.manager import PluginManager
 from spaceone.monitoring.manager.data_source_manager import DataSourceManager
 from spaceone.monitoring.manager.data_source_plugin_manager import (
     DataSourcePluginManager,
@@ -69,7 +70,25 @@ class LogService(BaseService):
 
         data_source_vo = self.data_source_mgr.get_data_source(data_source_id, domain_id)
         self._check_data_source_state(data_source_vo)
-        self.plugin_initialize(data_source_vo)
+        plugin_info = data_source_vo.plugin_info.to_dict()
+        plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+        endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
+            plugin_info, data_source_vo.domain_id
+        )
+
+        if updated_version:
+            _LOGGER.debug(
+                f'[get_data_source_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}'
+            )
+            plugin_info = data_source_vo.plugin_info.to_dict()
+            plugin_metadata = self.init_plugin(
+                endpoint, plugin_info.get("options", {}), data_source_vo.monitoring_type
+            )
+            plugin_info["version"] = updated_version
+            plugin_info["metadata"] = plugin_metadata
+            self.data_source_mgr.update_data_source_by_vo(
+                {"plugin_info": plugin_info}, data_source_vo
+            )
 
         plugin_options = data_source_vo.plugin_info.options
         cloud_service_info = self.inventory_mgr.get_cloud_service(
@@ -86,6 +105,7 @@ class LogService(BaseService):
         )
 
         logs_info = self.ds_plugin_mgr.list_logs(
+            endpoint,
             secret.get("schema"),
             plugin_options,
             secret_data,
@@ -98,12 +118,6 @@ class LogService(BaseService):
         )
 
         return {"results": logs_info["results"], "domain_id": domain_id}
-
-    def plugin_initialize(self, data_source_vo):
-        endpoint = self.ds_plugin_mgr.get_data_source_plugin_endpoint_by_vo(
-            data_source_vo
-        )
-        self.ds_plugin_mgr.initialize(endpoint)
 
     @staticmethod
     def get_query_from_cloud_service(cloud_service_info, plugin_info):

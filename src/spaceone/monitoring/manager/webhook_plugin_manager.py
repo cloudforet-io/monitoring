@@ -7,9 +7,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class WebhookPluginManager(BaseManager):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def init_plugin(self, endpoint, options):
         plugin_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", endpoint=endpoint

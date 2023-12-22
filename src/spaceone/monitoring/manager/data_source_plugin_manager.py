@@ -1,13 +1,9 @@
 import logging
 
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
-from spaceone.monitoring.connector.datasource_plugin_connector import (
-    DataSourcePluginConnector,
-)
 from spaceone.monitoring.error import *
-from spaceone.monitoring.manager.plugin_manager import PluginManager
-from spaceone.monitoring.model.data_source_model import DataSource
 from spaceone.monitoring.model.plugin_metadata_model import (
     MetricPluginMetadataModel,
     LogPluginMetadataModel,
@@ -17,18 +13,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DataSourcePluginManager(BaseManager):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.dsp_connector: DataSourcePluginConnector = self.locator.get_connector(
-            "DataSourcePluginConnector"
+    def init_plugin(self, endpoint, options: dict, monitoring_type: str) -> dict:
+        plugin_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", endpoint=endpoint
         )
 
-    def initialize(self, endpoint: str) -> None:
-        _LOGGER.debug(f"[initialize] data source plugin endpoint: {endpoint}")
-        self.dsp_connector.initialize(endpoint)
-
-    def init_plugin(self, options: dict, monitoring_type: str) -> dict:
-        plugin_info = self.dsp_connector.init(options)
+        plugin_info = plugin_connector.dispatch("DataSource.init", {"options": options})
 
         _LOGGER.debug(f"[plugin_info] {plugin_info}")
         plugin_metadata = plugin_info.get("metadata", {})
@@ -37,23 +27,84 @@ class DataSourcePluginManager(BaseManager):
 
         return plugin_metadata
 
-    def verify_plugin(self, options, secret_data, schema):
-        self.dsp_connector.verify(options, secret_data, schema)
+    def verify_plugin(self, endpoint, options, secret_data, schema):
+        plugin_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", endpoint=endpoint
+        )
 
-    def list_metrics(self, schema, options, secret_data, query):
-        return self.dsp_connector.list_metrics(schema, options, secret_data, query)
+        params = {"options": options, "secret_data": secret_data, "schema": schema}
 
-    def get_metric_data(self, params):
-        return self.dsp_connector.get_metric_data(params)
+        plugin_connector.dispatch("DataSource.verify", params)
+
+    def list_metrics(self, endpoint, schema, options, secret_data, query):
+        plugin_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", endpoint=endpoint
+        )
+
+        params = {"options": options, "secret_data": secret_data, "query": query}
+
+        if schema:
+            params.update({"schema": schema})
+
+        return plugin_connector.dispatch("Metric.list", params)
+
+    def get_metric_data(self, endpoint, params):
+        plugin_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", endpoint=endpoint
+        )
+
+        return plugin_connector.dispatch("Metric.get_data", params)
 
     def list_logs(
-        self, schema, options, secret_data, query, keyword, start, end, sort, limit
+        self,
+        endpoint,
+        schema,
+        options,
+        secret_data,
+        query,
+        keyword,
+        start,
+        end,
+        sort,
+        limit,
     ):
-        results = []
+        plugin_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", endpoint=endpoint
+        )
 
-        for result in self.dsp_connector.list_logs(
-            schema, options, secret_data, query, keyword, start, end, sort, limit
-        ):
+        """
+        logs_info = self.ds_plugin_mgr.list_logs(
+            endpoint,
+            secret.get("schema"),
+            plugin_options,
+            secret_data,
+            query,
+            params.get("keyword"),
+            start,
+            end,
+            params.get("sort"),
+            params.get("limit"),
+        )
+        """
+        params = {
+            "options": options,
+            "secret_data": secret_data,
+            "query": query,
+            "start": start,
+            "end": end,
+        }
+
+        if schema:
+            params["schema"] = schema
+        if keyword:
+            params["keyword"] = keyword
+        if sort:
+            params["sort"] = sort
+        if limit:
+            params["limit"] = limit
+
+        results = []
+        for result in plugin_connector.dispatch("Log.list", params):
             results.extend(result.get("results", []))
 
         return {"results": results}
@@ -68,42 +119,3 @@ class DataSourcePluginManager(BaseManager):
 
         except Exception as e:
             raise ERROR_INVALID_PLUGIN_OPTIONS(reason=str(e))
-
-    @staticmethod
-    def _process_stream(response_stream):
-        for response in response_stream:
-            yield response
-
-    def get_data_source_plugin_endpoint_by_vo(self, data_source_vo: DataSource):
-        plugin_info = data_source_vo.plugin_info.to_dict()
-        endpoint, updated_version = self.get_data_source_plugin_endpoint(
-            plugin_info, data_source_vo.domain_id
-        )
-
-        if updated_version:
-            _LOGGER.debug(
-                f'[get_data_source_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}'
-            )
-            self.upgrade_data_source_plugin_version(
-                data_source_vo, endpoint, updated_version
-            )
-
-        return endpoint
-
-    def get_data_source_plugin_endpoint(
-        self, plugin_info: dict, domain_id: str
-    ) -> dict:
-        plugin_mgr: PluginManager = self.locator.get_manager("PluginManager")
-        return plugin_mgr.get_plugin_endpoint(plugin_info, domain_id)
-
-    def upgrade_data_source_plugin_version(
-        self, data_source_vo: DataSource, endpoint, updated_version
-    ):
-        plugin_info = data_source_vo.plugin_info.to_dict()
-        self.initialize(endpoint)
-        plugin_metadata = self.init_plugin(
-            plugin_info.get("options", {}), data_source_vo.monitoring_type
-        )
-        plugin_info["version"] = updated_version
-        plugin_info["metadata"] = plugin_metadata
-        data_source_vo.update({"plugin_info": plugin_info})

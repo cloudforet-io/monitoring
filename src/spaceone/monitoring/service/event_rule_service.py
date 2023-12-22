@@ -92,8 +92,8 @@ class EventRuleService(BaseService):
         self._check_actions(params["actions"])
 
         params["order"] = (
-                self._get_highest_order(resource_group, project_id, domain_id, workspace_id)
-                + 1
+            self._get_highest_order(resource_group, project_id, domain_id, workspace_id)
+            + 1
         )
 
         return self.event_rule_mgr.create_event_rule(params)
@@ -369,18 +369,18 @@ class EventRuleService(BaseService):
                 )
 
             if key not in _SUPPORTED_CONDITION_KEYS and not fnmatch.fnmatch(
-                    key, "additional_info.*"
+                key, "additional_info.*"
             ):
                 raise ERROR_INVALID_PARAMETER(
                     key="conditions.key",
                     reason=f"Unsupported key. "
-                           f'({" | ".join(_SUPPORTED_CONDITION_KEYS)})',
+                    f'({" | ".join(_SUPPORTED_CONDITION_KEYS)})',
                 )
             if operator not in _SUPPORTED_CONDITION_OPERATORS:
                 raise ERROR_INVALID_PARAMETER(
                     key="conditions.operator",
                     reason=f"Unsupported operator. "
-                           f'({" | ".join(_SUPPORTED_CONDITION_OPERATORS)})',
+                    f'({" | ".join(_SUPPORTED_CONDITION_OPERATORS)})',
                 )
 
     @staticmethod
@@ -400,7 +400,7 @@ class EventRuleService(BaseService):
             )
 
     def _get_highest_order(
-            self, resource_group: str, project_id: str, domain_id: str, workspace_id: str
+        self, resource_group: str, project_id: str, domain_id: str, workspace_id: str
     ) -> int:
         query = {
             "filter": [
@@ -416,12 +416,12 @@ class EventRuleService(BaseService):
         return total_count
 
     def _get_all_event_rules(
-            self,
-            resource_group: str,
-            project_id: str,
-            domain_id: str,
-            workspace_id: str,
-            exclude_event_rule_id: str = None,
+        self,
+        resource_group: str,
+        project_id: str,
+        domain_id: str,
+        workspace_id: str,
+        exclude_event_rule_id: str = None,
     ):
         query = {
             "filter": [

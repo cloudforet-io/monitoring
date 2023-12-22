@@ -417,7 +417,7 @@ class AlertService(BaseService):
         return self.alert_mgr.stat_alerts(query)
 
     def _create_notification(
-            self, alert_vo: Alert, method: str, user_id: str = None
+        self, alert_vo: Alert, method: str, user_id: str = None
     ) -> None:
         params = {
             "alert_id": alert_vo.alert_id,
