@@ -11,6 +11,7 @@ class AlertResource(EmbeddedDocument):
 
 class AlertNumber(MongoModel):
     next = IntField(default=1)
+    workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
 
 
