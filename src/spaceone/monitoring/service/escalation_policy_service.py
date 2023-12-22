@@ -252,7 +252,7 @@ class EscalationPolicyService(BaseService):
         workspace_id = params["workspace_id"]
 
         if not self.escalation_policy_mgr.is_default_escalation_policy(
-                domain_id, workspace_id
+            domain_id, workspace_id
         ):
             self.escalation_policy_mgr.create_default_escalation_policy(
                 domain_id, workspace_id

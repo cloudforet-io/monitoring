@@ -33,9 +33,7 @@ class EscalationPolicyManager(BaseManager):
 
         return escalation_policy_vo
 
-    def create_default_escalation_policy(
-            self, domain_id, workspace_id
-    ):
+    def create_default_escalation_policy(self, domain_id, workspace_id):
         default_escalation_policy = copy.deepcopy(DEFAULT_ESCALATION_POLICY)
         default_escalation_policy["resource_group"] = "WORKSPACE"
         default_escalation_policy["domain_id"] = domain_id
@@ -48,7 +46,7 @@ class EscalationPolicyManager(BaseManager):
         return self.create_escalation_policy(default_escalation_policy)
 
     def update_escalation_policy_by_vo(
-            self, params: dict, escalation_policy_vo: EscalationPolicy
+        self, params: dict, escalation_policy_vo: EscalationPolicy
     ) -> EscalationPolicy:
         def _rollback(old_data: dict):
             _LOGGER.info(
@@ -97,7 +95,7 @@ class EscalationPolicyManager(BaseManager):
         return True
 
     def get_default_escalation_policy(
-            self, workspace_id: str, domain_id: str
+        self, workspace_id: str, domain_id: str
     ) -> EscalationPolicy:
         if not self.is_default_escalation_policy(domain_id, workspace_id):
             return self.create_default_escalation_policy(domain_id, workspace_id)
@@ -105,17 +103,17 @@ class EscalationPolicyManager(BaseManager):
             query = {
                 "domain_id": domain_id,
                 "workspace_id": workspace_id,
-                "is_default": True
+                "is_default": True,
             }
 
             return self.escalation_policy_model.get(**query)
 
     def delete_escalation_policy(
-            self,
-            escalation_policy_id: str,
-            workspace_id: str,
-            domain_id: str,
-            user_projects: list = None,
+        self,
+        escalation_policy_id: str,
+        workspace_id: str,
+        domain_id: str,
+        user_projects: list = None,
     ) -> None:
         conditions = {
             "escalation_policy_id": escalation_policy_id,
@@ -138,11 +136,11 @@ class EscalationPolicyManager(BaseManager):
         escalation_policy_vo.delete()
 
     def get_escalation_policy(
-            self,
-            escalation_policy_id: str,
-            workspace_id: str,
-            domain_id: str,
-            user_projects: list = None,
+        self,
+        escalation_policy_id: str,
+        workspace_id: str,
+        domain_id: str,
+        user_projects: list = None,
     ) -> EscalationPolicy:
         conditions = {
             "escalation_policy_id": escalation_policy_id,

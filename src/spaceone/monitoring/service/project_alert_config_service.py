@@ -66,8 +66,8 @@ class ProjectAlertConfigService(BaseService):
                 escalation_policy_id, workspace_id, domain_id
             )
             if (
-                    escalation_policy_vo.resource_group == "PROJECT"
-                    and escalation_policy_vo.project_id != project_id
+                escalation_policy_vo.resource_group == "PROJECT"
+                and escalation_policy_vo.project_id != project_id
             ):
                 raise ERROR_INVALID_ESCALATION_POLICY(
                     escalation_policy_id=escalation_policy_id
@@ -124,8 +124,8 @@ class ProjectAlertConfigService(BaseService):
                 escalation_policy_id, domain_id, workspace_id
             )
             if (
-                    escalation_policy_vo.resource_group == "PROJECT"
-                    and escalation_policy_vo.project_id != project_id
+                escalation_policy_vo.resource_group == "PROJECT"
+                and escalation_policy_vo.project_id != project_id
             ):
                 raise ERROR_INVALID_ESCALATION_POLICY(
                     escalation_policy_id=escalation_policy_id

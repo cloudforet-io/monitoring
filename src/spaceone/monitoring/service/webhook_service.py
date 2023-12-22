@@ -4,6 +4,7 @@ from spaceone.core import utils
 from spaceone.core.service import *
 
 from spaceone.monitoring.error import *
+from spaceone.monitoring.manager import PluginManager
 from spaceone.monitoring.manager.project_alert_config_manager import (
     ProjectAlertConfigManager,
 )
@@ -21,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 @event_handler
 class WebhookService(BaseService):
     resource = "Webhook"
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
@@ -64,18 +65,22 @@ class WebhookService(BaseService):
         )
 
         self._check_plugin_info(params["plugin_info"])
-        plugin_info = self._get_plugin(params["plugin_info"], domain_id)
+        plugin_id = params["plugin_info"]["plugin_id"]
+
+        repo_mgr: RepositoryManager = self.locator.get_manager(RepositoryManager)
+        plugin_info = repo_mgr.get_plugin(plugin_id)
         params["capability"] = plugin_info.get("capability", {})
 
         _LOGGER.debug(f'[create] Init Plugin: {params["plugin_info"]}')
-        endpoint, updated_version = self.webhook_plugin_mgr.get_webhook_plugin_endpoint(
+        plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+        endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
             params["plugin_info"], domain_id
         )
         if updated_version:
             params["plugin_info"]["version"] = updated_version
 
         options = params["plugin_info"].get("options", {})
-        plugin_metadata = self._init_plugin(endpoint, options)
+        plugin_metadata = self.webhook_plugin_mgr.init_plugin(endpoint, options)
         params["plugin_info"]["metadata"] = plugin_metadata
 
         webhook_vo: Webhook = self.webhook_mgr.create_webhook(params)
@@ -238,9 +243,28 @@ class WebhookService(BaseService):
             webhook_id, domain_id, workspace_id, user_projects
         )
 
-        endpoint = self.webhook_plugin_mgr.get_webhook_plugin_endpoint_by_vo(webhook_vo)
+        plugin_info = webhook_vo.plugin_info.to_dict()
+        plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+        endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
+            plugin_info, webhook_vo.domain_id
+        )
 
-        self._verify_plugin(endpoint, webhook_vo.plugin_info.options)
+        if updated_version:
+            _LOGGER.debug(
+                f'[get_webhook_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}'
+            )
+            plugin_info = webhook_vo.plugin_info.to_dict()
+            plugin_metadata = self.webhook_plugin_mgr.init_plugin(
+                endpoint, plugin_info.get("options", {})
+            )
+            plugin_info["version"] = updated_version
+            plugin_info["metadata"] = plugin_metadata
+
+            self.webhook_mgr.update_webhook_by_vo(
+                {"plugin_info": plugin_info}, webhook_vo
+            )
+
+        self.webhook_plugin_mgr.verify_plugin(endpoint, webhook_vo.plugin_info.options)
 
     @transaction(
         permission="monitoring:Webhook.write",
@@ -288,13 +312,16 @@ class WebhookService(BaseService):
         if upgrade_mode:
             plugin_info["upgrade_mode"] = upgrade_mode
 
-        endpoint, updated_version = self.webhook_plugin_mgr.get_webhook_plugin_endpoint(
+        plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+        endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
             plugin_info, domain_id
         )
         if updated_version:
             plugin_info["version"] = updated_version
 
-        plugin_metadata = self._init_plugin(endpoint, plugin_info.get("options", {}))
+        plugin_metadata = self.webhook_plugin_mgr.init_plugin(
+            endpoint, plugin_info.get("options", {})
+        )
         plugin_info["metadata"] = plugin_metadata
 
         params = {"plugin_info": plugin_info}
@@ -407,19 +434,3 @@ class WebhookService(BaseService):
     def _check_plugin_info(plugin_info_params: dict) -> None:
         if "plugin_id" not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
-
-    def _get_plugin(self, plugin_info: dict, domain_id: str):
-        plugin_id = plugin_info["plugin_id"]
-
-        repo_mgr: RepositoryManager = self.locator.get_manager("RepositoryManager")
-        plugin_info = repo_mgr.get_plugin(plugin_id, domain_id)
-
-        return plugin_info
-
-    def _init_plugin(self, endpoint: str, options: dict):
-        self.webhook_plugin_mgr.initialize(endpoint)
-        return self.webhook_plugin_mgr.init_plugin(options)
-
-    def _verify_plugin(self, endpoint: str, options: dict):
-        self.webhook_plugin_mgr.initialize(endpoint)
-        self.webhook_plugin_mgr.verify_plugin(options)

@@ -1,6 +1,8 @@
 from spaceone.api.monitoring.v1 import data_source_pb2, data_source_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
 
+from spaceone.monitoring.service import DataSourceService
+
 
 class DataSource(BaseAPI, data_source_pb2_grpc.DataSourceServicer):
     pb2 = data_source_pb2
@@ -69,7 +71,7 @@ class DataSource(BaseAPI, data_source_pb2_grpc.DataSourceServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service(
-            "DataSourceService", metadata
+            DataSourceService, metadata
         ) as data_source_service:
             data_source_service.verify_plugin(params)
             return self.locator.get_info("EmptyInfo")

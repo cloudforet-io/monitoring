@@ -64,7 +64,7 @@ class SecretManager(BaseManager):
         return response.get("results", [])
 
     def get_secret_data_from_plugin(
-            self, plugin_info: dict, capability: dict, domain_id: str
+        self, plugin_info: dict, capability: dict, domain_id: str
     ) -> (dict, dict):
         plugin_id = plugin_info["plugin_id"]
         secret_id = plugin_info.get("secret_id")
@@ -96,7 +96,7 @@ class SecretManager(BaseManager):
 
         result = response["results"][0]
         secret_id = result["secret_id"]
-        schema = result.get("schema_id")
+        schema = result.get("schema")
 
         return self.get_secret_data(secret_id, domain_id), schema
 
@@ -124,7 +124,7 @@ class SecretManager(BaseManager):
         query = {"filter": []}
 
         if supported_schema:
-            query["filter"].append({"k": "schema_id", "v": supported_schema, "o": "in"})
+            query["filter"].append({"k": "schema", "v": supported_schema, "o": "in"})
 
         if secret_id:
             query["filter"].append({"k": "secret_id", "v": secret_id, "o": "eq"})

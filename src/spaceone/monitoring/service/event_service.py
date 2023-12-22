@@ -5,6 +5,7 @@ from spaceone.core import utils, cache, config
 from spaceone.core.service import *
 
 from spaceone.monitoring.error.webhook import *
+from spaceone.monitoring.manager import PluginManager
 from spaceone.monitoring.manager.alert_manager import AlertManager
 from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
@@ -59,15 +60,17 @@ class EventService(BaseService):
 
         try:
             webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager(
-                "WebhookPluginManager"
+                WebhookPluginManager
             )
-            endpoint, updated_version = webhook_plugin_mgr.get_webhook_plugin_endpoint(
-                {
-                    "plugin_id": webhook_data["plugin_id"],
-                    "version": webhook_data["plugin_version"],
-                    "upgrade_mode": webhook_data["plugin_upgrade_mode"],
-                },
-                webhook_data["domain_id"],
+
+            plugin_info = {
+                "plugin_id": webhook_data["plugin_id"],
+                "version": webhook_data["plugin_version"],
+                "upgrade_mode": webhook_data["plugin_upgrade_mode"],
+            }
+            plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+            endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
+                plugin_info, webhook_data["domain_id"]
             )
 
             if updated_version:
@@ -77,14 +80,19 @@ class EventService(BaseService):
                 webhook_vo: Webhook = self.webhook_mgr.get_webhook(
                     webhook_data["webhook_id"], webhook_data["domain_id"]
                 )
-                webhook_plugin_mgr.upgrade_webhook_plugin_version(
-                    webhook_vo, endpoint, updated_version
-                )
-                cache.delete(f'webhook-data:{webhook_data["webhook_id"]}')
 
-            webhook_plugin_mgr.initialize(endpoint)
+                plugin_info = webhook_vo.plugin_info.to_dict()
+                plugin_metadata = self.webhook_plugin_mgr.init_plugin(
+                    endpoint, plugin_info.get("options", {})
+                )
+                plugin_info["version"] = updated_version
+                plugin_info["metadata"] = plugin_metadata
+                self.webhook_mgr.update_webhook_by_vo(
+                    {"plugin_info": plugin_info}, webhook_vo
+                )
+
             response = webhook_plugin_mgr.parse_event(
-                webhook_data["plugin_options"], params["data"]
+                endpoint, webhook_data["plugin_options"], params["data"]
             )
 
         except Exception as e:
@@ -207,6 +215,7 @@ class EventService(BaseService):
             "webhook_id": webhook_vo.webhook_id,
             "name": webhook_vo.name,
             "project_id": webhook_vo.project_id,
+            "workspace_id": webhook_vo.workspace_id,
             "domain_id": webhook_vo.domain_id,
             "state": webhook_vo.state,
             "access_key": webhook_vo.access_key,
@@ -360,9 +369,9 @@ class EventService(BaseService):
 
     def _check_resolved_state(self, event_data: dict, alert_vo: Alert) -> bool:
         if (
-                event_data["event_type"] == "RECOVERY"
-                and alert_vo.state != "RESOLVED"
-                and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id)
+            event_data["event_type"] == "RECOVERY"
+            and alert_vo.state != "RESOLVED"
+            and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id)
         ):
             return True
         else:
