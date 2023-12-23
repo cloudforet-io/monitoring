@@ -313,7 +313,7 @@ class AlertService(BaseService):
         permission="monitoring:Alert.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["alert_id", "domain_id", "workspace_id"])
+    @check_required(["alert_id", "domain_id"])
     def get(self, params):
         """Get alert
 
@@ -321,7 +321,7 @@ class AlertService(BaseService):
             params (dict): {
                 'alert_id': 'str',
                 'domain_id': 'str',            # injected from auth (required)
-                'workspace_id': 'str',         # injected from auth (required)
+                'workspace_id': 'str',         # injected from auth
                 'user_projects': 'list',       # injected from auth
             }
 
@@ -396,7 +396,7 @@ class AlertService(BaseService):
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @check_required(["query", "domain_id", "workspace_id"])
-    @append_query_filter(["domain_id", "workspace_id", "user_projects"])
+    @append_query_filter(["domain_id", "user_projects"])
     @append_keyword_filter(["alert_id", "title"])
     def stat(self, params):
         """
@@ -404,7 +404,7 @@ class AlertService(BaseService):
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
                 'domain_id': 'str',            # injected from auth (required)
-                'workspace_id': 'str',         # injected from auth (required)
+                'workspace_id': 'str',         # injected from auth
                 'user_projects': 'list',       # injected from auth
             }
 
