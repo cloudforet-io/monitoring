@@ -261,7 +261,7 @@ class EventRuleService(BaseService):
     @change_value_by_rule("APPEND", "workspace_id", "*")
     @change_value_by_rule("APPEND", "project_id", "*")
     @change_value_by_rule("APPEND", "user_projects", "*")
-    @check_required(["event_rule_id", "domain_id", "workspace_id"])
+    @check_required(["event_rule_id", "domain_id"])
     def get(self, params):
         """Get event rule
 
@@ -298,8 +298,8 @@ class EventRuleService(BaseService):
             "name",
             "resource_group",
             "project_id",
-            "domain_id",
             "workspace_id",
+            "domain_id",
             "user_projects",
         ]
     )
