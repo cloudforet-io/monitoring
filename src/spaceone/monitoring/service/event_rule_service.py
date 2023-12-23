@@ -88,6 +88,7 @@ class EventRuleService(BaseService):
         else:
             identity_mgr.check_workspace(workspace_id, domain_id)
             params["project_id"] = "*"
+            project_id = params["project_id"]
 
         self._check_conditions(params["conditions"])
         self._check_actions(params["actions"])
