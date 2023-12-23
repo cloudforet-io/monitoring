@@ -332,7 +332,7 @@ class AlertService(BaseService):
         return self.alert_mgr.get_alert(
             params["alert_id"],
             params["domain_id"],
-            params["workspace_id"],
+            params.get("workspace_id"),
             params.get("user_projects"),
         )
 
@@ -355,8 +355,8 @@ class AlertService(BaseService):
             "webhook_id",
             "escalation_policy_id",
             "project_id",
-            "domain_id",
             "workspace_id",
+            "domain_id",
             "user_projects",
         ]
     )
@@ -378,7 +378,7 @@ class AlertService(BaseService):
                 'webhook_id': 'bool',
                 'escalation_policy_id': 'str',
                 'project_id': 'str',
-                'workspace_id': 'str',
+                'workspace_id': 'str',                          # injected from auth
                 'domain_id': 'str',                             # injected from auth (required)
                 'user_projects': 'list'                         # injected from auth
             }
@@ -395,8 +395,8 @@ class AlertService(BaseService):
         permission="monitoring:Alert.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["query", "domain_id", "workspace_id"])
-    @append_query_filter(["domain_id", "user_projects"])
+    @check_required(["query", "domain_id"])
+    @append_query_filter(["workspace_id", "domain_id", "user_projects"])
     @append_keyword_filter(["alert_id", "title"])
     def stat(self, params):
         """
@@ -417,7 +417,7 @@ class AlertService(BaseService):
         return self.alert_mgr.stat_alerts(query)
 
     def _create_notification(
-        self, alert_vo: Alert, method: str, user_id: str = None
+            self, alert_vo: Alert, method: str, user_id: str = None
     ) -> None:
         params = {
             "alert_id": alert_vo.alert_id,
