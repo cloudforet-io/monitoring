@@ -76,7 +76,7 @@ class EventManager(BaseManager):
                 {"k": "event_type", "v": "RECOVERY", "o": "not"},
                 {"k": "created_at", "v": same_event_datetime, "o": "gte"},
             ],
-            "sort": {"key": "created_at", "desc": True},
+            "sort": [{"key": "created_at", "desc": True}],
         }
 
         event_vos, total_count = self.list_events(query)

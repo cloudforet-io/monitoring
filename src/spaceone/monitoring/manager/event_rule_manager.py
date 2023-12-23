@@ -187,7 +187,7 @@ class EventRuleManager(BaseManager):
                 {"k": "domain_id", "v": domain_id, "o": "eq"},
                 {"k": "workspace_id", "v": workspace_id, "o": "eq"},
             ],
-            "sort": {"key": "order"},
+            "sort": [{"key": "order"}],
         }
 
         event_rule_vos, total_count = self.list_event_rules(query)

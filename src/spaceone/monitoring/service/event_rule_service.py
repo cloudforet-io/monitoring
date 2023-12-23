@@ -430,7 +430,7 @@ class EventRuleService(BaseService):
                 {"k": "resource_group", "v": resource_group, "o": "eq"},
                 {"k": "project_id", "v": project_id, "o": "eq"},
             ],
-            "sort": {"key": "order"},
+            "sort": [{"key": "order"}],
         }
         if exclude_event_rule_id is not None:
             query["filter"].append(
