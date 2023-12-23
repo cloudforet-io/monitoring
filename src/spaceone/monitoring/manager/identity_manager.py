@@ -5,11 +5,6 @@ from spaceone.core.manager import BaseManager
 
 _LOGGER = logging.getLogger(__name__)
 
-_GET_RESOURCE_METHODS = {
-    "identity.Project": "get_project",
-    "identity.ServiceAccount": "get_service_account",
-}
-
 
 class IdentityManager(BaseManager):
     def __init__(self, *args, **kwargs):
@@ -43,15 +38,4 @@ class IdentityManager(BaseManager):
         return self.identity_connector.dispatch(
             "ServiceAccount.get",
             {"service_account_id": service_account_id, "domain_id": domain_id},
-        )
-
-    def get_resource(self, resource_type, resource_id, domain_id):
-        if resource_type == "identity.Project":
-            return self.get_project(resource_id)
-        elif resource_type == "identity.ServiceAccount":
-            return self.get_service_account(resource_id, domain_id)
-
-    def list_service_accounts(self, query, domain_id):
-        return self.identity_connector.dispatch(
-            "ServiceAccount.list", {"query": query, "domain_id": domain_id}
         )

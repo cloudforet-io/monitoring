@@ -3,9 +3,9 @@ import logging
 from typing import List
 
 from spaceone.core import utils
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
-# from spaceone.monitoring.manager import IdentityManager
 from spaceone.monitoring.model.event_rule_model import EventRule, EventRuleCondition
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,7 +15,6 @@ class EventRuleManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.event_rule_model: EventRule = self.locator.get_model("EventRule")
-        # self.identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
         self._service_account_info = {}
 
     def create_event_rule(self, params: dict) -> EventRule:
@@ -50,11 +49,8 @@ class EventRuleManager(BaseManager):
 
         return event_rule_vo.update(params)
 
-    def delete_event_rule(self, event_rule_id, domain_id):
-        event_rule_vo: EventRule = self.get_event_rule(event_rule_id, domain_id)
-        self.delete_event_rule_by_vo(event_rule_vo)
-
-    def delete_event_rule_by_vo(self, event_rule_vo):
+    @staticmethod
+    def delete_event_rule_by_vo(event_rule_vo):
         event_rule_vo.delete()
 
     def get_event_rule(
@@ -119,19 +115,18 @@ class EventRuleManager(BaseManager):
             if action == "no_notification":
                 event_data["no_notification"] = value
 
-            # TODO: Refactor Match Service Account
-            # if action == "match_service_account":
-            #     source = value["source"]
-            #     target_key = value["target"]
-            #     target_value = utils.get_dict_value(event_data, source)
-            #     if target_value:
-            #         service_account_info = self._get_service_account(
-            #             target_key, target_value, domain_id
-            #         )
-            #         if service_account_info:
-            #             event_data["project_id"] = service_account_info.get(
-            #                 "project_info", {}
-            #             ).get("project_id")
+            if action == "match_service_account":
+                source = value["source"]
+                target_key = value["target"]
+                target_value = utils.get_dict_value(event_data, source)
+                if target_value:
+                    service_account_info = self._get_service_account(
+                        target_key, target_value, domain_id
+                    )
+                    if service_account_info:
+                        event_data["project_id"] = service_account_info.get(
+                            "project_info", {}
+                        ).get("project_id")
 
         return event_data
 
@@ -198,26 +193,32 @@ class EventRuleManager(BaseManager):
         event_rule_vos, total_count = self.list_event_rules(query)
         return event_rule_vos
 
-    # def _get_service_account(self, target_key, target_value, domain_id):
-    #     if f"{domain_id}:{target_key}:{target_value}" in self._service_account_info:
-    #         return self._service_account_info[
-    #             f"{domain_id}:{target_key}:{target_value}"
-    #         ]
-    #
-    #     query = {
-    #         "filter": [{"k": target_key, "v": target_value, "o": "eq"}],
-    #         "only": ["service_account_id", "project_info"],
-    #     }
-    #
-    #     response = self.identity_mgr.list_service_accounts(query, domain_id)
-    #     results = response.get("results", [])
-    #     total_count = response.get("total_count", 0)
-    #
-    #     service_account_info = None
-    #     if total_count > 0:
-    #         service_account_info = results[0]
-    #
-    #     self._service_account_info[
-    #         f"{domain_id}:{target_key}:{target_value}"
-    #     ] = service_account_info
-    #     return service_account_info
+    def _get_service_account(self, target_key, target_value, domain_id):
+        if f"{domain_id}:{target_key}:{target_value}" in self._service_account_info:
+            return self._service_account_info[
+                f"{domain_id}:{target_key}:{target_value}"
+            ]
+
+        query = {
+            "filter": [{"k": target_key, "v": target_value, "o": "eq"}],
+            "only": ["service_account_id", "project_info"],
+        }
+
+        identity_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", service="identity"
+        )
+        response = identity_connector.dispatch(
+            "ServiceAccount.list", {"query": query, "domain_id": domain_id}
+        )
+
+        results = response.get("results", [])
+        total_count = response.get("total_count", 0)
+
+        service_account_info = None
+        if total_count > 0:
+            service_account_info = results[0]
+
+        self._service_account_info[
+            f"{domain_id}:{target_key}:{target_value}"
+        ] = service_account_info
+        return service_account_info
