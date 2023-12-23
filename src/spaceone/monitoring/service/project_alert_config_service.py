@@ -121,7 +121,7 @@ class ProjectAlertConfigService(BaseService):
                 "EscalationPolicyManager"
             )
             escalation_policy_vo = escalation_policy_mgr.get_escalation_policy(
-                escalation_policy_id, domain_id, workspace_id
+                escalation_policy_id=escalation_policy_id, workspace_id=workspace_id, domain_id=domain_id,
             )
             if (
                 escalation_policy_vo.resource_group == "PROJECT"
