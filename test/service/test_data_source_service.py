@@ -1,23 +1,22 @@
 import unittest
 from unittest.mock import patch
-from mongoengine import connect, disconnect
 
-from spaceone.core.unittest.result import print_data
-from spaceone.core.unittest.runner import RichTestRunner
+from mongoengine import connect, disconnect
 from spaceone.core import config
 from spaceone.core import utils
 from spaceone.core.transaction import Transaction
-from spaceone.monitoring.error import *
-from spaceone.monitoring.service.data_source_service import DataSourceService
-from spaceone.monitoring.model.data_source_model import DataSource
-from spaceone.monitoring.manager.plugin_manager import PluginManager
-from spaceone.monitoring.manager.secret_manager import SecretManager
-from spaceone.monitoring.manager.repository_manager import RepositoryManager
+from spaceone.core.unittest.result import print_data
+from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.monitoring.connector.datasource_plugin_connector import (
     DataSourcePluginConnector,
 )
-from spaceone.monitoring.info.data_source_info import *
+
 from spaceone.monitoring.info.common_info import StatisticsInfo
+from spaceone.monitoring.info.data_source_info import *
+from spaceone.monitoring.manager.plugin_manager import PluginManager
+from spaceone.monitoring.manager.secret_manager import SecretManager
+from spaceone.monitoring.model.data_source_model import DataSource
+from spaceone.monitoring.service.data_source_service import DataSourceService
 from test.factory.data_source_factory import DataSourceFactory
 
 
@@ -258,7 +257,7 @@ class TestDataSourceService(unittest.TestCase):
                             "fields": [{"operator": "count", "name": "Count"}],
                         }
                     },
-                    {"sort": {"key": "Count", "desc": True}},
+                    {"sort": [{"key": "Count", "desc": True}]},
                 ]
             },
         }
