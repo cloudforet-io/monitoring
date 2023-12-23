@@ -69,6 +69,7 @@ def EventRuleInfo(event_rule_vo: EventRule, minimal=False):
                 "actions": EventRuleActionsInfo(event_rule_vo.actions),
                 "options": EventRuleOptionsInfo(event_rule_vo.options),
                 "tags": change_struct_type(event_rule_vo.tags),
+                "workspace_id": event_rule_vo.workspace_id,
                 "domain_id": event_rule_vo.domain_id,
                 "created_at": utils.datetime_to_iso8601(event_rule_vo.created_at),
             }
