@@ -84,9 +84,11 @@ class EventRuleService(BaseService):
         if resource_group == "PROJECT":
             project_info = identity_mgr.get_project(project_id)
             params["workspace_id"] = project_info.get("workspace_id")
+            workspace_id = params["workspace_id"]
         else:
             identity_mgr.check_workspace(workspace_id, domain_id)
             params["project_id"] = "*"
+            project_id = params["project_id"]
 
         self._check_conditions(params["conditions"])
         self._check_actions(params["actions"])
@@ -198,14 +200,11 @@ class EventRuleService(BaseService):
         )
         event_rule_vos.insert(order - 1, target_event_rule_vo)
 
-        i = 0
-        for event_rule_vo in event_rule_vos:
+        for idx, event_rule_vo in enumerate(event_rule_vos):
             if target_event_rule_vo != event_rule_vo:
                 self.event_rule_mgr.update_event_rule_by_vo(
-                    {"order": i + 1}, event_rule_vo
+                    {"order": idx + 1}, event_rule_vo
                 )
-
-            i += 1
 
         return self.event_rule_mgr.update_event_rule_by_vo(
             {"order": order}, target_event_rule_vo
