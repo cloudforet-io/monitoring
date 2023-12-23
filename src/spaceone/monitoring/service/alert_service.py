@@ -98,11 +98,9 @@ class AlertService(BaseService):
                 'title': 'str',
                 'state': 'str',
                 'description': 'str',
-                'assignee': 'str',
+                'reset_description': 'bool',
                 'urgency': 'str',
                 'project_id': 'str',           # required
-                'reset_description': 'bool',
-                'reset_assignee': 'bool',
                 'domain_id': 'str',            # injected from auth (required)
                 'workspace_id': 'str',         # injected from auth (required)
                 'user_projects': 'list',       # injected from auth
@@ -118,12 +116,9 @@ class AlertService(BaseService):
         user_projects = params.get("user_projects")
         project_id = params.get("project_id")
         state = params.get("state")
-        assignee = params.get("assignee")
         reset_description = params.get("reset_description", False)
-        reset_assignee = params.get("reset_assignee", False)
 
         is_resolved_notify = False
-        is_assignee_notify = False
 
         if project_id:
             project_alert_config_mgr: ProjectAlertConfigManager = (
@@ -143,8 +138,6 @@ class AlertService(BaseService):
             params["escalation_ttl"] = escalation_policy_vo.repeat_count
             params["escalation_step"] = 1
             params["escalated_at"] = None
-            params["assignee"] = None
-            assignee = None
 
         if state:
             if state == "ACKNOWLEDGED":
@@ -169,14 +162,6 @@ class AlertService(BaseService):
         if reset_description:
             params["description"] = ""
 
-        if reset_assignee:
-            params["assignee"] = None
-            assignee = None
-
-        if assignee:
-            # TODO: Check Assignee
-            is_assignee_notify = True
-
         if alert_vo.state in ["TRIGGERED", "ACKNOWLEDGED"] and state == "RESOLVED":
             is_resolved_notify = True
 
@@ -184,13 +169,6 @@ class AlertService(BaseService):
 
         if is_resolved_notify:
             self._create_notification(updated_alert_vo, "create_resolved_notification")
-        elif is_assignee_notify and updated_alert_vo.state in [
-            "TRIGGERED",
-            "ACKNOWLEDGED",
-        ]:
-            self._create_notification(
-                updated_alert_vo, "create_assigned_notification", assignee
-            )
 
         return updated_alert_vo
 
@@ -417,7 +395,7 @@ class AlertService(BaseService):
         return self.alert_mgr.stat_alerts(query)
 
     def _create_notification(
-            self, alert_vo: Alert, method: str, user_id: str = None
+        self, alert_vo: Alert, method: str, user_id: str = None
     ) -> None:
         params = {
             "alert_id": alert_vo.alert_id,
