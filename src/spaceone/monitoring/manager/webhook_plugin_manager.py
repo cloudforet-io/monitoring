@@ -29,4 +29,4 @@ class WebhookPluginManager(BaseManager):
             "data": data,
         }
 
-        return plugin_connector.dispatch("Webhook.parse_event", params)
+        return plugin_connector.dispatch("Event.parse", params)
