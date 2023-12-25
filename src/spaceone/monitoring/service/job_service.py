@@ -483,7 +483,7 @@ class JobService(BaseService):
             tags.append(
                 {
                     "key": "Assigned to",
-                    "value": self._get_user_name(alert_vo.assignee, domain_id),
+                    "value": self._get_user_name(alert_vo.assignee),
                 }
             )
 
@@ -537,7 +537,6 @@ class JobService(BaseService):
             "topic": "monitoring.Alert",
             "message": message,
             "notification_level": notification_level,
-            "domain_id": domain_id,
         }
 
     @cache.cacheable(key="project-name:{domain_id}:{project_id}", expire=300)
@@ -557,6 +556,9 @@ class JobService(BaseService):
 
     @cache.cacheable(key="triggered-by-name:{domain_id}:{triggered_by}", expire=300)
     def _get_triggered_by_name(self, triggered_by, domain_id):
+        _LOGGER.debug(
+            f"[TEST][_get_triggered_by_name] triggered_by: {triggered_by}, domain_id: {domain_id}"
+        )
         if triggered_by.startswith("webhook-"):
             try:
                 webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
@@ -569,15 +571,14 @@ class JobService(BaseService):
                     exc_info=True,
                 )
         else:
-            return self._get_user_name(triggered_by, domain_id)
+            return self._get_user_name(triggered_by)
 
         return triggered_by
 
-    @cache.cacheable(key="user-name:{domain_id}:{user_id}", expire=300)
-    def _get_user_name(self, user_id, domain_id):
+    def _get_user_name(self, user_id):
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-            user_info = identity_mgr.get_user(user_id, domain_id)
+            user_info = identity_mgr.get_user(user_id)
 
             if len(user_info.get("name", "").strip()) == 0:
                 return user_info["user_id"]
