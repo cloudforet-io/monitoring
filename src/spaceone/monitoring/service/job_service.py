@@ -539,8 +539,7 @@ class JobService(BaseService):
             "notification_level": notification_level,
         }
 
-    @cache.cacheable(key="project-name:{domain_id}:{project_id}", expire=300)
-    def _get_project_name(self, project_id, domain_id):
+    def _get_project_name(self, project_id):
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
             project_info = identity_mgr.get_project(project_id)
