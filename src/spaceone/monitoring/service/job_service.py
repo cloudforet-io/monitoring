@@ -558,7 +558,7 @@ class JobService(BaseService):
         _LOGGER.debug(
             f"[TEST][_get_triggered_by_name] triggered_by: {triggered_by}, domain_id: {domain_id}"
         )
-        if triggered_by.startswith("webhook-") and triggered_by:
+        if triggered_by and triggered_by.startswith("webhook-"):
             try:
                 webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
                 webhook_info = webhook_mgr.get_webhook(triggered_by, domain_id)

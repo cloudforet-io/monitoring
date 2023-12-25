@@ -18,5 +18,5 @@ class NotificationManager(BaseManager):
         _LOGGER.debug(f"Notify message: {message}")
         system_token = config.get_global("TOKEN")
         return self.notification_connector.dispatch(
-            "Notification.create", message, toke=system_token, x_domain_id=domain_id
+            "Notification.create", message, token=system_token, x_domain_id=domain_id
         )
