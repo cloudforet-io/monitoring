@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
@@ -15,6 +16,15 @@ class IdentityManager(BaseManager):
 
     def get_domain(self, domain_id):
         return self.identity_connector.dispatch("Domain.get", {"domain_id": domain_id})
+
+    def get_domain_by_system_token(self, domain_id):
+        system_token = config.get_global("TOKEN")
+        return self.identity_connector.dispatch(
+            "Domain.get",
+            {"domain_id": domain_id},
+            token=system_token,
+            x_domain_id=domain_id,
+        )
 
     def get_user(self, user_id):
         return self.identity_connector.dispatch("User.get", {"user_id": user_id})

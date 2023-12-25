@@ -555,9 +555,6 @@ class JobService(BaseService):
 
     @cache.cacheable(key="triggered-by-name:{domain_id}:{triggered_by}", expire=300)
     def _get_triggered_by_name(self, triggered_by, domain_id):
-        _LOGGER.debug(
-            f"[TEST][_get_triggered_by_name] triggered_by: {triggered_by}, domain_id: {domain_id}"
-        )
         if triggered_by and triggered_by.startswith("webhook-"):
             try:
                 webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
@@ -626,7 +623,7 @@ class JobService(BaseService):
     def _get_domain_name(self, domain_id):
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-            domain_info = identity_mgr.get_domain(domain_id)
+            domain_info = identity_mgr.get_domain_by_system_token(domain_id)
             return domain_info["name"]
         except Exception as e:
             _LOGGER.error(
