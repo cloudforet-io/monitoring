@@ -63,7 +63,7 @@ class AlertService(BaseService):
 
         project_alert_config_vo: ProjectAlertConfig = (
             project_alert_config_mgr.get_project_alert_config(
-                project_id, domain_id, workspace_id
+                project_id, workspace_id, domain_id
             )
         )
         escalation_policy_vo: EscalationPolicy = (
@@ -127,7 +127,7 @@ class AlertService(BaseService):
 
             project_alert_config_vo: ProjectAlertConfig = (
                 project_alert_config_mgr.get_project_alert_config(
-                    project_id, domain_id, workspace_id
+                    project_id, workspace_id, domain_id
                 )
             )
             escalation_policy_vo: EscalationPolicy = (
@@ -395,7 +395,7 @@ class AlertService(BaseService):
         return self.alert_mgr.stat_alerts(query)
 
     def _create_notification(
-        self, alert_vo: Alert, method: str, user_id: str = None
+            self, alert_vo: Alert, method: str, user_id: str = None
     ) -> None:
         params = {
             "alert_id": alert_vo.alert_id,
