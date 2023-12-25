@@ -157,13 +157,14 @@ class JobService(BaseService):
 
         alert_vo: Alert = alert_mgr.get_alert(alert_id, domain_id)
         project_id = alert_vo.project_id
+        workspace_id = alert_vo.workspace_id
         escalation_policy_id = alert_vo.escalation_policy_id
 
         (
             rules,
             finish_condition,
         ) = self._get_escalation_policy_rules_and_finish_condition(
-            escalation_policy_id, domain_id
+            escalation_policy_id, workspace_id, domain_id
         )
 
         title = f"[Resolved] {alert_vo.title}"
@@ -200,21 +201,24 @@ class JobService(BaseService):
         alert_id = params["alert_id"]
         domain_id = params["domain_id"]
 
-        job_mgr: JobManager = self.locator.get_manager("JobManager")
+        job_mgr: JobManager = self.locator.get_manager(JobManager)
 
         try:
-            alert_mgr: AlertManager = self.locator.get_manager("AlertManager")
+            alert_mgr: AlertManager = self.locator.get_manager(AlertManager)
 
             alert_vo: Alert = alert_mgr.get_alert(alert_id, domain_id)
             project_id = alert_vo.project_id
+            workspace_id = alert_vo.workspace_id
             escalation_policy_id = alert_vo.escalation_policy_id
 
-            alert_options = self._get_project_alert_options(project_id, domain_id)
+            alert_options = self._get_project_alert_options(
+                project_id, workspace_id, domain_id
+            )
             (
                 rules,
                 finish_condition,
             ) = self._get_escalation_policy_rules_and_finish_condition(
-                escalation_policy_id, domain_id
+                escalation_policy_id, workspace_id, domain_id
             )
 
             # Check Notification Urgency and Finish Condition
@@ -307,12 +311,14 @@ class JobService(BaseService):
         return alert_mgr.list_alerts(query)
 
     @cache.cacheable(key="project-alert-options:{domain_id}:{project_id}", expire=300)
-    def _get_project_alert_options(self, project_id, domain_id):
+    def _get_project_alert_options(self, project_id, workspace_id, domain_id):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager(
             "ProjectAlertConfigManager"
         )
         project_alert_config_vo: ProjectAlertConfig = (
-            project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+            project_alert_config_mgr.get_project_alert_config(
+                project_id, domain_id, workspace_id
+            )
         )
 
         return dict(project_alert_config_vo.options.to_dict())
@@ -321,13 +327,15 @@ class JobService(BaseService):
         key="escalation-policy-condition:{domain_id}:{escalation_policy_id}", expire=300
     )
     def _get_escalation_policy_rules_and_finish_condition(
-        self, escalation_policy_id, domain_id
+        self, escalation_policy_id, workspace_id, domain_id
     ):
         escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager(
             "EscalationPolicyManager"
         )
         escalation_policy_vo: EscalationPolicy = (
-            escalation_policy_mgr.get_escalation_policy(escalation_policy_id, domain_id)
+            escalation_policy_mgr.get_escalation_policy(
+                escalation_policy_id, workspace_id, domain_id
+            )
         )
         rules = []
         for rule in escalation_policy_vo.rules:
