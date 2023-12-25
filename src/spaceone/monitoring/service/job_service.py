@@ -133,7 +133,7 @@ class JobService(BaseService):
         )
         message = self._create_message(alert_vo, title, "INFO", user_id=user_id)
 
-        notification_mgr.create_notification(message)
+        notification_mgr.create_notification(message, domain_id)
 
     @transaction
     @check_required(["alert_id", "domain_id"])
@@ -179,7 +179,7 @@ class JobService(BaseService):
                 alert_vo, title, "SUCCESS", notification_level=notification_level
             )
 
-            notification_mgr.create_notification(message)
+            notification_mgr.create_notification(message, domain_id)
 
     @transaction
     @check_required(["alert_id", "domain_id"])
@@ -253,7 +253,7 @@ class JobService(BaseService):
                         has_callback=True,
                         has_short_description=True,
                     )
-                    notification_mgr.create_notification(message)
+                    notification_mgr.create_notification(message, domain_id)
 
             if job_id:
                 job_vo = self.job_mgr.get_job(job_id, domain_id)
@@ -456,7 +456,7 @@ class JobService(BaseService):
         user_id=None,
     ):
         domain_id = alert_vo.domain_id
-        project_name = self._get_project_name(alert_vo.project_id, domain_id)
+        project_name = self._get_project_name(alert_vo.project_id)
 
         tags = [
             {
@@ -543,7 +543,7 @@ class JobService(BaseService):
     def _get_project_name(self, project_id, domain_id):
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-            project_info = identity_mgr.get_project(project_id, domain_id)
+            project_info = identity_mgr.get_project(project_id)
             return (
                 f'{project_info["project_group_info"]["name"]} > {project_info["name"]}'
             )
@@ -559,7 +559,7 @@ class JobService(BaseService):
         _LOGGER.debug(
             f"[TEST][_get_triggered_by_name] triggered_by: {triggered_by}, domain_id: {domain_id}"
         )
-        if triggered_by.startswith("webhook-"):
+        if triggered_by.startswith("webhook-") and triggered_by:
             try:
                 webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
                 webhook_info = webhook_mgr.get_webhook(triggered_by, domain_id)
