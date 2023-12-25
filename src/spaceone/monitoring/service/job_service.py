@@ -456,7 +456,7 @@ class JobService(BaseService):
         user_id=None,
     ):
         domain_id = alert_vo.domain_id
-        project_name = self._get_project_name(alert_vo.project_id)
+        project_name = self._get_project_name(alert_vo.project_id, domain_id)
 
         tags = [
             {
@@ -483,7 +483,7 @@ class JobService(BaseService):
             tags.append(
                 {
                     "key": "Assigned to",
-                    "value": self._get_user_name(alert_vo.assignee),
+                    "value": self._get_user_name(alert_vo.assignee, domain_id),
                 }
             )
 
@@ -540,7 +540,7 @@ class JobService(BaseService):
         }
 
     @cache.cacheable(key="project-name:{domain_id}:{project_id}", expire=300)
-    def _get_project_name(self, project_id):
+    def _get_project_name(self, project_id: str, domain_id: str) -> str:
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
             project_info = identity_mgr.get_project(project_id)
@@ -570,12 +570,12 @@ class JobService(BaseService):
                     exc_info=True,
                 )
         else:
-            return self._get_user_name(triggered_by)
+            return self._get_user_name(triggered_by, domain_id)
 
         return triggered_by
 
     @cache.cacheable(key="user-name:{domain_id}:{user_id}", expire=300)
-    def _get_user_name(self, user_id):
+    def _get_user_name(self, user_id: str, domain_id: str) -> str:
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
             user_info = identity_mgr.get_user(user_id)
