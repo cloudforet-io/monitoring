@@ -16,10 +16,8 @@ class IdentityManager(BaseManager):
     def get_domain(self, domain_id):
         return self.identity_connector.dispatch("Domain.get", {"domain_id": domain_id})
 
-    def get_user(self, user_id, domain_id):
-        return self.identity_connector.dispatch(
-            "User.get", {"user_id": user_id, "domain_id": domain_id}
-        )
+    def get_user(self, user_id):
+        return self.identity_connector.dispatch("User.get", {"user_id": user_id})
 
     def get_project(self, project_id: str, domain_id: str = None) -> dict:
         conditions = {"project_id": project_id}
