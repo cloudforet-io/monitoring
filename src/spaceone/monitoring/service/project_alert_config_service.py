@@ -112,7 +112,7 @@ class ProjectAlertConfigService(BaseService):
 
         project_alert_config_vo: ProjectAlertConfig = (
             self.project_alert_config_mgr.get_project_alert_config(
-                project_id, domain_id, workspace_id
+                project_id, workspace_id, domain_id
             )
         )
 
@@ -121,7 +121,9 @@ class ProjectAlertConfigService(BaseService):
                 "EscalationPolicyManager"
             )
             escalation_policy_vo = escalation_policy_mgr.get_escalation_policy(
-                escalation_policy_id=escalation_policy_id, workspace_id=workspace_id, domain_id=domain_id,
+                escalation_policy_id=escalation_policy_id,
+                workspace_id=workspace_id,
+                domain_id=domain_id,
             )
             if (
                 escalation_policy_vo.resource_group == "PROJECT"
@@ -192,7 +194,7 @@ class ProjectAlertConfigService(BaseService):
         """
 
         return self.project_alert_config_mgr.get_project_alert_config(
-            params["project_id"], params["domain_id"], params["workspace_id"]
+            params["project_id"], params["workspace_id"], params["domain_id"]
         )
 
     @transaction(

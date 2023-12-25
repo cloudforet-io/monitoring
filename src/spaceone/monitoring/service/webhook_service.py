@@ -27,7 +27,7 @@ class WebhookService(BaseService):
         super().__init__(*args, **kwargs)
         self.webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
         self.webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager(
-            "WebhookPluginManager"
+            WebhookPluginManager
         )
 
     @transaction(
@@ -61,7 +61,7 @@ class WebhookService(BaseService):
         )
 
         project_alert_config_mgr.get_project_alert_config(
-            project_id, domain_id, workspace_id
+            project_id, workspace_id, domain_id
         )
 
         self._check_plugin_info(params["plugin_info"])

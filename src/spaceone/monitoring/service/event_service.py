@@ -34,8 +34,11 @@ class EventService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.resource = "Event"
-        self.event_mgr: EventManager = self.locator.get_manager("EventManager")
-        self.webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
+        self.event_mgr: EventManager = self.locator.get_manager(EventManager)
+        self.webhook_mgr: WebhookManager = self.locator.get_manager(WebhookManager)
+        self.webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager(
+            WebhookPluginManager
+        )
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @check_required(["webhook_id", "access_key", "data"])
@@ -303,7 +306,9 @@ class EventService(BaseService):
             )
 
         escalation_policy_id, escalation_ttl = self._get_escalation_policy_info(
-            event_data["project_id"], event_data["domain_id"]
+            event_data["project_id"],
+            event_data["workspace_id"],
+            event_data["domain_id"],
         )
 
         alert_data["escalation_policy_id"] = escalation_policy_id
@@ -334,9 +339,9 @@ class EventService(BaseService):
             return "LOW"
 
     @cache.cacheable(key="escalation-policy-info:{domain_id}:{project_id}", expire=300)
-    def _get_escalation_policy_info(self, project_id, domain_id):
+    def _get_escalation_policy_info(self, project_id, workspace_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(
-            project_id, domain_id
+            project_id, workspace_id, domain_id
         )
         escalation_policy_vo: EscalationPolicy = (
             project_alert_config_vo.escalation_policy
@@ -371,28 +376,32 @@ class EventService(BaseService):
         if (
             event_data["event_type"] == "RECOVERY"
             and alert_vo.state != "RESOLVED"
-            and self._is_auto_recovery(alert_vo.project_id, alert_vo.domain_id)
+            and self._is_auto_recovery(
+                alert_vo.project_id, alert_vo.workspace_id, alert_vo.domain_id
+            )
         ):
             return True
         else:
             return False
 
     @cache.cacheable(key="auto-recovery:{domain_id}:{project_id}", expire=300)
-    def _is_auto_recovery(self, project_id, domain_id):
+    def _is_auto_recovery(self, project_id, workspace_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(
-            project_id, domain_id
+            project_id, workspace_id, domain_id
         )
         return project_alert_config_vo.options.recovery_mode == "AUTO"
 
-    def _get_project_alert_config(self, project_id, domain_id):
+    def _get_project_alert_config(self, project_id, workspace_id, domain_id):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager(
             "ProjectAlertConfigManager"
         )
-        return project_alert_config_mgr.get_project_alert_config(project_id, domain_id)
+        return project_alert_config_mgr.get_project_alert_config(
+            project_id, workspace_id, domain_id
+        )
 
-    def _get_notification_urgency(self, project_id, domain_id):
+    def _get_notification_urgency(self, project_id, workspace_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(
-            project_id, domain_id
+            project_id, workspace_id, domain_id
         )
         return project_alert_config_vo.options.notification_urgency
 

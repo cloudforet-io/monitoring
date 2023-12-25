@@ -317,7 +317,7 @@ class JobService(BaseService):
         )
         project_alert_config_vo: ProjectAlertConfig = (
             project_alert_config_mgr.get_project_alert_config(
-                project_id, domain_id, workspace_id
+                project_id, workspace_id, domain_id
             )
         )
 
