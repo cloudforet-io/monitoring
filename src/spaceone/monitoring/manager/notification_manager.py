@@ -1,8 +1,8 @@
 import logging
 
 from spaceone.core import config
-from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.core.manager import BaseManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,6 +14,9 @@ class NotificationManager(BaseManager):
             "SpaceConnector", service="notification", token=config.get_global("TOKEN")
         )
 
-    def create_notification(self, message):
+    def create_notification(self, message, domain_id):
         _LOGGER.debug(f"Notify message: {message}")
-        return self.notification_connector.dispatch("Notification.create", message)
+        system_token = config.get_global("TOKEN")
+        return self.notification_connector.dispatch(
+            "Notification.create", message, toke=system_token, x_domain_id=domain_id
+        )

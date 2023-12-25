@@ -19,13 +19,10 @@ class IdentityManager(BaseManager):
     def get_user(self, user_id):
         return self.identity_connector.dispatch("User.get", {"user_id": user_id})
 
-    def get_project(self, project_id: str, domain_id: str = None) -> dict:
-        conditions = {"project_id": project_id}
-
-        if domain_id:
-            conditions["domain_id"] = domain_id
-
-        return self.identity_connector.dispatch("Project.get", conditions)
+    def get_project(self, project_id: str) -> dict:
+        return self.identity_connector.dispatch(
+            "Project.get", {"project_id": project_id}
+        )
 
     def check_workspace(self, workspace_id: str, domain_id: str) -> dict:
         return self.identity_connector.dispatch(
