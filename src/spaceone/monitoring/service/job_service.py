@@ -539,13 +539,16 @@ class JobService(BaseService):
             "notification_level": notification_level,
         }
 
+    @cache.cacheable(key="project-name:{domain_id}:{project_id}", expire=300)
     def _get_project_name(self, project_id):
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
             project_info = identity_mgr.get_project(project_id)
-            return (
-                f'{project_info["project_group_info"]["name"]} > {project_info["name"]}'
-            )
+
+            if project_group_id := project_info.get("project_group_id"):
+                project_group_info = identity_mgr.get_project_group(project_group_id)
+
+                return f'{project_group_info["name"]} > {project_info["name"]}'
         except Exception as e:
             _LOGGER.error(
                 f"[_get_project_name] Failed to get project: {e}", exc_info=True
@@ -571,6 +574,7 @@ class JobService(BaseService):
 
         return triggered_by
 
+    @cache.cacheable(key="user-name:{domain_id}:{user_id}", expire=300)
     def _get_user_name(self, user_id):
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")

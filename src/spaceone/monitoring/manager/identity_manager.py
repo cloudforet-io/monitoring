@@ -34,6 +34,11 @@ class IdentityManager(BaseManager):
             "Project.get", {"project_id": project_id}
         )
 
+    def get_project_group(self, project_group_id: str) -> dict:
+        return self.identity_connector.dispatch(
+            "ProjectGroup.get", {"project_group_id": project_group_id}
+        )
+
     def check_workspace(self, workspace_id: str, domain_id: str) -> dict:
         return self.identity_connector.dispatch(
             "Workspace.check", {"workspace_id": workspace_id, "domain_id": domain_id}
