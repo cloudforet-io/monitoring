@@ -105,12 +105,14 @@ class NoteService(BaseService):
             None
         """
 
-        self.note_mgr.delete_note(
+        note_vo = self.note_mgr.get_note(
             params["note_id"],
             params["domain_id"],
             params["workspace_id"],
             params.get("user_projects"),
         )
+
+        self.note_mgr.delete_note_by_vo(note_vo)
 
     @transaction(
         permission="monitoring:Note.read",
