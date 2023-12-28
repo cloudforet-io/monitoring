@@ -42,14 +42,8 @@ class NoteManager(BaseManager):
 
         return note_vo.update(params)
 
-    def delete_note(
-        self,
-        note_id: str,
-        domain_id: str,
-        workspace_id: str,
-        user_projects: list = None,
-    ):
-        note_vo: Note = self.get_note(note_id, domain_id, workspace_id, user_projects)
+    @staticmethod
+    def delete_note_by_vo(note_vo: Note):
         note_vo.delete()
 
     def get_note(
@@ -68,12 +62,7 @@ class NoteManager(BaseManager):
         if user_projects:
             conditions["project_id"] = user_projects
 
-        return self.note_model.get(
-            note_id=note_id,
-            domain_id=domain_id,
-            workspace_id=workspace_id,
-            user_projects=user_projects,
-        )
+        return self.note_model.get(**conditions)
 
     def list_notes(self, query: dict) -> dict:
         return self.note_model.query(**query)
