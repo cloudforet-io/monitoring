@@ -18,6 +18,14 @@ class Alert(BaseAPI, alert_pb2_grpc.AlertServicer):
         with self.locator.get_service("AlertService", metadata) as alert_service:
             return self.locator.get_info("AlertInfo", alert_service.update(params))
 
+    def assign_user(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service("AlertService", metadata) as alert_service:
+            return self.locator.get_info(
+                "AlertInfo", alert_service.assign_user(params)
+            )
+
     def update_state(self, request, context):
         params, metadata = self.parse_request(request, context)
 

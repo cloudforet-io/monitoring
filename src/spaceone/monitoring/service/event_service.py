@@ -293,6 +293,7 @@ class EventService(BaseService):
 
         self.event_mgr.create_event(event_data)
 
+    # create alert by system
     def _create_alert(self, event_data):
         alert_mgr: AlertManager = self.locator.get_manager("AlertManager")
 

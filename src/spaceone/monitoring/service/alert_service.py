@@ -56,6 +56,7 @@ class AlertService(BaseService):
         project_id = params["project_id"]
         domain_id = params["domain_id"]
         workspace_id = params["workspace_id"]
+        assignee = params.get("assignee")
 
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager(
             "ProjectAlertConfigManager"
@@ -74,7 +75,9 @@ class AlertService(BaseService):
         params["escalation_ttl"] = escalation_policy_vo.repeat_count + 1
         params["escalated_at"] = None
 
-        # TODO: Check Assignee
+        if assignee:
+            identity_mgr = self.locator.get_manager("IdentityManager")
+            identity_mgr.get_workspace_user(user_id=assignee)
 
         params["triggered_by"] = self.transaction.get_meta("authorization.user_id")
 
@@ -199,11 +202,14 @@ class AlertService(BaseService):
         user_projects = params.get("user_projects")
         assignee = params["assignee"]
 
+        identity_mgr = self.locator.get_manager("IdentityManager")
+        identity_mgr.get_workspace_user(user_id=assignee)
+
         alert_vo = self.alert_mgr.get_alert(
             alert_id, domain_id, workspace_id, user_projects
         )
-        # TODO: Not Implemented
-        pass
+        alert_vo = self.alert_mgr.update_alert_by_vo({"assignee": assignee}, alert_vo)
+        return alert_vo
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @check_required(["alert_id", "access_key", "state"])
@@ -395,7 +401,7 @@ class AlertService(BaseService):
         return self.alert_mgr.stat_alerts(query)
 
     def _create_notification(
-            self, alert_vo: Alert, method: str, user_id: str = None
+        self, alert_vo: Alert, method: str, user_id: str = None
     ) -> None:
         params = {
             "alert_id": alert_vo.alert_id,
