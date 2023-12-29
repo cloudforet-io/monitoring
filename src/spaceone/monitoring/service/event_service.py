@@ -1,5 +1,6 @@
 import copy
 import logging
+from datetime import datetime
 
 from spaceone.core import utils, cache, config
 from spaceone.core.service import *
@@ -365,6 +366,7 @@ class EventService(BaseService):
 
         if is_resolved:
             update_params["state"] = "RESOLVED"
+            update_params["resolved_at"] = datetime.utcnow()
 
         alert_mgr.update_alert_by_vo(update_params, alert_vo)
 
