@@ -51,6 +51,7 @@ class SecretManager(BaseManager):
 
     def list_secrets_from_query(self, secret_filter, **kwargs):
         secret_query = self._make_query(**secret_filter)
+        _LOGGER.debug(f"[list_secrets_from_query] secret_query: {secret_query}")
         response = self.list_secrets(secret_query)
 
         if response.get("total_count", 0) == 0:
