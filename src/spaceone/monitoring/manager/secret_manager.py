@@ -15,14 +15,12 @@ class SecretManager(BaseManager):
             "SpaceConnector", service="secret"
         )
 
-    def get_secret_from_resource(self, resource, data_source_vo, domain_id):
+    def get_secret_from_resource(self, resource, data_source_vo):
         secret = {}
 
         if data_source_plugin_info := data_source_vo.plugin_info:
             if secret_id := data_source_plugin_info.secret_id:
-                secret = self.list_secrets_from_query(
-                    {"secret_id": secret_id}, domain_id
-                )[0]
+                secret = self.list_secrets_from_query({"secret_id": secret_id})[0]
 
         if not secret:
             resource_secrets = []
@@ -38,14 +36,12 @@ class SecretManager(BaseManager):
                     ),
                     "secrets": resource_secrets,
                 }
-                secret = self.list_secrets_from_query(secret_filter, domain_id)[0]
+                secret = self.list_secrets_from_query(secret_filter)[0]
 
         return secret
 
-    def list_secrets(self, query: dict, domain_id: str) -> dict:
-        return self.secret_connector.dispatch(
-            "Secret.list", {"query": query, "domain_id": domain_id}
-        )
+    def list_secrets(self, query: dict) -> dict:
+        return self.secret_connector.dispatch("Secret.list", {"query": query})
 
     def get_secret_data(self, secret_id, domain_id):
         response = self.secret_connector.dispatch(
@@ -53,9 +49,9 @@ class SecretManager(BaseManager):
         )
         return response["data"]
 
-    def list_secrets_from_query(self, secret_filter, domain_id, **kwargs):
+    def list_secrets_from_query(self, secret_filter, **kwargs):
         secret_query = self._make_query(**secret_filter)
-        response = self.list_secrets(secret_query, domain_id)
+        response = self.list_secrets(secret_query)
 
         if response.get("total_count", 0) == 0:
             resource_id = kwargs.get("resource_id")
@@ -84,7 +80,7 @@ class SecretManager(BaseManager):
                 supported_schema=supported_schema, secret_id=secret_id
             )
 
-        response = self.list_secrets(secret_query, domain_id)
+        response = self.list_secrets(secret_query)
 
         if response.get("total_count", 0) == 0:
             if use_resource_secret:
