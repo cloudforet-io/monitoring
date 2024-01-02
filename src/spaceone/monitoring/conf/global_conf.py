@@ -41,6 +41,15 @@ HANDLERS = {
     # "event": []
 }
 
+# Log Settings
+LOG = {
+    "filters": {
+        "masking": {
+            "rules": {"Log.list": ["secret_data"], "Metric.get_data": ["secret_data"]}
+        }
+    }
+}
+
 # Connector Settings
 CONNECTORS = {
     "SpaceConnector": {
