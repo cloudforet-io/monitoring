@@ -120,7 +120,7 @@ class SecretManager(BaseManager):
         query = {"filter": []}
 
         if supported_schema:
-            query["filter"].append({"k": "schema", "v": supported_schema, "o": "in"})
+            query["filter"].append({"k": "schema_id", "v": supported_schema, "o": "in"})
 
         if secret_id:
             query["filter"].append({"k": "secret_id", "v": secret_id, "o": "eq"})
