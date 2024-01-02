@@ -493,7 +493,7 @@ class MetricService(BaseService):
 
     @staticmethod
     def get_query_from_cloud_service(cloud_service_info, plugin_info):
-        metadata = plugin_info.metadata
+        metadata = plugin_info.get("metadata", {})
         required_keys = metadata.get("required_keys", [])
 
         if required_keys:
