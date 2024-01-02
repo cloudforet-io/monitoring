@@ -51,7 +51,6 @@ class SecretManager(BaseManager):
 
     def list_secrets_from_query(self, secret_filter, **kwargs):
         secret_query = self._make_query(**secret_filter)
-        _LOGGER.debug(f"[list_secrets_from_query] secret_query: {secret_query}")
         response = self.list_secrets(secret_query)
 
         if response.get("total_count", 0) == 0:
@@ -111,7 +110,7 @@ class SecretManager(BaseManager):
 
     @staticmethod
     def _make_query(**secret_filter):
-        supported_schema = secret_filter.get("supported_schema")
+        # supported_schema = secret_filter.get("supported_schema")
         secret_id = secret_filter.get("secret_id")
         service_account_id = secret_filter.get("service_account_id")
         project_id = secret_filter.get("project_id")
@@ -120,8 +119,8 @@ class SecretManager(BaseManager):
 
         query = {"filter": []}
 
-        if supported_schema:
-            query["filter"].append({"k": "schema_id", "v": supported_schema, "o": "in"})
+        # if supported_schema:
+        #     query["filter"].append({"k": "schema_id", "v": supported_schema, "o": "in"})
 
         if secret_id:
             query["filter"].append({"k": "secret_id", "v": secret_id, "o": "eq"})
