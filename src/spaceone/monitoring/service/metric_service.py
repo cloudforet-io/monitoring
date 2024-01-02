@@ -113,7 +113,7 @@ class MetricService(BaseService):
             list_metric_params.append(
                 {
                     "schema": secret.get("schema"),
-                    "options": plugin_info.options,
+                    "options": plugin_info.get("options"),
                     "secret_data": secret_data,
                     "query": query,
                     "cloud_service_id": cloud_service_info["cloud_service_id"],
