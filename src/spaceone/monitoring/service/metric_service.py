@@ -1,5 +1,6 @@
 import concurrent.futures
 import logging
+from copy import deepcopy
 
 from spaceone.core.service import *
 from spaceone.core.utils import get_dict_value, random_string
@@ -205,7 +206,10 @@ class MetricService(BaseService):
             resources_info, metric_query, data_source_vo, domain_id
         )
 
-        _LOGGER.debug(f"[get_data] chunk_resources: {resources_chunks}")
+        copied_resources_chunks = deepcopy(resources_chunks)
+        copied_resources_chunks.pop("secret_data", None)
+
+        _LOGGER.debug(f"[get_data] chunk_resources: {copied_resources_chunks}")
 
         metric_data_params = self.set_metric_data_params(params)
 
