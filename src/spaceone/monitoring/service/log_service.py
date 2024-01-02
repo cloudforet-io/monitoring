@@ -96,7 +96,7 @@ class LogService(BaseService):
             cloud_service_info, data_source_vo.plugin_info
         )
         secret = self.secret_mgr.get_secret_from_resource(
-            cloud_service_info, data_source_vo, domain_id
+            cloud_service_info, data_source_vo
         )
         secret_data = self.secret_mgr.get_secret_data(
             secret.get("secret_id", ""), domain_id
