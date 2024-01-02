@@ -1,8 +1,7 @@
 import logging
 
-from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.monitoring.error import *
+from spaceone.core.manager import BaseManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,10 +23,9 @@ class InventoryManager(BaseManager):
             "Server.list", {"query": query, "domain_id": domain_id}
         )
 
-    def get_cloud_service(self, cloud_service_id, domain_id):
+    def get_cloud_service(self, cloud_service_id):
         return self.inventory_connector.dispatch(
-            "CloudService.get",
-            {"cloud_service_id": cloud_service_id, "domain_id": domain_id},
+            "CloudService.get", {"cloud_service_id": cloud_service_id}
         )
 
     def list_cloud_services(self, query, domain_id):
@@ -36,7 +34,7 @@ class InventoryManager(BaseManager):
         )
 
     def get_resource(self, resource_type, resource_id, domain_id):
-        return self.get_cloud_service(resource_id, domain_id)
+        return self.get_cloud_service(resource_id)
 
     def list_resources(self, resources, required_keys, domain_id):
         query = self._make_query(resources, required_keys)

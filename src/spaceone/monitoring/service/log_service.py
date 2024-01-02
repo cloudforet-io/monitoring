@@ -91,9 +91,7 @@ class LogService(BaseService):
             )
 
         plugin_options = data_source_vo.plugin_info.options
-        cloud_service_info = self.inventory_mgr.get_cloud_service(
-            resource_id, domain_id
-        )
+        cloud_service_info = self.inventory_mgr.get_cloud_service(resource_id)
         query = self.get_query_from_cloud_service(
             cloud_service_info, data_source_vo.plugin_info
         )
