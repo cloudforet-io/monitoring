@@ -207,7 +207,8 @@ class MetricService(BaseService):
         )
 
         copied_resources_chunks = deepcopy(resources_chunks)
-        copied_resources_chunks.pop("secret_data", None)
+        for key in copied_resources_chunks.keys():
+            copied_resources_chunks[key].pop("secret_data", None)
 
         _LOGGER.debug(f"[get_data] chunk_resources: {copied_resources_chunks}")
 
