@@ -28,17 +28,15 @@ class InventoryManager(BaseManager):
             "CloudService.get", {"cloud_service_id": cloud_service_id}
         )
 
-    def list_cloud_services(self, query, domain_id):
-        return self.inventory_connector.dispatch(
-            "CloudService.list", {"query": query, "domain_id": domain_id}
-        )
+    def list_cloud_services(self, query):
+        return self.inventory_connector.dispatch("CloudService.list", {"query": query})
 
     def get_resource(self, resource_type, resource_id, domain_id):
         return self.get_cloud_service(resource_id)
 
-    def list_resources(self, resources, required_keys, domain_id):
+    def list_resources(self, resources, required_keys):
         query = self._make_query(resources, required_keys)
-        response = self.list_cloud_services(query, domain_id)
+        response = self.list_cloud_services(query)
         return response.get("results", [])
 
     @staticmethod

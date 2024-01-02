@@ -96,7 +96,7 @@ class MetricService(BaseService):
 
         required_keys = plugin_metadata.get("required_keys")
         cloud_services_info = self.inventory_mgr.list_resources(
-            resources, required_keys, domain_id
+            resources, required_keys
         )
 
         list_metric_params = []
@@ -200,9 +200,7 @@ class MetricService(BaseService):
 
         required_keys = plugin_metadata.get("required_keys")
         resource_ids = self.get_resource_ids_from_metric_query(metric_query)
-        resources_info = self.inventory_mgr.list_resources(
-            resource_ids, required_keys, domain_id
-        )
+        resources_info = self.inventory_mgr.list_resources(resource_ids, required_keys)
         resources_chunks = self.list_chunk_resources(
             resources_info, metric_query, data_source_vo, domain_id
         )
