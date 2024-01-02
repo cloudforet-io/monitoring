@@ -77,7 +77,7 @@ class MetricService(BaseService):
                 f'[get_data_source_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}'
             )
             plugin_info = data_source_vo.plugin_info.to_dict()
-            plugin_metadata = self.init_plugin(
+            plugin_metadata = self.ds_plugin_mgr.init_plugin(
                 endpoint, plugin_info.get("options", {}), data_source_vo.monitoring_type
             )
             plugin_info["version"] = updated_version
