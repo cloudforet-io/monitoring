@@ -411,12 +411,7 @@ class AlertService(BaseService):
 
         if user_id:
             params["user_id"] = user_id
-        _LOGGER.debug(
-            f"[TEST][create_alert] token_type: {self.transaction.get_meta('authorization.token_type')}"
-        )
-        _LOGGER.debug(
-            f"[TEST][create_alert] token: {self.transaction.get_meta('token')}"
-        )
+
         job_mgr: JobManager = self.locator.get_manager("JobManager")
         job_mgr.push_task(
             "monitoring_alert_notification_from_manual", "JobService", method, params
