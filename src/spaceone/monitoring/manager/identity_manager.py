@@ -42,7 +42,7 @@ class IdentityManager(BaseManager):
             {"user_id": user_id},
         )
 
-    def get_project(self, project_id: str, domain_id: str) -> dict:
+    def get_project(self, project_id: str, domain_id: str = None) -> dict:
         if self.token_type == "SYSTEM_TOKEN":
             return self.identity_connector.dispatch(
                 "Project.get",
