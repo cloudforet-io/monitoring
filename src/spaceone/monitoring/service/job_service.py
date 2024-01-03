@@ -542,13 +542,11 @@ class JobService(BaseService):
     @cache.cacheable(key="project-name:{domain_id}:{project_id}", expire=300)
     def _get_project_name(self, project_id: str, domain_id: str) -> str:
         try:
-            identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-            project_info = identity_mgr.get_project_by_system_token(
-                project_id, domain_id
-            )
+            identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
+            project_info = identity_mgr.get_project(project_id, domain_id)
 
             if project_group_id := project_info.get("project_group_id"):
-                project_group_info = identity_mgr.get_project_group_by_system_token(
+                project_group_info = identity_mgr.get_project_group(
                     project_group_id, domain_id
                 )
 
@@ -564,7 +562,7 @@ class JobService(BaseService):
     def _get_triggered_by_name(self, triggered_by, domain_id):
         if triggered_by and triggered_by.startswith("webhook-"):
             try:
-                webhook_mgr: WebhookManager = self.locator.get_manager("WebhookManager")
+                webhook_mgr: WebhookManager = self.locator.get_manager(WebhookManager)
                 webhook_info = webhook_mgr.get_webhook(triggered_by, domain_id)
 
                 return webhook_info["name"]
@@ -582,7 +580,7 @@ class JobService(BaseService):
     def _get_user_name(self, user_id: str, domain_id: str) -> str:
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-            user_info = identity_mgr.get_user_by_system_token(user_id, domain_id)
+            user_info = identity_mgr.get_user(user_id, domain_id)
 
             if len(user_info.get("name", "").strip()) == 0:
                 return user_info["user_id"]
@@ -630,8 +628,8 @@ class JobService(BaseService):
     @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
     def _get_domain_name(self, domain_id):
         try:
-            identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-            domain_info = identity_mgr.get_domain_by_system_token(domain_id)
+            identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
+            domain_info = identity_mgr.get_domain(domain_id)
             return domain_info["name"]
         except Exception as e:
             _LOGGER.error(
