@@ -59,7 +59,7 @@ class ProjectAlertConfigService(BaseService):
             "EscalationPolicyManager"
         )
 
-        identity_mgr.get_project(project_id)
+        identity_mgr.get_project(project_id, domain_id)
 
         if escalation_policy_id:
             escalation_policy_vo = escalation_policy_mgr.get_escalation_policy(
