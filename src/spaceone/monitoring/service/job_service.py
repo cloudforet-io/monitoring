@@ -214,6 +214,12 @@ class JobService(BaseService):
             alert_options = self._get_project_alert_options(
                 project_id, workspace_id, domain_id
             )
+            _LOGGER.debug(
+                f"[TEST][job_service.create_alert] token_type: {self.transaction.get_meta('authorization.token_type')}"
+            )
+            _LOGGER.debug(
+                f"[TEST][job_service.create_alert] token: {self.transaction.get_meta('token')}"
+            )
             (
                 rules,
                 finish_condition,
