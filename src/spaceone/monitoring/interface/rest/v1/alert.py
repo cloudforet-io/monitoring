@@ -23,9 +23,10 @@ class Alert(BaseAPI):
     @exception_handler
     async def update_alert_state_get(self, alert_id: str, access_key: str, state: str):
         alert_info = self._update_alert_state(alert_id, access_key, state)
+        workspace_id = alert_info["workspace_id"]
         domain_name = self._get_domain_name(alert_info["domain_id"])
 
-        return self._make_redirect_response(alert_id, domain_name)
+        return self._make_redirect_response(alert_id, workspace_id, domain_name)
 
     @router.post("/alert/{alert_id}/{access_key}/{state}")
     async def update_alert_state_post(
@@ -55,6 +56,7 @@ class Alert(BaseAPI):
             "assignee": alert_vo.assignee,
             "urgency": alert_vo.urgency,
             "domain_id": alert_vo.domain_id,
+            "workspace_id": alert_vo.workspace_id
         }
 
     @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
@@ -64,11 +66,11 @@ class Alert(BaseAPI):
         return domain_info["name"]
 
     @staticmethod
-    def _make_redirect_response(alert_id, domain_name):
+    def _make_redirect_response(alert_id, workspace_id, domain_name):
         console_domain = config.get_global("CONSOLE_DOMAIN")
 
         if console_domain.strip() != "":
             console_domain = console_domain.format(domain_name=domain_name)
-            return RedirectResponse(f"{console_domain}/alert-manager/alert/{alert_id}")
+            return RedirectResponse(f"{console_domain}/{workspace_id}/alert-manager/alert/{alert_id}")
         else:
             return None
