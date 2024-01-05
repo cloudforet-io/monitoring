@@ -516,7 +516,7 @@ class JobService(BaseService):
         if alert_vo.description and alert_vo.description != "":
             message["description"] = alert_vo.description
 
-        alert_link = self._make_alert_link(alert_vo.alert_id, alert_vo.domain_id)
+        alert_link = self._make_alert_link(alert_vo.alert_id, alert_vo.workspace_id, alert_vo.domain_id)
 
         if alert_link:
             message["link"] = alert_link
@@ -616,14 +616,14 @@ class JobService(BaseService):
             f"{webhook_domain}/monitoring/v1/alert/{alert_id}/{access_key}/ACKNOWLEDGED"
         )
 
-    def _make_alert_link(self, alert_id, domain_id):
+    def _make_alert_link(self, alert_id, workspace_id, domain_id):
         console_domain: str = config.get_global("CONSOLE_DOMAIN")
 
         if console_domain.strip() != "":
             domain_name = self._get_domain_name(domain_id)
             console_domain = console_domain.format(domain_name=domain_name)
 
-            return f"{console_domain}/alert-manager/alert/{alert_id}"
+            return f"{console_domain}/{workspace_id}/alert-manager/alert/{alert_id}"
 
     @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
     def _get_domain_name(self, domain_id):
