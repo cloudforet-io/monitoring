@@ -30,8 +30,6 @@ setup(
     install_requires=[
         "spaceone-core",
         "spaceone-api",
-        "mongoengine",
-        "redis",
         "schematics",
     ],
     zip_safe=False,
