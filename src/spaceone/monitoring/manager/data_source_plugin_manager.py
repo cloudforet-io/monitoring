@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class DataSourcePluginManager(BaseManager):
     def init_plugin(self, endpoint, options: dict, monitoring_type: str) -> dict:
         plugin_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", endpoint=endpoint
+            "SpaceConnector", endpoint=endpoint, token="NO_TOKEN"
         )
 
         plugin_info = plugin_connector.dispatch("DataSource.init", {"options": options})
@@ -29,7 +29,7 @@ class DataSourcePluginManager(BaseManager):
 
     def verify_plugin(self, endpoint, options, secret_data, schema):
         plugin_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", endpoint=endpoint
+            "SpaceConnector", endpoint=endpoint, token="NO_TOKEN"
         )
 
         params = {"options": options, "secret_data": secret_data, "schema": schema}
@@ -38,7 +38,7 @@ class DataSourcePluginManager(BaseManager):
 
     def list_metrics(self, endpoint, schema, options, secret_data, query):
         plugin_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", endpoint=endpoint
+            "SpaceConnector", endpoint=endpoint, token="NO_TOKEN"
         )
 
         params = {"options": options, "secret_data": secret_data, "query": query}
@@ -50,7 +50,7 @@ class DataSourcePluginManager(BaseManager):
 
     def get_metric_data(self, endpoint, params):
         plugin_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", endpoint=endpoint
+            "SpaceConnector", endpoint=endpoint, token="NO_TOKEN"
         )
 
         return plugin_connector.dispatch("Metric.get_data", params)
