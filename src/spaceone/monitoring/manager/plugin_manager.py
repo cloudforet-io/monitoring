@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
@@ -14,7 +15,7 @@ class PluginManager(BaseManager):
         )
 
     def get_plugin_endpoint(self, plugin_info: dict, domain_id: str) -> (str, str):
-        system_token = self.transaction.get_meta("token")
+        system_token = config.get_global("TOKEN")
 
         response = self.plugin_connector.dispatch(
             "Plugin.get_plugin_endpoint",
