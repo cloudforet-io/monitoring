@@ -14,6 +14,8 @@ class PluginManager(BaseManager):
         )
 
     def get_plugin_endpoint(self, plugin_info: dict, domain_id: str) -> (str, str):
+        system_token = self.transaction.get_meta("token")
+
         response = self.plugin_connector.dispatch(
             "Plugin.get_plugin_endpoint",
             {
@@ -22,6 +24,7 @@ class PluginManager(BaseManager):
                 "upgrade_mode": plugin_info.get("upgrade_mode", "AUTO"),
                 "domain_id": domain_id,
             },
+            token=system_token,
         )
 
         _LOGGER.debug(f"[get_plugin_endpoint] response: {response}")
