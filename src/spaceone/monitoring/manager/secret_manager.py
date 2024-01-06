@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
@@ -44,7 +45,7 @@ class SecretManager(BaseManager):
         return self.secret_connector.dispatch("Secret.list", {"query": query})
 
     def get_secret_data(self, secret_id, domain_id):
-        system_token = self.transaction.get_meta("token")
+        system_token = config.get_global("TOKEN")
 
         response = self.secret_connector.dispatch(
             "Secret.get_data",
