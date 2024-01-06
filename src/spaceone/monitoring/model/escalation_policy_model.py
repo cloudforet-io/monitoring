@@ -13,7 +13,7 @@ class EscalationRule(EmbeddedDocument):
 
 class EscalationPolicy(MongoModel):
     escalation_policy_id = StringField(max_length=40, generate_id="ep", unique=True)
-    name = StringField(max_length=255, unique_with="workspace_id")
+    name = StringField(max_length=255, unique_with=["workspace_id", "domain_id"])
     is_default = BooleanField(default=False)
     rules = ListField(EmbeddedDocumentField(EscalationRule))
     repeat_count = IntField(default=0, min_value=0)
