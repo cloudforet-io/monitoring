@@ -44,8 +44,12 @@ class SecretManager(BaseManager):
         return self.secret_connector.dispatch("Secret.list", {"query": query})
 
     def get_secret_data(self, secret_id, domain_id):
+        system_token = self.transaction.get_meta("token")
+
         response = self.secret_connector.dispatch(
-            "Secret.get_data", {"secret_id": secret_id, "domain_id": domain_id}
+            "Secret.get_data",
+            {"secret_id": secret_id, "domain_id": domain_id},
+            token=system_token,
         )
         return response["data"]
 
