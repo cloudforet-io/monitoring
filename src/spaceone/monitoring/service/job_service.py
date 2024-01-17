@@ -516,7 +516,9 @@ class JobService(BaseService):
         if alert_vo.description and alert_vo.description != "":
             message["description"] = alert_vo.description
 
-        alert_link = self._make_alert_link(alert_vo.alert_id, alert_vo.workspace_id, alert_vo.domain_id)
+        alert_link = self._make_alert_link(
+            alert_vo.alert_id, alert_vo.workspace_id, alert_vo.domain_id
+        )
 
         if alert_link:
             message["link"] = alert_link
@@ -551,6 +553,8 @@ class JobService(BaseService):
                 )
 
                 return f'{project_group_info["name"]} > {project_info["name"]}'
+            else:
+                return project_info["name"]
         except Exception as e:
             _LOGGER.error(
                 f"[_get_project_name] Failed to get project: {e}", exc_info=True

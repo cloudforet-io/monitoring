@@ -18,16 +18,10 @@ class IdentityManager(BaseManager):
         )
 
     def get_domain(self, domain_id: str) -> dict:
-        if self.token_type == "SYSTEM_TOKEN":
-            return self.identity_connector.dispatch(
-                "Domain.get",
-                {"domain_id": domain_id},
-                x_domain_id=domain_id,
-            )
-        else:
-            return self.identity_connector.dispatch(
-                "Domain.get", {"domain_id": domain_id}
-            )
+        token = config.get_global("TOKEN")
+        return self.identity_connector.dispatch(
+            "Domain.get", {"domain_id": domain_id}, x_domain_id=domain_id, token=token
+        )
 
     def get_user(self, user_id: str, domain_id) -> dict:
         if self.token_type == "SYSTEM_TOKEN":
