@@ -627,7 +627,7 @@ class JobService(BaseService):
             domain_name = self._get_domain_name(domain_id)
             console_domain = console_domain.format(domain_name=domain_name)
 
-            return f"{console_domain}/{workspace_id}/alert-manager/alert/{alert_id}"
+            return f"{console_domain}/workspace/{workspace_id}/alert-manager/alert/{alert_id}"
 
     @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
     def _get_domain_name(self, domain_id):
