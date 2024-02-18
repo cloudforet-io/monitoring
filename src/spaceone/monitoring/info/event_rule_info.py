@@ -35,7 +35,10 @@ def EventRuleActionsInfo(actions_data):
         info = {}
 
         for key, value in actions_data.items():
-            if key == "add_additional_info":
+            if key in [
+                "add_additional_info",
+                "match_service_account",
+            ]:
                 info[key] = change_struct_type(value)
             else:
                 info[key] = value
