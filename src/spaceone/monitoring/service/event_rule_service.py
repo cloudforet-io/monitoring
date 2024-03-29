@@ -6,6 +6,9 @@ from spaceone.core.service import *
 from spaceone.monitoring.error.event_rule import *
 from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
 from spaceone.monitoring.manager.identity_manager import IdentityManager
+from spaceone.monitoring.manager.escalation_policy_manager import (
+    EscalationPolicyManager,
+)
 from spaceone.monitoring.model.event_rule_model import EventRule
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,6 +40,9 @@ class EventRuleService(BaseService):
         super().__init__(*args, **kwargs)
         self.event_rule_mgr: EventRuleManager = self.locator.get_manager(
             "EventRuleManager"
+        )
+        self.escalation_policy_manager: EscalationPolicyManager = (
+            self.locator.get_manager("EscalationPolicyManager")
         )
 
     @transaction(
@@ -91,7 +97,7 @@ class EventRuleService(BaseService):
             project_id = params["project_id"]
 
         self._check_conditions(params["conditions"])
-        self._check_actions(params["actions"])
+        self._check_actions(params["actions"], domain_id, workspace_id, identity_mgr)
 
         params["order"] = (
             self._get_highest_order(resource_group, project_id, domain_id, workspace_id)
@@ -131,15 +137,22 @@ class EventRuleService(BaseService):
         workspace_id = params["workspace_id"]
         user_projects = params.get("user_projects")
 
+        event_rule_vo = self.event_rule_mgr.get_event_rule(
+            event_rule_id, domain_id, workspace_id, user_projects
+        )
+
         if "conditions" in params:
             self._check_conditions(params["conditions"])
 
         if "actions" in params:
-            self._check_actions(params["actions"])
+            identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
+            self._check_actions(
+                params["actions"],
+                domain_id,
+                workspace_id,
+                identity_mgr,
+            )
 
-        event_rule_vo = self.event_rule_mgr.get_event_rule(
-            event_rule_id, domain_id, workspace_id, user_projects
-        )
         return self.event_rule_mgr.update_event_rule_by_vo(params, event_rule_vo)
 
     @transaction(
@@ -382,14 +395,29 @@ class EventRuleService(BaseService):
                     f'({" | ".join(_SUPPORTED_CONDITION_OPERATORS)})',
                 )
 
-    @staticmethod
-    def _check_actions(actions: dict) -> None:
+    def _check_actions(
+        self,
+        actions: dict,
+        domain_id: str,
+        workspace_id: str,
+        identity_mgr: IdentityManager,
+    ) -> None:
         if "change_urgency" in actions:
             if actions["change_urgency"] not in ["HIGH", "LOW"]:
                 raise ERROR_INVALID_PARAMETER(
                     key="actions.change_urgency",
                     reason=f"Unsupported urgency. (HIGH | LOW)",
                 )
+        elif "change_assignee" in actions:
+            pass
+        elif "change_project" in actions:
+            change_project_id = actions["change_project"]
+            identity_mgr.get_project(change_project_id, domain_id)
+        elif "change_escalation_policy" in actions:
+            change_es_id = actions["change_escalation_policy"]
+            self.escalation_policy_manager.get_escalation_policy(
+                change_es_id, workspace_id, domain_id
+            )
 
     @staticmethod
     def _check_order(order: int) -> None:
