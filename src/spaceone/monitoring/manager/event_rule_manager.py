@@ -108,6 +108,9 @@ class EventRuleManager(BaseManager):
             if action == "change_urgency":
                 event_data["urgency"] = value
 
+            if action == "change_escalation_policy":
+                event_data["escalation_policy_id"] = value
+
             if action == "add_additional_info":
                 event_data["additional_info"] = event_data.get("additional_info", {})
                 event_data["additional_info"].update(value)

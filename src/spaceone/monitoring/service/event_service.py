@@ -16,6 +16,9 @@ from spaceone.monitoring.manager.project_alert_config_manager import (
 )
 from spaceone.monitoring.manager.webhook_manager import WebhookManager
 from spaceone.monitoring.manager.webhook_plugin_manager import WebhookPluginManager
+from spaceone.monitoring.manager.escalation_policy_manager import (
+    EscalationPolicyManager,
+)
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.model.event_model import Event
@@ -311,6 +314,7 @@ class EventService(BaseService):
             event_data["project_id"],
             event_data["workspace_id"],
             event_data["domain_id"],
+            event_data.get("escalation_policy_id", ""),
         )
 
         alert_data["escalation_policy_id"] = escalation_policy_id
@@ -340,14 +344,33 @@ class EventService(BaseService):
         else:
             return "LOW"
 
-    @cache.cacheable(key="escalation-policy-info:{domain_id}:{project_id}", expire=300)
-    def _get_escalation_policy_info(self, project_id, workspace_id, domain_id):
-        project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(
-            project_id, workspace_id, domain_id
-        )
-        escalation_policy_vo: EscalationPolicy = (
-            project_alert_config_vo.escalation_policy
-        )
+    @cache.cacheable(
+        key="escalation-policy-info:{domain_id}:{workspace_id}:{project_id}:{escalation_policy_id}",
+        expire=300,
+    )
+    def _get_escalation_policy_info(
+        self,
+        project_id: str,
+        workspace_id: str,
+        domain_id: str,
+        escalation_policy_id: str,
+    ):
+        if escalation_policy_id != "":
+            escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager(
+                "EscalationPolicyManager"
+            )
+            escalation_policy_vo: EscalationPolicy = (
+                escalation_policy_mgr.get_escalation_policy(
+                    escalation_policy_id, workspace_id, domain_id
+                )
+            )
+        else:
+            project_alert_config_vo: ProjectAlertConfig = (
+                self._get_project_alert_config(project_id, workspace_id, domain_id)
+            )
+            escalation_policy_vo: EscalationPolicy = (
+                project_alert_config_vo.escalation_policy
+            )
 
         return (
             escalation_policy_vo.escalation_policy_id,
