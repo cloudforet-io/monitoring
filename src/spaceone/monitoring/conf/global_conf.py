@@ -2,8 +2,8 @@ WEBHOOK_DOMAIN = ""
 CONSOLE_DOMAIN = ""
 
 # Service Description
-TITLE = "Documentation for Monitoring Webhook"
-DESCRIPTION = ""
+REST_TITLE = "Documentation for Monitoring Webhook"
+REST_DESCRIPTION = ""
 
 # Database Settings
 DATABASE_AUTO_CREATE_INDEX = True
