@@ -25,9 +25,9 @@ class SecretManager(BaseManager):
 
         if not secret:
             resource_secrets = []
-            for collection_info in resource.get("collection_info", []):
-                if secret_id := collection_info.get("secret_id"):
-                    resource_secrets.append(secret_id)
+            collection_info = resource.get("collection_info", {})
+            if secret_id := collection_info.get("secret_id"):
+                resource_secrets.append(secret_id)
 
             if data_source_vo.capability.get("use_resource_secret", False):
                 secret_filter = {
