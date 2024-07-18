@@ -1,11 +1,10 @@
 import logging
-from fastapi import Request, Body
+from fastapi import Request
 from fastapi_utils.inferring_router import InferringRouter
 from fastapi_utils.cbv import cbv
 from spaceone.core.fastapi.api import BaseAPI, exception_handler
 from spaceone.core.error import *
 from spaceone.core import config, cache
-from spaceone.monitoring.model import Alert
 from spaceone.monitoring.service import AlertService
 from spaceone.monitoring.manager import IdentityManager
 from fastapi.responses import RedirectResponse
@@ -19,58 +18,113 @@ router = InferringRouter()
 class Alert(BaseAPI):
     service = "Alert"
 
-    @router.get("/alert/{alert_id}/{access_key}/{state}")
+    @router.get("/domain/{domain_id}/alert/{alert_id}/{access_key}")
     @exception_handler
-    async def update_alert_state_get(self, alert_id: str, access_key: str, state: str):
-        alert_info = self._update_alert_state(alert_id, access_key, state)
-        workspace_id = alert_info["workspace_id"]
-        domain_name = self._get_domain_name(alert_info["domain_id"])
+    async def get_alert_info(self, domain_id: str, alert_id: str, access_key: str):
+        if self._check_access_key(alert_id, access_key):
+            alert_service: AlertService = self.locator.get_service("AlertService")
+            try:
+                return alert_service.get_alert_info(
+                    {"alert_id": alert_id, "domain_id": domain_id}
+                )
+            except Exception as e:
+                _LOGGER.error(f"Failed to get alert info: {e}", exc_info=True)
+                return self._make_redirect_response(
+                    alert_id, domain_id, access_key, "TIMEOUT"
+                )
+        else:
+            return self._make_redirect_response(
+                alert_id, domain_id, access_key, "TIMEOUT"
+            )
 
-        return self._make_redirect_response(alert_id, workspace_id, domain_name)
-
-    @router.post("/alert/{alert_id}/{access_key}/{state}")
-    async def update_alert_state_post(
-        self, alert_id: str, access_key: str, state: str, request: Request
+    @router.get("/domain/{domain_id}/alert/{alert_id}/{access_key}/ACKNOWLEDGED")
+    @exception_handler
+    async def update_alert_state_get(
+        self, domain_id: str, alert_id: str, access_key: str, responder: str = None
     ):
-        params, metadata = await self.parse_request(request)
+        if self._check_access_key(alert_id, access_key):
+            try:
+                self._update_alert_state(alert_id, domain_id, responder)
+                return self._make_redirect_response(
+                    alert_id, domain_id, access_key, "SUCCESS"
+                )
+            except Exception as e:
+                _LOGGER.error(f"Failed to update alert state: {e}", exc_info=True)
+                return self._make_redirect_response(
+                    alert_id, domain_id, access_key, "ERROR"
+                )
+        else:
+            return self._make_redirect_response(
+                alert_id, domain_id, access_key, "TIMEOUT"
+            )
+
+    @router.post("/domain/{domain_id}/alert/{alert_id}/{access_key}/ACKNOWLEDGED")
+    async def update_alert_state_post(
+        self,
+        domain_id: str,
+        alert_id: str,
+        access_key: str,
+        request: Request,
+    ):
+        try:
+            params, metadata = await self.parse_request(request)
+        except Exception as e:
+            _LOGGER.error(f"Failed to parse request: {e}", exc_info=True)
+            params = {}
 
         if params.get("code") != "TIME_OUT":
-            self._update_alert_state(alert_id, access_key, state)
-
-            return {"detail": f"Alert({alert_id}) state was changed."}
+            if self._check_access_key(alert_id, access_key):
+                try:
+                    responder = params.get("responder")
+                    self._update_alert_state(alert_id, domain_id, responder)
+                    return self._make_redirect_response(
+                        alert_id, domain_id, access_key, "SUCCESS"
+                    )
+                except Exception as e:
+                    _LOGGER.error(f"Failed to update alert state: {e}", exc_info=True)
+                    return self._make_redirect_response(
+                        alert_id, domain_id, access_key, "ERROR"
+                    )
+            else:
+                return self._make_redirect_response(
+                    alert_id, domain_id, access_key, "TIMEOUT"
+                )
         else:
-            raise ERROR_REQUEST_TIMEOUT()
+            return self._make_redirect_response(
+                alert_id, domain_id, access_key, "TIMEOUT"
+            )
 
-    def _update_alert_state(self, alert_id, access_key, state):
+    def _update_alert_state(self, alert_id: str, domain_id: str, responder: str = None):
         alert_service: AlertService = self.locator.get_service("AlertService")
-
-        alert_vo: Alert = alert_service.update_state(
-            {"alert_id": alert_id, "access_key": access_key, "state": state}
+        alert_service.update_state(
+            {"alert_id": alert_id, "domain_id": domain_id, "responder": responder}
         )
 
-        return {
-            "alert_number": alert_vo.alert_number,
-            "alert_id": alert_vo.alert_id,
-            "title": alert_vo.title,
-            "state": alert_vo.state,
-            "assignee": alert_vo.assignee,
-            "urgency": alert_vo.urgency,
-            "domain_id": alert_vo.domain_id,
-            "workspace_id": alert_vo.workspace_id
-        }
-
     @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
-    def _get_domain_name(self, domain_id):
+    def _get_domain_name(self, domain_id: str) -> str:
         identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
         domain_info = identity_mgr.get_domain(domain_id)
         return domain_info["name"]
 
     @staticmethod
-    def _make_redirect_response(alert_id, workspace_id, domain_name):
-        console_domain = config.get_global("CONSOLE_DOMAIN")
+    def _check_access_key(alert_id: str, access_key: str):
+        return cache.get(f"alert-notification-callback:{alert_id}:{access_key}")
 
-        if console_domain.strip() != "":
+    def _make_redirect_response(
+        self, alert_id: str, domain_id: str, access_key: str, state: str
+    ):
+        console_domain = config.get_global("CONSOLE_DOMAIN")
+        webhook_domain = config.get_global("WEBHOOK_DOMAIN")
+
+        if console_domain.strip() != "" and webhook_domain.strip() != "":
+            domain_name = self._get_domain_name(domain_id)
             console_domain = console_domain.format(domain_name=domain_name)
-            return RedirectResponse(f"{console_domain}/{workspace_id}/alert-manager/alert/{alert_id}")
+            if state == "SUCCESS":
+                alert_url = f"{webhook_domain}/monitoring/v1/domain/{domain_id}/alert/{alert_id}/{access_key}"
+                return RedirectResponse(
+                    f"{console_domain}/alert-public-detail?alert_url={alert_url}"
+                )
+            else:
+                return RedirectResponse(f"{console_domain}/expired-link")
         else:
-            return None
+            return ERROR_UNKNOWN(message="CONSOLE_DOMAIN or WEBHOOK_DOMAIN is not set.")

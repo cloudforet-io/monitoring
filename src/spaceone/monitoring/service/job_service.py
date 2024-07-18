@@ -517,7 +517,7 @@ class JobService(BaseService):
             message["description"] = alert_vo.description
 
         alert_link = self._make_alert_link(
-            alert_vo.alert_id, alert_vo.workspace_id, alert_vo.domain_id
+            alert_vo.alert_id, alert_vo.domain_id, access_key
         )
 
         if alert_link:
@@ -611,23 +611,23 @@ class JobService(BaseService):
         cache.set(
             f"alert-notification-callback:{alert_id}:{access_key}",
             domain_id,
-            expire=600,
+            expire=3600,
         )
         self.transaction.add_rollback(_rollback, alert_id, access_key)
 
         webhook_domain = config.get_global("WEBHOOK_DOMAIN")
-        return (
-            f"{webhook_domain}/monitoring/v1/alert/{alert_id}/{access_key}/ACKNOWLEDGED"
-        )
+        return f"{webhook_domain}/monitoring/v1/domain/{domain_id}/alert/{alert_id}/{access_key}/ACKNOWLEDGED"
 
-    def _make_alert_link(self, alert_id, workspace_id, domain_id):
+    def _make_alert_link(self, alert_id, domain_id, access_key):
         console_domain: str = config.get_global("CONSOLE_DOMAIN")
+        webhook_domain = config.get_global("WEBHOOK_DOMAIN")
 
-        if console_domain.strip() != "":
+        if console_domain.strip() != "" and webhook_domain.strip() != "":
             domain_name = self._get_domain_name(domain_id)
             console_domain = console_domain.format(domain_name=domain_name)
 
-            return f"{console_domain}/workspace/{workspace_id}/alert-manager/alert/{alert_id}"
+            alert_url = f"{webhook_domain}/monitoring/v1/domain/{domain_id}/alert/{alert_id}/{access_key}"
+            return f"{console_domain}/alert-public-detail?alert_url={alert_url}"
 
     @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
     def _get_domain_name(self, domain_id):
