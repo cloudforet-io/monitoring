@@ -8,6 +8,9 @@ class AlertResource(EmbeddedDocument):
     resource_type = StringField(default=None, null=True)
     name = StringField(default=None, null=True)
 
+    def to_dict(self):
+        return dict(self.to_mongo())
+
 
 class AlertNumber(MongoModel):
     next = IntField(default=1)
@@ -27,6 +30,7 @@ class Alert(MongoModel):
     )
     description = StringField(default=None, null=True)
     assignee = StringField(default=None, null=True)
+    responder = StringField(default=None, null=True)
     urgency = StringField(max_length=20, default="HIGH", choices=("HIGH", "LOW"))
     severity = StringField(
         max_length=20,
@@ -59,6 +63,7 @@ class Alert(MongoModel):
             "state",
             "description",
             "assignee",
+            "responder",
             "urgency",
             "escalation_step",
             "escalation_ttl",
@@ -74,6 +79,7 @@ class Alert(MongoModel):
             "title",
             "state",
             "assignee",
+            "responder",
             "urgency",
             "escalation_step",
             "escalation_ttl",
@@ -89,6 +95,7 @@ class Alert(MongoModel):
             # 'alert_id',
             "state",
             "assignee",
+            "responder",
             "urgency",
             "severity",
             "resource.resource_id",

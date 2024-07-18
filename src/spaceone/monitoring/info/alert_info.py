@@ -29,6 +29,7 @@ def AlertInfo(alert_vo: Alert, minimal=False):
         "title": alert_vo.title,
         "state": alert_vo.state,
         "assignee": alert_vo.assignee,
+        "responder": alert_vo.responder,
         "urgency": alert_vo.urgency,
         "escalation_step": alert_vo.escalation_step,
         "escalation_ttl": alert_vo.escalation_ttl,

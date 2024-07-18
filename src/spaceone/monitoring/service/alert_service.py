@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from spaceone.core import cache
+from spaceone.core import utils
 from spaceone.core.service import *
 
 from spaceone.monitoring.error.alert import *
@@ -144,6 +144,7 @@ class AlertService(BaseService):
 
         if state:
             if state == "ACKNOWLEDGED":
+                params["responder"] = self.transaction.get_meta("authorization.user_id")
                 params["acknowledged_at"] = datetime.utcnow()
                 params["resolved_at"] = None
             elif state == "RESOLVED":
@@ -212,59 +213,83 @@ class AlertService(BaseService):
         return alert_vo
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
-    @check_required(["alert_id", "access_key", "state"])
+    @check_required(["alert_id", "domain_id"])
+    def get_alert_info(self, params):
+        """Get alert info
+
+        Args:
+            params (dict): {
+                'alert_id': 'str',          # required
+                'domain_id': 'str',         # required
+            }
+
+        Returns:
+            alert_data (dict)
+        """
+        alert_id = params["alert_id"]
+        domain_id = params["domain_id"]
+
+        alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
+        return {
+            "alert_number": alert_vo.alert_number,
+            "alert_id": alert_vo.alert_id,
+            "title": alert_vo.title,
+            "description": alert_vo.description,
+            "state": alert_vo.state,
+            "assignee": alert_vo.assignee,
+            "responder": alert_vo.responder,
+            "urgency": alert_vo.urgency,
+            "severity": alert_vo.severity,
+            "rule": alert_vo.rule,
+            "image_url": alert_vo.image_url,
+            "resource": alert_vo.resource.to_mongo(),
+            "provider": alert_vo.provider,
+            "account": alert_vo.account,
+            "additional_info": alert_vo.additional_info,
+            "triggered_by": alert_vo.triggered_by,
+            "webhook_id": alert_vo.webhook_id,
+            "escalation_policy_id": alert_vo.escalation_policy_id,
+            "project_id": alert_vo.project_id,
+            "workspace_id": alert_vo.workspace_id,
+            "domain_id": alert_vo.domain_id,
+            "created_at": utils.datetime_to_iso8601(alert_vo.created_at),
+            "updated_at": utils.datetime_to_iso8601(alert_vo.updated_at),
+            "acknowledged_at": utils.datetime_to_iso8601(alert_vo.acknowledged_at),
+            "resolved_at": utils.datetime_to_iso8601(alert_vo.resolved_at),
+            "escalated_at": utils.datetime_to_iso8601(alert_vo.escalated_at),
+        }
+
+    @transaction(exclude=["authentication", "authorization", "mutation"])
+    @check_required(["alert_id", "domain_id"])
     def update_state(self, params):
         """Update alert state
 
         Args:
             params (dict): {
-                'alert_id': 'str',            # required
-                'access_key': 'str',          # required
-                'state': 'str'                # required
+                'alert_id': 'str',          # required
+                'domain_id': 'str',         # required
+                'responder': 'str',
             }
 
         Returns:
-            alert_vo (object)
+            None
         """
         alert_id = params["alert_id"]
-        access_key = params["access_key"]
-        state = params["state"]
-
-        is_resolved_notify = False
-
-        # Check Access Key
-        domain_id = self._check_access_key(alert_id, access_key)
-
-        # Check State
-        self._check_state(state)
+        domain_id = params["domain_id"]
+        responder = params.get("responder")
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
-        if alert_vo.state == "ERROR":
-            raise ERROR_INVALID_PARAMETER(
-                key="state", reason="The error state cannot be changed."
-            )
+        if alert_vo.state == "TRIGGERED":
+            update_params = {
+                "state": "ACKNOWLEDGED",
+                "acknowledged_at": datetime.utcnow(),
+            }
 
-        if alert_vo.state != "TRIGGERED":
-            # raise ERROR_ALERT_ALREADY_PROCESSED(alert_id=alert_id)
-            return alert_vo
+            if responder:
+                update_params["responder"] = responder
 
-        update_params = {"state": state}
-
-        if state == "ACKNOWLEDGED":
-            update_params["acknowledged_at"] = datetime.utcnow()
-        elif state == "RESOLVED":
-            update_params["resolved_at"] = datetime.utcnow()
-
-        if alert_vo.state in ["TRIGGERED", "ACKNOWLEDGED"] and state == "RESOLVED":
-            is_resolved_notify = True
-
-        updated_alert_vo = self.alert_mgr.update_alert_by_vo(update_params, alert_vo)
-
-        if is_resolved_notify:
-            self._create_notification(updated_alert_vo, "create_resolved_notification")
-
-        return updated_alert_vo
+            self.alert_mgr.update_alert_by_vo(update_params, alert_vo)
 
     @transaction(
         permission="monitoring:Alert.write",
@@ -416,15 +441,6 @@ class AlertService(BaseService):
         job_mgr.push_task(
             "monitoring_alert_notification_from_manual", "JobService", method, params
         )
-
-    @staticmethod
-    def _check_access_key(alert_id: str, access_key: str) -> str:
-        domain_id = cache.get(f"alert-notification-callback:{alert_id}:{access_key}")
-
-        if domain_id is None:
-            raise ERROR_PERMISSION_DENIED()
-
-        return domain_id
 
     @staticmethod
     def _check_state(state: str) -> None:
