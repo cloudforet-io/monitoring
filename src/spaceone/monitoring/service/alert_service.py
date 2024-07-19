@@ -230,6 +230,12 @@ class AlertService(BaseService):
         domain_id = params["domain_id"]
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
+
+        if alert_vo.resource:
+            resource_info = alert_vo.resource.to_dict()
+        else:
+            resource_info = None
+
         return {
             "alert_number": alert_vo.alert_number,
             "alert_id": alert_vo.alert_id,
@@ -242,7 +248,7 @@ class AlertService(BaseService):
             "severity": alert_vo.severity,
             "rule": alert_vo.rule,
             "image_url": alert_vo.image_url,
-            "resource": alert_vo.resource.to_mongo(),
+            "resource": resource_info,
             "provider": alert_vo.provider,
             "account": alert_vo.account,
             "additional_info": alert_vo.additional_info,

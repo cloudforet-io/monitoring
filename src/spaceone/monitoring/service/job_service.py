@@ -610,7 +610,7 @@ class JobService(BaseService):
 
         cache.set(
             f"alert-notification-callback:{alert_id}:{access_key}",
-            domain_id,
+            True,
             expire=3600,
         )
         self.transaction.add_rollback(_rollback, alert_id, access_key)
