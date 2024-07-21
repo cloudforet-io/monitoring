@@ -73,43 +73,44 @@ class EventService(BaseService):
         webhook_vo.increment("requests.total")
 
         try:
-            # webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager(
-            #     WebhookPluginManager
-            # )
-            #
-            # plugin_info = {
-            #     "plugin_id": webhook_data["plugin_id"],
-            #     "version": webhook_data["plugin_version"],
-            #     "upgrade_mode": webhook_data["plugin_upgrade_mode"],
-            # }
-            # plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
-            # endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
-            #     plugin_info, webhook_data["domain_id"]
-            # )
-            #
-            # if updated_version:
-            #     _LOGGER.debug(
-            #         f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}'
-            #     )
-            #     webhook_vo: Webhook = self.webhook_mgr.get_webhook(
-            #         webhook_data["webhook_id"], webhook_data["domain_id"]
-            #     )
-            #
-            #     plugin_info = webhook_vo.plugin_info.to_dict()
-            #     plugin_metadata = self.webhook_plugin_mgr.init_plugin(
-            #         endpoint, plugin_info.get("options", {})
-            #     )
-            #     plugin_info["version"] = updated_version
-            #     plugin_info["metadata"] = plugin_metadata
-            #     self.webhook_mgr.update_webhook_by_vo(
-            #         {"plugin_info": plugin_info}, webhook_vo
-            #     )
-            #
-            # response = webhook_plugin_mgr.parse_event(
-            #     endpoint, webhook_data["plugin_options"], params["data"]
-            # )
+            webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager(
+                WebhookPluginManager
+            )
 
-            response = {"results": [params["data"]]}
+            plugin_info = {
+                "plugin_id": webhook_data["plugin_id"],
+                "version": webhook_data["plugin_version"],
+                "upgrade_mode": webhook_data["plugin_upgrade_mode"],
+            }
+            plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+            endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
+                plugin_info, webhook_data["domain_id"]
+            )
+
+            if updated_version:
+                _LOGGER.debug(
+                    f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}'
+                )
+                webhook_vo: Webhook = self.webhook_mgr.get_webhook(
+                    webhook_data["webhook_id"], webhook_data["domain_id"]
+                )
+
+                plugin_info = webhook_vo.plugin_info.to_dict()
+                plugin_metadata = self.webhook_plugin_mgr.init_plugin(
+                    endpoint, plugin_info.get("options", {})
+                )
+                plugin_info["version"] = updated_version
+                plugin_info["metadata"] = plugin_metadata
+                self.webhook_mgr.update_webhook_by_vo(
+                    {"plugin_info": plugin_info}, webhook_vo
+                )
+
+            response = webhook_plugin_mgr.parse_event(
+                endpoint, webhook_data["plugin_options"], params["data"]
+            )
+
+            # Test Code
+            # response = {"results": [params["data"]]}
 
         except Exception as e:
             if not isinstance(e, ERROR_BASE):
