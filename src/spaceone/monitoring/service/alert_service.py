@@ -1,16 +1,22 @@
 import logging
 from datetime import datetime
 
-from spaceone.core import utils
+from spaceone.core import utils, cache
 from spaceone.core.service import *
 
 from spaceone.monitoring.error.alert import *
 from spaceone.monitoring.manager.alert_manager import AlertManager
 from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.manager.job_manager import JobManager
+from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.project_alert_config_manager import (
     ProjectAlertConfigManager,
 )
+from spaceone.monitoring.manager.escalation_policy_manager import (
+    EscalationPolicyManager,
+)
+from spaceone.monitoring.manager.config_manager import ConfigManager
+
 from spaceone.monitoring.model.alert_model import Alert
 from spaceone.monitoring.model.escalation_policy_model import EscalationPolicy
 from spaceone.monitoring.model.project_alert_config_model import ProjectAlertConfig
@@ -236,6 +242,16 @@ class AlertService(BaseService):
         else:
             resource_info = None
 
+        escalation_policy_id = alert_vo.escalation_policy_id
+        escalation_policy_name = self._get_escalation_policy_name(
+            escalation_policy_id, domain_id
+        )
+
+        project_id = alert_vo.project_id
+        project_name = self._get_project_name(project_id, domain_id)
+
+        domain_settings = self._get_domain_settings(domain_id)
+
         return {
             "alert_number": alert_vo.alert_number,
             "alert_id": alert_vo.alert_id,
@@ -254,8 +270,10 @@ class AlertService(BaseService):
             "additional_info": alert_vo.additional_info,
             "triggered_by": alert_vo.triggered_by,
             "webhook_id": alert_vo.webhook_id,
-            "escalation_policy_id": alert_vo.escalation_policy_id,
-            "project_id": alert_vo.project_id,
+            "escalation_policy_id": escalation_policy_id,
+            "escalation_policy_name": escalation_policy_name,
+            "project_id": project_id,
+            "project_name": project_name,
             "workspace_id": alert_vo.workspace_id,
             "domain_id": alert_vo.domain_id,
             "created_at": utils.datetime_to_iso8601(alert_vo.created_at),
@@ -263,7 +281,76 @@ class AlertService(BaseService):
             "acknowledged_at": utils.datetime_to_iso8601(alert_vo.acknowledged_at),
             "resolved_at": utils.datetime_to_iso8601(alert_vo.resolved_at),
             "escalated_at": utils.datetime_to_iso8601(alert_vo.escalated_at),
+            "domain_settings": domain_settings,
         }
+
+    @cache.cacheable(
+        key="monitoring:escalation-policy-name:{domain_id}:{escalation_policy_id}",
+        expire=600,
+    )
+    def _get_escalation_policy_name(
+        self, escalation_policy_id: str, domain_id: str
+    ) -> str:
+        escalation_policy_mgr: EscalationPolicyManager = self.locator.get_manager(
+            "EscalationPolicyManager"
+        )
+
+        escalation_policy_vos = escalation_policy_mgr.filter_escalation_policies(
+            escalation_policy_id=escalation_policy_id,
+            domain_id=domain_id,
+        )
+
+        if escalation_policy_vos.count() == 0:
+            return ""
+        else:
+            escalation_policy_vo = escalation_policy_vos[0]
+            return escalation_policy_vo.name
+
+    @cache.cacheable(key="monitoring:project-name:{domain_id}:{project_id}", expire=600)
+    def _get_project_name(self, project_id: str, domain_id: str) -> str:
+        try:
+            identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
+            project_info = identity_mgr.get_project_from_system(project_id, domain_id)
+
+            if project_group_id := project_info.get("project_group_id"):
+                project_group_info = identity_mgr.get_project_group_from_system(
+                    project_group_id, domain_id
+                )
+
+                return f'{project_group_info["name"]} > {project_info["name"]}'
+            else:
+                return project_info["name"]
+        except Exception as e:
+            _LOGGER.error(
+                f"[_get_project_name] Failed to get project: {e}", exc_info=True
+            )
+
+            return ""
+
+    @cache.cacheable(key="monitoring:domain-settings:{domain_id}", expire=600)
+    def _get_domain_settings(self, domain_id: str) -> dict:
+        try:
+            config_mgr: ConfigManager = self.locator.get_manager("ConfigManager")
+            domain_settings = config_mgr.get_domain_config("settings", domain_id)
+            settings_data = domain_settings.get("data", {})
+            language = settings_data.get("language", "en")
+            timezone = settings_data.get("timezone", "UTC")
+
+            return {
+                "language": language,
+                "timezone": timezone,
+            }
+
+        except Exception as e:
+            _LOGGER.error(
+                f"[_get_domain_settings] Failed to get domain settings: {e}",
+                exc_info=True,
+            )
+
+            return {
+                "language": "en",
+                "timezone": "UTC",
+            }
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @check_required(["alert_id", "domain_id"])

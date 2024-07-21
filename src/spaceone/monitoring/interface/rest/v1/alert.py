@@ -100,15 +100,22 @@ class Alert(BaseAPI):
             {"alert_id": alert_id, "domain_id": domain_id, "responder": responder}
         )
 
-    @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
+    @cache.cacheable(key="monitoring:domain-name:{domain_id}", expire=3600)
     def _get_domain_name(self, domain_id: str) -> str:
-        identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-        domain_info = identity_mgr.get_domain(domain_id)
-        return domain_info["name"]
+        try:
+            identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
+            domain_info = identity_mgr.get_domain_from_system(domain_id)
+            return domain_info["name"]
+        except Exception as e:
+            _LOGGER.error(f"Failed to get domain name: {e}", exc_info=True)
+
+        return domain_id
 
     @staticmethod
     def _check_access_key(alert_id: str, access_key: str):
-        return cache.get(f"alert-notification-callback:{alert_id}:{access_key}")
+        return cache.get(
+            f"monitoring:alert:notification-callback:{alert_id}:{access_key}"
+        )
 
     def _make_redirect_response(
         self, alert_id: str, domain_id: str, access_key: str, state: str
@@ -118,6 +125,12 @@ class Alert(BaseAPI):
 
         if console_domain.strip() != "" and webhook_domain.strip() != "":
             domain_name = self._get_domain_name(domain_id)
+
+            if domain_id == domain_name:
+                raise ERROR_UNKNOWN(
+                    message=f"Domain is not found. (domain_id = {domain_id})"
+                )
+
             console_domain = console_domain.format(domain_name=domain_name)
             if state == "SUCCESS":
                 alert_url = f"{webhook_domain}/monitoring/v1/domain/{domain_id}/alert/{alert_id}/{access_key}"
