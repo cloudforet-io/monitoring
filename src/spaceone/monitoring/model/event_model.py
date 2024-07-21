@@ -1,15 +1,5 @@
-from datetime import datetime
-from typing import Union
-
 from mongoengine import *
-from pydantic import BaseModel, Field
 from spaceone.core.model.mongo_model import MongoModel
-
-
-class EventResource(EmbeddedDocument):
-    resource_id = StringField(default=None, null=True)
-    resource_type = StringField(default=None, null=True)
-    name = StringField(default=None, null=True)
 
 
 class Event(MongoModel):
@@ -27,7 +17,7 @@ class Event(MongoModel):
     )
     rule = StringField(default=None, null=True)
     image_url = StringField(default=None, null=True)
-    resource = EmbeddedDocumentField(EventResource, default=None, null=True)
+    resources = ListField(StringField(), default=[])
     provider = StringField(default=None, null=True)
     account = StringField(default=None, null=True)
     raw_data = DictField()
@@ -54,7 +44,7 @@ class Event(MongoModel):
         ],
         "change_query_keys": {
             "user_projects": "project_id",
-            "resource_id": "resource.resource_id",
+            "resource": "resources",
         },
         "ordering": ["-created_at"],
         "indexes": [
@@ -62,9 +52,7 @@ class Event(MongoModel):
             "event_key",
             "event_type",
             "severity",
-            "resource.resource_id",
-            "resource.resource_type",
-            "resource.name",
+            "resources",
             "provider",
             "account",
             "alert",
@@ -77,26 +65,3 @@ class Event(MongoModel):
             "occurred_at",
         ],
     }
-
-
-# Pydantic Model
-
-
-class CreateEventResource(BaseModel):
-    resource_id: Union[str, None] = Field(None)
-    resource_type: Union[str, None] = Field(None)
-    name: Union[str, None] = Field(None)
-
-
-class CreateEvent(BaseModel):
-    event_key: Union[str, None] = Field(None)
-    event_type: Union[str, None] = Field(None)
-    title: Union[str, None] = Field(None)
-    description: Union[str, None] = Field(None)
-    severity: Union[str, None] = Field(None)
-    rule: Union[str, None] = Field(None)
-    image_url: Union[str, None] = Field(None)
-    resource: Union[CreateEventResource, None] = Field(None)
-    additional_info: Union[dict, None] = Field(None)
-    project_id: Union[str, None] = Field(None)
-    occurred_at: Union[datetime, None] = Field(None)

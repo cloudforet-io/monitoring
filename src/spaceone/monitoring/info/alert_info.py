@@ -9,15 +9,18 @@ from spaceone.monitoring.model.alert_model import Alert
 __all__ = ["AlertInfo", "AlertsInfo"]
 
 
-def AlertResourceInfo(vo):
-    if vo:
-        info = {
-            "resource_id": vo.resource_id,
-            "resource_type": vo.resource_type,
-            "name": vo.name,
-        }
+def AlertResourcesInfo(vos):
+    if vos:
+        resources = []
+        for vo in vos:
+            info = {
+                "resource_id": vo.resource_id,
+                "resource_type": vo.resource_type,
+                "name": vo.name,
+            }
+            resources.append(alert_pb2.AlertResource(**info))
 
-        return alert_pb2.AlertResource(**info)
+        return resources
     else:
         return None
 
@@ -44,7 +47,7 @@ def AlertInfo(alert_vo: Alert, minimal=False):
                 "severity": alert_vo.severity,
                 "rule": alert_vo.rule,
                 "image_url": alert_vo.image_url,
-                "resource": AlertResourceInfo(alert_vo.resource),
+                "resources": AlertResourcesInfo(alert_vo.resources),
                 "provider": alert_vo.provider,
                 "account": alert_vo.account,
                 "additional_info": change_struct_type(alert_vo.additional_info),

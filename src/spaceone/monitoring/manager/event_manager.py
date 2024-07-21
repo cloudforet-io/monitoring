@@ -26,10 +26,6 @@ class EventManager(BaseManager):
 
         return event_vo
 
-    def update_event(self, params):
-        event_vo: Event = self.get_event(params["event_id"], params["domain_id"])
-        return self.update_event_by_vo(params, event_vo)
-
     def update_event_by_vo(self, params, event_vo):
         def _rollback(old_data):
             _LOGGER.info(
@@ -41,10 +37,6 @@ class EventManager(BaseManager):
         self.transaction.add_rollback(_rollback, event_vo.to_dict())
 
         return event_vo.update(params)
-
-    def delete_event(self, event_id, domain_id):
-        event_vo: Event = self.get_event(event_id, domain_id)
-        event_vo.delete()
 
     def get_event(self, event_id, domain_id, workspace_id=None, user_projects=None):
         conditions = {"event_id": event_id, "domain_id": domain_id}

@@ -65,53 +65,61 @@ class EventService(BaseService):
         self._check_access_key(params["access_key"], webhook_data["access_key"])
         self._check_webhook_state(webhook_data)
 
+        webhook_id = webhook_data["webhook_id"]
+        domain_id = webhook_data["domain_id"]
+        workspace_id = webhook_data["workspace_id"]
+
+        webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id, workspace_id)
+        webhook_vo.increment("requests.total")
+
         try:
-            webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager(
-                WebhookPluginManager
-            )
+            # webhook_plugin_mgr: WebhookPluginManager = self.locator.get_manager(
+            #     WebhookPluginManager
+            # )
+            #
+            # plugin_info = {
+            #     "plugin_id": webhook_data["plugin_id"],
+            #     "version": webhook_data["plugin_version"],
+            #     "upgrade_mode": webhook_data["plugin_upgrade_mode"],
+            # }
+            # plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
+            # endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
+            #     plugin_info, webhook_data["domain_id"]
+            # )
+            #
+            # if updated_version:
+            #     _LOGGER.debug(
+            #         f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}'
+            #     )
+            #     webhook_vo: Webhook = self.webhook_mgr.get_webhook(
+            #         webhook_data["webhook_id"], webhook_data["domain_id"]
+            #     )
+            #
+            #     plugin_info = webhook_vo.plugin_info.to_dict()
+            #     plugin_metadata = self.webhook_plugin_mgr.init_plugin(
+            #         endpoint, plugin_info.get("options", {})
+            #     )
+            #     plugin_info["version"] = updated_version
+            #     plugin_info["metadata"] = plugin_metadata
+            #     self.webhook_mgr.update_webhook_by_vo(
+            #         {"plugin_info": plugin_info}, webhook_vo
+            #     )
+            #
+            # response = webhook_plugin_mgr.parse_event(
+            #     endpoint, webhook_data["plugin_options"], params["data"]
+            # )
 
-            plugin_info = {
-                "plugin_id": webhook_data["plugin_id"],
-                "version": webhook_data["plugin_version"],
-                "upgrade_mode": webhook_data["plugin_upgrade_mode"],
-            }
-            plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
-            endpoint, updated_version = plugin_mgr.get_plugin_endpoint(
-                plugin_info, webhook_data["domain_id"]
-            )
-
-            if updated_version:
-                _LOGGER.debug(
-                    f'[create] upgrade plugin version: {webhook_data["plugin_version"]} -> {updated_version}'
-                )
-                webhook_vo: Webhook = self.webhook_mgr.get_webhook(
-                    webhook_data["webhook_id"], webhook_data["domain_id"]
-                )
-
-                plugin_info = webhook_vo.plugin_info.to_dict()
-                plugin_metadata = self.webhook_plugin_mgr.init_plugin(
-                    endpoint, plugin_info.get("options", {})
-                )
-                plugin_info["version"] = updated_version
-                plugin_info["metadata"] = plugin_metadata
-                self.webhook_mgr.update_webhook_by_vo(
-                    {"plugin_info": plugin_info}, webhook_vo
-                )
-
-            response = webhook_plugin_mgr.parse_event(
-                endpoint, webhook_data["plugin_options"], params["data"]
-            )
+            response = {"results": [params["data"]]}
 
         except Exception as e:
             if not isinstance(e, ERROR_BASE):
                 e = ERROR_UNKNOWN(message=str(e))
 
             _LOGGER.error(f"[create] Event parsing failed: {e.message}", exc_info=True)
+            webhook_vo.increment("requests.error")
             response = self._create_error_event(webhook_data["name"], e.message)
 
         for event_data in response.get("results", []):
-            # TODO: Check event data using schematics
-
             _LOGGER.debug(f"[Event.create] event_data: {event_data}")
             self._create_event(event_data, params["data"], webhook_data)
 
@@ -153,7 +161,7 @@ class EventService(BaseService):
             "event_key",
             "event_type",
             "severity",
-            "resource_id",
+            "resource",
             "alert_id",
             "webhook_id",
             "project_id",
@@ -172,7 +180,7 @@ class EventService(BaseService):
                 'event_key': 'str',
                 'event_type': 'str',
                 'severity': 'str',
-                'resource_id': 'str',
+                'resource': 'str',
                 'alert_id': 'str',
                 'webhook_id': 'str',
                 'project_id': 'str',
@@ -204,7 +212,6 @@ class EventService(BaseService):
                 'domain_id': 'str',         # injected from auth (required)
                 'workspace_id': 'str',      # injected from auth
                 'user_projects': 'list',    # injected from auth
-
             }
 
         Returns:
@@ -215,7 +222,7 @@ class EventService(BaseService):
         query = params.get("query", {})
         return self.event_mgr.stat_events(query)
 
-    @cache.cacheable(key="webhook-data:{webhook_id}", expire=300)
+    @cache.cacheable(key="monitoring:webhook-data:{webhook_id}", expire=300)
     def _get_webhook_data(self, webhook_id):
         webhook_vo: Webhook = self.webhook_mgr.get_webhook_by_id(webhook_id)
         return {
@@ -254,6 +261,15 @@ class EventService(BaseService):
         event_data["severity"] = event_data.get("severity", "NONE")
         event_data["account"] = event_data.get("account", "")
         event_data["provider"] = event_data.get("provider", "")
+        event_data["resources"] = event_data.get("resources", [])
+
+        if "resource" in event_data:
+            resource = event_data["resource"]
+            if isinstance(resource, dict):
+                if resource_name := resource.get("name"):
+                    event_data["resources"].append(resource_name)
+
+            del event_data["resource"]
 
         event_rule_mgr: EventRuleManager = self.locator.get_manager("EventRuleManager")
 
@@ -309,6 +325,17 @@ class EventService(BaseService):
             alert_data["urgency"] = self._get_urgency_from_severity(
                 event_data["severity"]
             )
+
+        if "resources" in alert_data:
+            # Find cloud service from resources
+            alert_resources = []
+            for resource in alert_data["resources"]:
+                alert_resources.append(
+                    {
+                        "name": resource,
+                    }
+                )
+            alert_data["resource"] = alert_resources
 
         escalation_policy_id, escalation_ttl = self._get_escalation_policy_info(
             event_data["project_id"],

@@ -17,13 +17,11 @@ _SUPPORTED_CONDITION_KEYS = [
     "title",
     "description",
     "rule",
-    "resource_id",
-    "resource_name",
-    "resource_type",
+    "severity",
+    "resource",
+    "account",
     "webhook_id",
     "project_id",
-    "provider",
-    "account",
     "additional_info.<key>",
 ]
 _SUPPORTED_CONDITION_OPERATORS = ["eq", "contain", "not", "not_contain"]
@@ -402,22 +400,33 @@ class EventRuleService(BaseService):
         workspace_id: str,
         identity_mgr: IdentityManager,
     ) -> None:
-        if "change_urgency" in actions:
-            if actions["change_urgency"] not in ["HIGH", "LOW"]:
+        if change_project_id := actions.get("change_project"):
+            identity_mgr.get_project(change_project_id, domain_id)
+        elif change_urgency := actions.get("change_urgency"):
+            if change_urgency not in ["HIGH", "LOW"]:
                 raise ERROR_INVALID_PARAMETER(
                     key="actions.change_urgency",
                     reason=f"Unsupported urgency. (HIGH | LOW)",
                 )
-        elif "change_assignee" in actions:
-            pass
-        elif "change_project" in actions:
-            change_project_id = actions["change_project"]
-            identity_mgr.get_project(change_project_id, domain_id)
-        elif "change_escalation_policy" in actions:
-            change_es_id = actions["change_escalation_policy"]
+        elif change_assignee := actions.get("change_assignee"):
+            if not isinstance(change_assignee, str):
+                raise ERROR_INVALID_PARAMETER_TYPE(
+                    key="actions.change_assignee", type="str"
+                )
+        elif change_escalation_policy_id := actions.get("change_escalation_policy"):
             self.escalation_policy_manager.get_escalation_policy(
-                change_es_id, workspace_id, domain_id
+                change_escalation_policy_id, workspace_id, domain_id
             )
+        elif add_additional_info := actions.get("add_additional_info"):
+            if not isinstance(add_additional_info, dict):
+                raise ERROR_INVALID_PARAMETER_TYPE(
+                    key="actions.add_additional_info", type="dict"
+                )
+        elif no_notification := actions.get("no_notification"):
+            if not isinstance(no_notification, bool):
+                raise ERROR_INVALID_PARAMETER_TYPE(
+                    key="actions.no_notification", type="bool"
+                )
 
     @staticmethod
     def _check_order(order: int) -> None:

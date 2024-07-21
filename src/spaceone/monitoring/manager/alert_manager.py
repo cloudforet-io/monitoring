@@ -26,6 +26,7 @@ class AlertManager(BaseManager):
             params["domain_id"], params["workspace_id"]
         )
         params["alert_number_str"] = str(params["alert_number"])
+        print(params)
         alert_vo: Alert = self.alert_model.create(params)
         self.transaction.add_rollback(_rollback, alert_vo)
 
