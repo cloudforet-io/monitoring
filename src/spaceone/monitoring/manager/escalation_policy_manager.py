@@ -1,5 +1,6 @@
 import copy
 import logging
+from mongoengine import QuerySet
 
 from spaceone.core.manager import BaseManager
 
@@ -152,6 +153,9 @@ class EscalationPolicyManager(BaseManager):
             conditions["project_id"] = user_projects
 
         return self.escalation_policy_model.get(**conditions)
+
+    def filter_escalation_policies(self, **conditions) -> QuerySet:
+        return self.escalation_policy_model.filter(**conditions)
 
     def list_escalation_policies(self, query: dict) -> dict:
         return self.escalation_policy_model.query(**query)

@@ -17,10 +17,10 @@ class IdentityManager(BaseManager):
             "SpaceConnector", service="identity"
         )
 
-    def get_domain(self, domain_id: str) -> dict:
-        token = config.get_global("TOKEN")
+    def get_domain_from_system(self, domain_id: str) -> dict:
+        system_token = config.get_global("TOKEN")
         return self.identity_connector.dispatch(
-            "Domain.get", {"domain_id": domain_id}, token=token
+            "Domain.get", {"domain_id": domain_id}, token=system_token
         )
 
     def get_user(self, user_id: str, domain_id) -> dict:
@@ -51,6 +51,15 @@ class IdentityManager(BaseManager):
                 "Project.get", {"project_id": project_id}
             )
 
+    def get_project_from_system(self, project_id: str, domain_id: str) -> dict:
+        system_token = config.get_global("TOKEN")
+        return self.identity_connector.dispatch(
+            "Project.get",
+            {"project_id": project_id},
+            x_domain_id=domain_id,
+            token=system_token,
+        )
+
     def get_project_group(self, project_group_id: str, domain_id: str) -> dict:
         if self.token_type == "SYSTEM_TOKEN":
             return self.identity_connector.dispatch(
@@ -62,6 +71,17 @@ class IdentityManager(BaseManager):
             return self.identity_connector.dispatch(
                 "ProjectGroup.get", {"project_group_id": project_group_id}
             )
+
+    def get_project_group_from_system(
+        self, project_group_id: str, domain_id: str
+    ) -> dict:
+        system_token = config.get_global("TOKEN")
+        return self.identity_connector.dispatch(
+            "ProjectGroup.get",
+            {"project_group_id": project_group_id},
+            x_domain_id=domain_id,
+            token=system_token,
+        )
 
     def check_workspace(self, workspace_id: str, domain_id: str) -> dict:
         system_token = config.get_global("TOKEN")

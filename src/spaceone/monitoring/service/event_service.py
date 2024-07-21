@@ -345,7 +345,7 @@ class EventService(BaseService):
             return "LOW"
 
     @cache.cacheable(
-        key="escalation-policy-info:{domain_id}:{workspace_id}:{project_id}:{escalation_policy_id}",
+        key="monitoring:escalation-policy-info:{domain_id}:{workspace_id}:{project_id}:{escalation_policy_id}",
         expire=300,
     )
     def _get_escalation_policy_info(
@@ -410,7 +410,9 @@ class EventService(BaseService):
         else:
             return False
 
-    @cache.cacheable(key="auto-recovery:{domain_id}:{project_id}", expire=300)
+    @cache.cacheable(
+        key="monitoring:auto-recovery:{domain_id}:{project_id}", expire=300
+    )
     def _is_auto_recovery(self, project_id, workspace_id, domain_id):
         project_alert_config_vo: ProjectAlertConfig = self._get_project_alert_config(
             project_id, workspace_id, domain_id

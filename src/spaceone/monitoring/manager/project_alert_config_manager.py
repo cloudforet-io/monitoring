@@ -52,12 +52,14 @@ class ProjectAlertConfigManager(BaseManager):
         updated_vo: ProjectAlertConfig = project_alert_config_vo.update(params)
 
         cache.delete(
-            f"project-alert-options:{updated_vo.domain_id}:{updated_vo.project_id}"
+            f"monitoring:alert:project-options:{updated_vo.domain_id}:{updated_vo.project_id}"
         )
         cache.delete(
-            f"escalation-policy-info:{updated_vo.domain_id}:{updated_vo.project_id}"
+            f"monitoring:escalation-policy-info:{updated_vo.domain_id}:{updated_vo.project_id}"
         )
-        cache.delete(f"auto-recovery:{updated_vo.domain_id}:{updated_vo.project_id}")
+        cache.delete(
+            f"monitoring:auto-recovery:{updated_vo.domain_id}:{updated_vo.project_id}"
+        )
 
         return updated_vo
 
@@ -68,9 +70,9 @@ class ProjectAlertConfigManager(BaseManager):
             project_id, workspace_id, domain_id
         )
 
-        cache.delete(f"project-alert-options:{domain_id}:{project_id}")
-        cache.delete(f"escalation-policy-info:{domain_id}:{project_id}")
-        cache.delete(f"auto-recovery::{domain_id}:{project_id}")
+        cache.delete(f"monitoring:alert:project-options:{domain_id}:{project_id}")
+        cache.delete(f"monitoring:escalation-policy-info:{domain_id}:{project_id}")
+        cache.delete(f"monitoring:auto-recovery:{domain_id}:{project_id}")
 
         project_alert_config_vo.delete()
 

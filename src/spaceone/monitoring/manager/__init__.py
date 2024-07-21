@@ -10,6 +10,7 @@ from spaceone.monitoring.manager.event_manager import EventManager
 from spaceone.monitoring.manager.event_rule_manager import EventRuleManager
 from spaceone.monitoring.manager.identity_manager import IdentityManager
 from spaceone.monitoring.manager.inventory_manager import InventoryManager
+from spaceone.monitoring.manager.config_manager import ConfigManager
 from spaceone.monitoring.manager.job_manager import JobManager
 from spaceone.monitoring.manager.note_manager import NoteManager
 from spaceone.monitoring.manager.notification_manager import NotificationManager

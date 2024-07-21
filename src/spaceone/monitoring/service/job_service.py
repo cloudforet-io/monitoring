@@ -310,7 +310,9 @@ class JobService(BaseService):
 
         return alert_mgr.list_alerts(query)
 
-    @cache.cacheable(key="project-alert-options:{domain_id}:{project_id}", expire=300)
+    @cache.cacheable(
+        key="monitoring:alert:project-options:{domain_id}:{project_id}", expire=300
+    )
     def _get_project_alert_options(self, project_id, workspace_id, domain_id):
         project_alert_config_mgr: ProjectAlertConfigManager = self.locator.get_manager(
             "ProjectAlertConfigManager"
@@ -324,7 +326,8 @@ class JobService(BaseService):
         return dict(project_alert_config_vo.options.to_dict())
 
     @cache.cacheable(
-        key="escalation-policy-condition:{domain_id}:{escalation_policy_id}", expire=300
+        key="monitoring:escalation-policy-condition:{domain_id}:{escalation_policy_id}",
+        expire=300,
     )
     def _get_escalation_policy_rules_and_finish_condition(
         self, escalation_policy_id, workspace_id, domain_id
@@ -541,7 +544,7 @@ class JobService(BaseService):
             "notification_level": notification_level,
         }
 
-    @cache.cacheable(key="project-name:{domain_id}:{project_id}", expire=300)
+    @cache.cacheable(key="monitoring:project-name:{domain_id}:{project_id}", expire=300)
     def _get_project_name(self, project_id: str, domain_id: str) -> str:
         try:
             identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
@@ -560,9 +563,11 @@ class JobService(BaseService):
                 f"[_get_project_name] Failed to get project: {e}", exc_info=True
             )
 
-        return project_id
+        return ""
 
-    @cache.cacheable(key="triggered-by-name:{domain_id}:{triggered_by}", expire=300)
+    @cache.cacheable(
+        key="monitoring:triggered-by-name:{domain_id}:{triggered_by}", expire=300
+    )
     def _get_triggered_by_name(self, triggered_by, domain_id):
         if triggered_by and triggered_by.startswith("webhook-"):
             try:
@@ -580,7 +585,7 @@ class JobService(BaseService):
 
         return triggered_by
 
-    @cache.cacheable(key="user-name:{domain_id}:{user_id}", expire=300)
+    @cache.cacheable(key="monitoring:user-name:{domain_id}:{user_id}", expire=300)
     def _get_user_name(self, user_id: str, domain_id: str) -> str:
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
@@ -606,10 +611,12 @@ class JobService(BaseService):
                 f"Delete cache : {alert_id} "
                 f"({access_key})"
             )
-            cache.delete(f"alert-notification-callback:{alert_id}:{access_key}")
+            cache.delete(
+                f"monitoring:alert:notification-callback:{alert_id}:{access_key}"
+            )
 
         cache.set(
-            f"alert-notification-callback:{alert_id}:{access_key}",
+            f"monitoring:alert:notification-callback:{alert_id}:{access_key}",
             True,
             expire=3600,
         )
@@ -629,11 +636,11 @@ class JobService(BaseService):
             alert_url = f"{webhook_domain}/monitoring/v1/domain/{domain_id}/alert/{alert_id}/{access_key}"
             return f"{console_domain}/alert-public-detail?alert_url={alert_url}"
 
-    @cache.cacheable(key="domain-name:{domain_id}", expire=3600)
-    def _get_domain_name(self, domain_id):
+    @cache.cacheable(key="monitoring:domain-name:{domain_id}", expire=3600)
+    def _get_domain_name(self, domain_id: str):
         try:
             identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
-            domain_info = identity_mgr.get_domain(domain_id)
+            domain_info = identity_mgr.get_domain_from_system(domain_id)
             return domain_info["name"]
         except Exception as e:
             _LOGGER.error(
