@@ -9,19 +9,6 @@ from spaceone.monitoring.model.event_model import Event
 __all__ = ["EventInfo", "EventsInfo"]
 
 
-def EventResourceInfo(vo):
-    if vo:
-        info = {
-            "resource_id": vo.resource_id,
-            "resource_type": vo.resource_type,
-            "name": vo.name,
-        }
-
-        return event_pb2.EventResource(**info)
-    else:
-        return None
-
-
 def EventInfo(event_vo: Event, minimal=False):
     info = {
         "event_id": event_vo.event_id,
@@ -40,7 +27,7 @@ def EventInfo(event_vo: Event, minimal=False):
                 "provider": event_vo.provider,
                 "account": event_vo.account,
                 "image_url": event_vo.image_url,
-                "resource": EventResourceInfo(event_vo.resource),
+                "resources": event_vo.resources,
                 "raw_data": change_struct_type(event_vo.raw_data),
                 "additional_info": change_struct_type(event_vo.additional_info),
                 "alert_id": event_vo.alert_id,

@@ -87,49 +87,49 @@ class EventRuleManager(BaseManager):
 
             if is_match:
                 event_data = self._change_event_data_with_actions(
-                    event_data, event_rule_vo.actions, domain_id
+                    event_data, event_rule_vo.actions, domain_id, workspace_id
                 )
 
             if is_match and event_rule_vo.options.stop_processing:
                 break
 
-        # TODO: Check Global Event Rule
-
         return event_data
 
-    def _change_event_data_with_actions(self, event_data, actions, domain_id):
+    def _change_event_data_with_actions(
+        self, event_data, actions, domain_id, workspace_id
+    ):
         for action, value in actions.items():
             if action == "change_project":
                 event_data["project_id"] = value
+                if "assignee" in event_data:
+                    del event_data["assignee"]
+                if "escalation_policy_id" in event_data:
+                    del event_data["escalation_policy_id"]
 
-            if action == "change_assignee":
-                event_data["assignee"] = value
+                _LOGGER.debug(
+                    f"[_change_event_data_with_actions] change_project: {value}"
+                )
+                event_data = self.change_event_data(
+                    event_data, value, domain_id, workspace_id
+                )
+            else:
+                if action == "change_assignee":
+                    event_data["assignee"] = value
 
-            if action == "change_urgency":
-                event_data["urgency"] = value
+                if action == "change_urgency":
+                    event_data["urgency"] = value
 
-            if action == "change_escalation_policy":
-                event_data["escalation_policy_id"] = value
+                if action == "change_escalation_policy":
+                    event_data["escalation_policy_id"] = value
 
-            if action == "add_additional_info":
-                event_data["additional_info"] = event_data.get("additional_info", {})
-                event_data["additional_info"].update(value)
-
-            if action == "no_notification":
-                event_data["no_notification"] = value
-
-            if action == "match_service_account":
-                source = value["source"]
-                target_key = value["target"]
-                target_value = utils.get_dict_value(event_data, source)
-                if target_value:
-                    service_account_info = self._get_service_account(
-                        target_key, target_value, domain_id
+                if action == "add_additional_info":
+                    event_data["additional_info"] = event_data.get(
+                        "additional_info", {}
                     )
-                    if service_account_info:
-                        event_data["project_id"] = service_account_info.get(
-                            "project_info", {}
-                        ).get("project_id")
+                    event_data["additional_info"].update(value)
+
+                if action == "no_notification":
+                    event_data["no_notification"] = value
 
         return event_data
 

@@ -16,6 +16,14 @@ class PluginInfo(EmbeddedDocument):
         return dict(self.to_mongo())
 
 
+class WebhookRequests(EmbeddedDocument):
+    total = IntField(default=0)
+    error = IntField(default=0)
+
+    def to_dict(self):
+        return dict(self.to_mongo())
+
+
 class Webhook(MongoModel):
     webhook_id = StringField(max_length=40, generate_id="webhook", unique=True)
     name = StringField(
@@ -29,6 +37,7 @@ class Webhook(MongoModel):
     capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
     tags = DictField()
+    requests = EmbeddedDocumentField(WebhookRequests, defaul={"total": 0, "error": 0})
     project = ReferenceField("ProjectAlertConfig", reverse_delete_rule=CASCADE)
     project_id = StringField(max_length=40)
     workspace_id = StringField(max_length=40)
@@ -44,6 +53,7 @@ class Webhook(MongoModel):
             "capability",
             "plugin_info",
             "tags",
+            "requests",
         ],
         "minimal_fields": [
             "webhook_id",

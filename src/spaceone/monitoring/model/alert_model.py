@@ -6,7 +6,7 @@ from spaceone.core.model.mongo_model import MongoModel
 class AlertResource(EmbeddedDocument):
     resource_id = StringField(default=None, null=True)
     resource_type = StringField(default=None, null=True)
-    name = StringField(default=None, null=True)
+    name = StringField(required=True)
 
     def to_dict(self):
         return dict(self.to_mongo())
@@ -39,7 +39,7 @@ class Alert(MongoModel):
     )
     rule = StringField(default=None, null=True)
     image_url = StringField(default=None, null=True)
-    resource = EmbeddedDocumentField(AlertResource, default=None, null=True)
+    resources = ListField(EmbeddedDocumentField(AlertResource), default=[])
     provider = StringField(default=None, null=True)
     account = StringField(default=None, null=True)
     additional_info = DictField()
@@ -86,7 +86,7 @@ class Alert(MongoModel):
             "project_id",
         ],
         "change_query_keys": {
-            "resource_id": "resource.resource_id",
+            "resource": "resources.name",
             "user_projects": "project_id",
         },
         "ordering": ["-created_at"],
@@ -98,9 +98,7 @@ class Alert(MongoModel):
             "responder",
             "urgency",
             "severity",
-            "resource.resource_id",
-            "resource.resource_type",
-            "resource.name",
+            "resources.name",
             "provider",
             "account",
             "escalation_step",
