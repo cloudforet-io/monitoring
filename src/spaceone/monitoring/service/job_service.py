@@ -593,7 +593,7 @@ class JobService(BaseService):
     def _get_user_name(self, user_id: str, domain_id: str) -> str:
         try:
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-            user_info = identity_mgr.get_user(user_id, domain_id)
+            user_info = identity_mgr.get_user_from_system(user_id, domain_id)
 
             if len(user_info.get("name", "").strip()) == 0:
                 return user_info["user_id"]

@@ -23,15 +23,14 @@ class IdentityManager(BaseManager):
             "Domain.get", {"domain_id": domain_id}, token=system_token
         )
 
-    def get_user(self, user_id: str, domain_id) -> dict:
-        if self.token_type == "SYSTEM_TOKEN":
-            return self.identity_connector.dispatch(
-                "User.get",
-                {"user_id": user_id},
-                x_domain_id=domain_id,
-            )
-        else:
-            return self.identity_connector.dispatch("User.get", {"user_id": user_id})
+    def get_user_from_system(self, user_id: str, domain_id: str) -> dict:
+        system_token = config.get_global("TOKEN")
+        return self.identity_connector.dispatch(
+            "User.get",
+            {"user_id": user_id},
+            x_domain_id=domain_id,
+            token=system_token,
+        )
 
     def get_workspace_user(self, user_id: str):
         return self.identity_connector.dispatch(
