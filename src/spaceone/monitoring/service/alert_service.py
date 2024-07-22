@@ -237,10 +237,15 @@ class AlertService(BaseService):
 
         alert_vo = self.alert_mgr.get_alert(alert_id, domain_id)
 
-        if alert_vo.resource:
-            resource_info = alert_vo.resource.to_dict()
-        else:
-            resource_info = None
+        resources_info = []
+        for resource in alert_vo.resources:
+            resources_info.append(
+                {
+                    "resource_id": resource.resource_id,
+                    "resource_type": resource.resource_type,
+                    "name": resource.name,
+                }
+            )
 
         escalation_policy_id = alert_vo.escalation_policy_id
         escalation_policy_name = self._get_escalation_policy_name(
@@ -264,7 +269,7 @@ class AlertService(BaseService):
             "severity": alert_vo.severity,
             "rule": alert_vo.rule,
             "image_url": alert_vo.image_url,
-            "resource": resource_info,
+            "resources": resources_info,
             "provider": alert_vo.provider,
             "account": alert_vo.account,
             "additional_info": alert_vo.additional_info,
