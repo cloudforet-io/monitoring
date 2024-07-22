@@ -477,10 +477,14 @@ class JobService(BaseService):
             {"key": "Project", "value": project_name},
         ]
 
-        resource = alert_vo.resource or {}
-
-        if "name" in resource:
-            tags.append({"key": "Resource", "value": resource["name"]})
+        i = 1
+        for resource in alert_vo.resources:
+            if "name" in resource:
+                if i == 1:
+                    tags.append({"key": f"Resource", "value": resource["name"]})
+                else:
+                    tags.append({"key": f"Resource #{i}", "value": resource["name"]})
+                i += 1
 
         if alert_vo.assignee:
             tags.append(
