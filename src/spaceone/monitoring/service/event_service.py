@@ -68,6 +68,7 @@ class EventService(BaseService):
         webhook_id = webhook_data["webhook_id"]
         domain_id = webhook_data["domain_id"]
         workspace_id = webhook_data["workspace_id"]
+        plugin_metadata = webhook_data["plugin_metadata"]
 
         webhook_vo = self.webhook_mgr.get_webhook(webhook_id, domain_id, workspace_id)
         webhook_vo.increment("requests.total")
@@ -101,6 +102,7 @@ class EventService(BaseService):
                 )
                 plugin_info["version"] = updated_version
                 plugin_info["metadata"] = plugin_metadata
+                webhook_data["metadata"] = plugin_metadata
                 self.webhook_mgr.update_webhook_by_vo(
                     {"plugin_info": plugin_info}, webhook_vo
                 )
@@ -238,6 +240,7 @@ class EventService(BaseService):
             "plugin_version": webhook_vo.plugin_info.version,
             "plugin_upgrade_mode": webhook_vo.plugin_info.upgrade_mode,
             "plugin_options": webhook_vo.plugin_info.options,
+            "plugin_metadata": webhook_vo.plugin_info.metadata,
         }
 
     @staticmethod
@@ -251,6 +254,8 @@ class EventService(BaseService):
             raise ERROR_WEBHOOK_STATE_DISABLED(webhook_id=webhook_data["webhook_id"])
 
     def _create_event(self, event_data, raw_data, webhook_data):
+        plugin_metadata = webhook_data.get("plugin_metadata", {})
+
         event_data["raw_data"] = copy.deepcopy(raw_data)
         event_data["occurred_at"] = utils.iso8601_to_datetime(
             event_data.get("occurred_at")
@@ -287,6 +292,7 @@ class EventService(BaseService):
             event_data["domain_id"],
             event_data["project_id"],
             event_data["workspace_id"],
+            plugin_metadata.get("duplicate_event_time"),
         )
 
         if event_vo and event_vo.alert.state != "RESOLVED":
