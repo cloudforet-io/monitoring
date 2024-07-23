@@ -55,9 +55,20 @@ class EventManager(BaseManager):
     def stat_events(self, query: dict) -> dict:
         return self.event_model.stat(**query)
 
-    def get_event_by_key(self, event_key, domain_id, project_id, workspace_id):
-        same_event_time = config.get_global("SAME_EVENT_TIME", 600)
-        same_event_datetime = datetime.utcnow() - timedelta(seconds=same_event_time)
+    def get_event_by_key(
+        self,
+        event_key,
+        domain_id,
+        project_id,
+        workspace_id,
+        duplicate_event_time,
+    ):
+        if not isinstance(duplicate_event_time, int):
+            duplicate_event_time = config.get_global("DUPLICATE_EVENT_TIME", 600)
+
+        duplicate_event_datetime = datetime.utcnow() - timedelta(
+            seconds=duplicate_event_time
+        )
 
         query = {
             "filter": [
@@ -66,7 +77,7 @@ class EventManager(BaseManager):
                 {"k": "workspace_id", "v": workspace_id, "o": "eq"},
                 {"k": "project_id", "v": project_id, "o": "eq"},
                 {"k": "event_type", "v": "RECOVERY", "o": "not"},
-                {"k": "created_at", "v": same_event_datetime, "o": "gte"},
+                {"k": "created_at", "v": duplicate_event_datetime, "o": "gte"},
             ],
             "sort": [{"key": "created_at", "desc": True}],
         }
