@@ -10,6 +10,17 @@ from spaceone.monitoring.model.webhook_model import Webhook
 __all__ = ["WebhookInfo", "WebhooksInfo"]
 
 
+def WebhookRequests(vo):
+    if vo:
+        info = {
+            "total": vo.total,
+            "error": vo.error,
+        }
+        return webhook_pb2.WebhookRequests(**info)
+    else:
+        return None
+
+
 def PluginInfo(vo):
     if vo:
         info = {
@@ -46,6 +57,8 @@ def WebhookInfo(webhook_vo: Webhook, minimal=False):
                 "access_key": webhook_vo.access_key,
                 "capability": change_struct_type(webhook_vo.capability),
                 "plugin_info": PluginInfo(webhook_vo.plugin_info),
+                "tags": change_struct_type(webhook_vo.tags),
+                "requests": WebhookRequests(webhook_vo.requests),
                 "domain_id": webhook_vo.domain_id,
                 "created_at": utils.datetime_to_iso8601(webhook_vo.created_at),
             }
