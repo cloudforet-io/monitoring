@@ -342,7 +342,7 @@ class EventService(BaseService):
                         "name": resource,
                     }
                 )
-            alert_data["resource"] = alert_resources
+            alert_data["resources"] = alert_resources
 
         escalation_policy_id, escalation_ttl = self._get_escalation_policy_info(
             event_data["project_id"],
