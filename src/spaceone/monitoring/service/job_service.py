@@ -497,8 +497,9 @@ class JobService(BaseService):
 
         callbacks = []
 
+        access_key = self._create_access_key(alert_vo.alert_id)
+
         if has_callback:
-            access_key = self._generate_access_key()
             callback_url = self._make_callback_url(
                 alert_vo.alert_id, domain_id, access_key
             )
@@ -539,6 +540,27 @@ class JobService(BaseService):
             "message": message,
             "notification_level": notification_level,
         }
+
+    def _create_access_key(self, alert_id: str) -> str:
+        def _rollback(alert_id: str, access_key: str):
+            _LOGGER.info(
+                f"[_make_callback_url._rollback] "
+                f"Delete cache : {alert_id} "
+                f"({access_key})"
+            )
+            cache.delete(
+                f"monitoring:alert:notification-callback:{alert_id}:{access_key}"
+            )
+
+        access_key = self._generate_access_key()
+
+        cache.set(
+            f"monitoring:alert:notification-callback:{alert_id}:{access_key}",
+            True,
+            expire=3600,
+        )
+        self.transaction.add_rollback(_rollback, alert_id, access_key)
+        return access_key
 
     @cache.cacheable(key="monitoring:project-name:{domain_id}:{project_id}", expire=300)
     def _get_project_name(self, project_id: str, domain_id: str) -> str:
@@ -600,24 +622,8 @@ class JobService(BaseService):
     def _generate_access_key():
         return utils.random_string(16)
 
-    def _make_callback_url(self, alert_id, domain_id, access_key):
-        def _rollback(alert_id, access_key):
-            _LOGGER.info(
-                f"[_make_callback_url._rollback] "
-                f"Delete cache : {alert_id} "
-                f"({access_key})"
-            )
-            cache.delete(
-                f"monitoring:alert:notification-callback:{alert_id}:{access_key}"
-            )
-
-        cache.set(
-            f"monitoring:alert:notification-callback:{alert_id}:{access_key}",
-            True,
-            expire=3600,
-        )
-        self.transaction.add_rollback(_rollback, alert_id, access_key)
-
+    @staticmethod
+    def _make_callback_url(alert_id, domain_id, access_key):
         webhook_domain = config.get_global("WEBHOOK_DOMAIN")
         return f"{webhook_domain}/monitoring/v1/domain/{domain_id}/alert/{alert_id}/{access_key}/ACKNOWLEDGED"
 
