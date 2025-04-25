@@ -1,7 +1,5 @@
 import logging
 from datetime import datetime
-
-from pandas.io.sas.sas_constants import page_size_length
 from spaceone.core import utils, cache
 from spaceone.core.service import *
 
