@@ -74,6 +74,9 @@ class EventRuleManager(BaseManager):
     def list_event_rules(self, query: dict) -> dict:
         return self.event_rule_model.query(**query)
 
+    def filter_event_rules(self, **conditions):
+        return self.event_rule_model.filter(**conditions)
+
     def stat_event_rules(self, query: dict) -> dict:
         return self.event_rule_model.stat(**query)
 
@@ -221,7 +224,7 @@ class EventRuleManager(BaseManager):
         if total_count > 0:
             service_account_info = results[0]
 
-        self._service_account_info[
-            f"{domain_id}:{target_key}:{target_value}"
-        ] = service_account_info
+        self._service_account_info[f"{domain_id}:{target_key}:{target_value}"] = (
+            service_account_info
+        )
         return service_account_info

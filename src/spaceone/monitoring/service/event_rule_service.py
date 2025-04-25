@@ -97,6 +97,10 @@ class EventRuleService(BaseService):
         self._check_conditions(params["conditions"])
         self._check_actions(params["actions"], domain_id, workspace_id, identity_mgr)
 
+        self._check_recursive_actions(
+            identity_mgr, params["actions"], domain_id, workspace_id, []
+        )
+
         params["order"] = (
             self._get_highest_order(resource_group, project_id, domain_id, workspace_id)
             + 1
@@ -142,13 +146,16 @@ class EventRuleService(BaseService):
         if "conditions" in params:
             self._check_conditions(params["conditions"])
 
-        if "actions" in params:
+        if actions := params.get("actions", {}):
             identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
             self._check_actions(
-                params["actions"],
+                actions,
                 domain_id,
                 workspace_id,
                 identity_mgr,
+            )
+            self._check_recursive_actions(
+                identity_mgr, actions, domain_id, workspace_id, []
             )
 
         return self.event_rule_mgr.update_event_rule_by_vo(params, event_rule_vo)
@@ -427,6 +434,39 @@ class EventRuleService(BaseService):
                 raise ERROR_INVALID_PARAMETER_TYPE(
                     key="actions.no_notification", type="bool"
                 )
+
+    def _check_recursive_actions(
+        self,
+        identity_mgr: IdentityManager,
+        actions: dict,
+        domain_id: str,
+        workspace_id: str,
+        project_ids: list,
+    ) -> list:
+        if change_project_id := actions.get("change_project"):
+            if change_project_id in project_ids:
+                _LOGGER.error(
+                    f"[_check_recursive_actions] change_project_id {change_project_id}, project ids: {project_ids} "
+                )
+                raise ERROR_INVALID_PARAMETER(
+                    key="actions.change_project",
+                    reason=f"The {change_project_id} in the action should be different from the project_id in the event rule.",
+                )
+            else:
+                project_ids.append(change_project_id)
+                event_rule_vos = self.event_rule_mgr.filter_event_rules(
+                    domain_id=domain_id,
+                    workspace_id=workspace_id,
+                    project_id=change_project_id,
+                )
+                for event_rule_vo in event_rule_vos:
+                    self._check_recursive_actions(
+                        identity_mgr,
+                        event_rule_vo.actions,
+                        domain_id,
+                        workspace_id,
+                        project_ids,
+                    )
 
     @staticmethod
     def _check_order(order: int) -> None:

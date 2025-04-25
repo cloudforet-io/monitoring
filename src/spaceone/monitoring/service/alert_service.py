@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+from pandas.io.sas.sas_constants import page_size_length
 from spaceone.core import utils, cache
 from spaceone.core.service import *
 
@@ -468,6 +469,7 @@ class AlertService(BaseService):
         ]
     )
     @append_keyword_filter(["alert_id", "alert_number_str", "title"])
+    @set_query_page_limit(1000)
     def list(self, params):
         """List alerts
 
