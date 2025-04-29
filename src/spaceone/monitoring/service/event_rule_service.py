@@ -105,8 +105,8 @@ class EventRuleService(BaseService):
         )
 
         params["order"] = (
-                self._get_highest_order(resource_group, project_id, domain_id, workspace_id)
-                + 1
+            self._get_highest_order(resource_group, project_id, domain_id, workspace_id)
+            + 1
         )
 
         return self.event_rule_mgr.create_event_rule(params)
@@ -395,26 +395,26 @@ class EventRuleService(BaseService):
                 )
 
             if key not in _SUPPORTED_CONDITION_KEYS and not fnmatch.fnmatch(
-                    key, "additional_info.*"
+                key, "additional_info.*"
             ):
                 raise ERROR_INVALID_PARAMETER(
                     key="conditions.key",
                     reason=f"Unsupported key. "
-                           f'({" | ".join(_SUPPORTED_CONDITION_KEYS)})',
+                    f'({" | ".join(_SUPPORTED_CONDITION_KEYS)})',
                 )
             if operator not in _SUPPORTED_CONDITION_OPERATORS:
                 raise ERROR_INVALID_PARAMETER(
                     key="conditions.operator",
                     reason=f"Unsupported operator. "
-                           f'({" | ".join(_SUPPORTED_CONDITION_OPERATORS)})',
+                    f'({" | ".join(_SUPPORTED_CONDITION_OPERATORS)})',
                 )
 
     def _check_actions(
-            self,
-            actions: dict,
-            domain_id: str,
-            workspace_id: str,
-            identity_mgr: IdentityManager,
+        self,
+        actions: dict,
+        domain_id: str,
+        workspace_id: str,
+        identity_mgr: IdentityManager,
     ) -> None:
         if change_project_id := actions.get("change_project"):
             identity_mgr.get_project(change_project_id, domain_id)
@@ -445,20 +445,20 @@ class EventRuleService(BaseService):
                 )
 
     def _check_recursive_actions(
-            self,
-            identity_mgr: IdentityManager,
-            actions: dict,
-            domain_id: str,
-            workspace_id: str,
-            project_ids: list,
+        self,
+        identity_mgr: IdentityManager,
+        actions: dict,
+        domain_id: str,
+        workspace_id: str,
+        project_ids: list,
     ) -> None:
-        visited_projects = deepcopy(project_ids)
+        visited_project_ids = deepcopy(project_ids)
 
         change_project_id = actions.get("change_project")
         if not change_project_id:
             return
 
-        if change_project_id in visited_projects:
+        if change_project_id in visited_project_ids:
             _LOGGER.error(
                 f"[_check_recursive_actions] change_project_id {change_project_id}, project ids: {project_ids} "
             )
@@ -467,7 +467,7 @@ class EventRuleService(BaseService):
                 reason=f"The {change_project_id} in the action should be different from the project_id in the event rule.",
             )
 
-        visited_projects.append(change_project_id)
+        visited_project_ids.append(change_project_id)
         event_rule_vos = self.event_rule_mgr.filter_event_rules(
             domain_id=domain_id,
             workspace_id=workspace_id,
@@ -479,7 +479,7 @@ class EventRuleService(BaseService):
                 event_rule_vo.actions,
                 domain_id,
                 workspace_id,
-                visited_projects,
+                visited_project_ids,
             )
 
     @staticmethod
@@ -490,7 +490,7 @@ class EventRuleService(BaseService):
             )
 
     def _get_highest_order(
-            self, resource_group: str, project_id: str, domain_id: str, workspace_id: str
+        self, resource_group: str, project_id: str, domain_id: str, workspace_id: str
     ) -> int:
         query = {
             "filter": [
@@ -506,12 +506,12 @@ class EventRuleService(BaseService):
         return total_count
 
     def _get_all_event_rules(
-            self,
-            resource_group: str,
-            project_id: str,
-            domain_id: str,
-            workspace_id: str,
-            exclude_event_rule_id: str = None,
+        self,
+        resource_group: str,
+        project_id: str,
+        domain_id: str,
+        workspace_id: str,
+        exclude_event_rule_id: str = None,
     ):
         query = {
             "filter": [
