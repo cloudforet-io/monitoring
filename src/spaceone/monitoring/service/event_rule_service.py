@@ -464,7 +464,7 @@ class EventRuleService(BaseService):
             )
             raise ERROR_INVALID_PARAMETER(
                 key="actions.change_project",
-                reason=f"The {change_project_id} in the action should be different from the project_id in the event rule.",
+                reason=f"To avoid an infinite loop, the change_project_id({change_project_id}) in the action must differ from the project_id in the event rule.",
             )
 
         visited_project_ids.append(change_project_id)
