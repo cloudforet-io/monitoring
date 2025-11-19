@@ -18,7 +18,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name="spaceone-monitoring",
+    name="spaceone_monitoring",
     version=os.environ.get("PACKAGE_VERSION"),
     description="SpaceONE monitoring service",
     long_description="",
